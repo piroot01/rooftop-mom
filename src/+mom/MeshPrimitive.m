@@ -1,5 +1,8 @@
 classdef MeshPrimitive < handle
     properties (Access = private)
-        origin mom.Vec3;
+        patchCountX uint32;
+        patchCountY uint32;
+        patchSizeX double;
+        patchSizeY double;
     end
 end
