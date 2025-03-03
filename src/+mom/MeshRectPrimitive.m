@@ -1,4 +1,4 @@
-classdef MeshPrimitive < handle
+classdef MeshRectPrimitive < handle
     properties (Access = private)
         patchCountX_ uint32;
         patchCountY_ uint32;
