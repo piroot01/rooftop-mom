@@ -8,7 +8,7 @@ classdef MeshRectPrimitive < handle
     end
 
     methods
-        function obj = mesh(patchCountX, patchCountY, patchSizeX, patchSizeY, genom)
+        function obj = MeshRectPrimitive(patchCountX, patchCountY, patchSizeX, patchSizeY, genom)
             obj.patchCountX_ = patchCountX;
             obj.patchCountY_ = patchCountY;
             obj.patchSizeX_ = patchSizeX;
@@ -17,7 +17,7 @@ classdef MeshRectPrimitive < handle
             if ~isempty(genom) && numel(genom) == getPatchCount(obj)
                 obj.genom_ = logical(genom);
             else
-                obj.genom_ = true(1, patch_count_x_direction * patch_count_y_direction);
+                obj.genom_ = true(1, obj.patchCountX_ * obj.patchCountY_);
             end
         end
     end
