@@ -14,6 +14,10 @@ classdef Vec3
     end
 
     methods
+        function v = getAsColVec(obj)
+            v = [obj.x; obj.y; obj.z];
+        end
+
         function disp(obj)
             fprintf('[%g, %g, %g]', obj.x, obj.y, obj.z);
         end

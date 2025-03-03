@@ -16,5 +16,5 @@ myRectMesh = mom.MeshRect(myRectMeshPrimitive, origin, pi/3, pi/2, roll);
 
 myMesh = myRectMesh.getAsMesh();
 
-myMesh.vertices
-myMesh.faces
+disp(myMesh.vertices);
+disp(myMesh.faces);
