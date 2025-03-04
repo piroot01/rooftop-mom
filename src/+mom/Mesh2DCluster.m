@@ -18,7 +18,6 @@ classdef Mesh2DCluster < handle
 
             currMeshLastIndex = getLastIndex(mesh);
             if isempty(obj.meshes)
-                prevMeshLastIndex = uint32(0);
                 obj.meshRanges = [obj.meshRanges; 1, currMeshLastIndex];
             else
                 prevMeshLastIndex = getLastIndex(obj.meshes(end));
