@@ -4,6 +4,7 @@ classdef MeshRectPrimitive < handle
         patchCountY_ uint32;
         patchSizeX_ double;
         patchSizeY_ double;
+
         genom_ logical;
     end
 

@@ -7,7 +7,7 @@ countX = 3;
 countY = 3;
 sizeX = 0.1;
 sizeY = 0.2;
-origin = mom.Vec3(0, 0, 0);
+origin = [0; 0; 0];
 roll = pi / 4;
 
 
@@ -18,3 +18,5 @@ myMesh = myRectMesh.getAsMesh();
 
 disp(myMesh.vertices);
 disp(myMesh.faces);
+disp(myMesh.origin);
+disp(myMesh.transformation);

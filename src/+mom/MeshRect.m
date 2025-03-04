@@ -2,7 +2,8 @@ classdef MeshRect < handle
     properties (Access = private)
         rectPrimitive_ mom.MeshRectPrimitive;
 
-        origin_ mom.Vec3;
+        % origin must be a 3D vector
+        origin_ double;
         rotX_ double = 0;
         rotY_ double = 0;
         rotZ_ double = 0;
@@ -25,13 +26,13 @@ classdef MeshRect < handle
                 points = double(rawPoints) .* size;
             end
 
-            function vertices = getVertices(pointsX, pointsY)
+            function [vertices, transformation] = getVertices(pointsX, pointsY)
                 [x, y] = meshgrid(pointsX, pointsY);
                 points = [x(:), y(:), zeros(numel(x), 1)];
 
-                rotMatH = makehgtform('xrotate', obj.rotX_, 'yrotate', obj.rotY_, 'zrotate', obj.rotZ_);
-                rotMat = rotMatH(1:3, 1:3);
-                vertices = rotMat * points.' + obj.origin_.getAsColVec();
+                transformationH = makehgtform('xrotate', obj.rotX_, 'yrotate', obj.rotY_, 'zrotate', obj.rotZ_);
+                transformation = transformationH(1:3, 1:3);
+                vertices = transformation * points.' + obj.origin_(:);
             end
 
             function faces = getFaces(countX, countY)
@@ -50,8 +51,10 @@ classdef MeshRect < handle
 
             pointsX = rectSide(countX, sizeX);
             pointsY = rectSide(countY, sizeY);
-            mesh = mom.Mesh();
-            mesh.vertices = getVertices(pointsX, pointsY);
+
+            mesh = mom.Mesh2D();
+            mesh.origin = obj.origin_(:);
+            [mesh.vertices, mesh.transformation] = getVertices(pointsX, pointsY);
             mesh.faces = getFaces(countX, countY);
        end
     end
