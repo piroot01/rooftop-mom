@@ -18,14 +18,26 @@ classdef Mesh2DCluster < handle
 
             currMeshLastIndex = getLastIndex(mesh);
             if isempty(obj.meshes)
+                prevMeshLastIndex = uint32(0);
                 obj.meshRanges = [obj.meshRanges; 1, currMeshLastIndex];
             else
                 prevMeshLastIndex = getLastIndex(obj.meshes(end));
                 obj.meshRanges = [obj.meshRanges; prevMeshLastIndex + 1, prevMeshLastIndex + currMeshLastIndex];
             end
 
-            mesh.faces = mesh.faces + currMeshLastIndex;
+            mesh.faces = mesh.faces + prevMeshLastIndex;
             obj.meshes = [obj.meshes, mesh];
+        end
+
+        function faces = getFaces(obj)
+            meshCount = obj.getMeshCount();
+            faceCells = cell(1, meshCount);
+
+            for n = 1:meshCount
+                faceCells{n} = obj.meshes(n).getFaces();
+            end
+
+            faces = [faceCells{:}];
         end
 
         function count = getMeshCount(obj)

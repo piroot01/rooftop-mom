@@ -11,4 +11,10 @@ classdef Mesh2D < handle
         origin double;
         transformation double;
     end
+
+    methods
+        function faces = getFaces(obj)
+            faces = obj.faces;
+        end
+    end
 end

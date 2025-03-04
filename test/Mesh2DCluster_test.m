@@ -10,7 +10,6 @@ sizeY = 0.2;
 origin = [0; 0; 0];
 roll = pi / 4;
 
-
 myRectMeshPrimitive = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
 myRectMesh1 = mom.MeshRect(myRectMeshPrimitive, origin, pi/3, pi/2, roll);
 myRectMesh2 = mom.MeshRect(myRectMeshPrimitive, [1, 1, 1], 0, 0, 0);
@@ -22,6 +21,7 @@ myMeshes = mom.Mesh2DCluster();
 myMeshes.loadMesh(myMesh1);
 myMeshes.loadMesh(myMesh2);
 
-mesh = myMeshes.getMesh(2);
+mesh = myMeshes.getMesh(1);
 disp(mesh.faces);
-disp(myMeshes.meshRanges)
+disp(myMeshes.meshRanges);
+disp(myMeshes.getFaces());
