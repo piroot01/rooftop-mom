@@ -24,11 +24,25 @@ classdef QuadPoints
     end
 
     methods
-        function points = getTransformed(obj, v1, v2, v4)
+        function points = getTransformed(obj, faceVertices)
+            % we expect the faceVertices to be 3 by (4N) matrix, where N is the number of faces
+            faceCount = size(faceVertices, 2) / 4;
+
+            v1 = faceVertices(:, 1:4:end);
+            v2 = faceVertices(:, 2:4:end);
+            v4 = faceVertices(:, 4:4:end);
+
             uSide= v2 - v1;
             vSide = v4 - v1;
 
-            points = uSide .* obj.points2Du_ + vSide .* obj.points2Dv_ + v1;
+            uCount = numel(obj.points2Du_);
+            points = zeros(3, faceCount * uCount);
+
+            for n = 1:faceCount
+                slice = ((n - 1) * uCount + 1):(n * uCount);
+                facePoints = uSide(:, n) .* obj.points2Du_ + vSide(:, n) .* obj.points2Dv_ + v1(:, n);
+                points(:, slice) = facePoints;
+            end
         end
     end
 end
