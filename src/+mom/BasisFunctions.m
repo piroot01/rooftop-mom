@@ -42,7 +42,7 @@ classdef BasisFunctions
                 faces = [min(face1, face2), max(face1, face2)];
             end
 
-            obj.functions_ = getDoubleFaces(generateEdges(mesh.faces)).';
+            obj.functions_ = getDoubleFaces(generateEdges(mesh.getFaces())).';
         end
 
         function func = get(obj)
