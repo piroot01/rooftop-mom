@@ -20,6 +20,9 @@ faces = mesh.vertices(:, vertexIndices(:))
 order = 2;
 
 myQuadPoints = mom.QuadPoints(order);
-quadPoints = myQuadPoints.getTransformed(faces);
+quadPoints = myQuadPoints.getTransformed(faces)
 
 mom.DistMatrix().getChunk(quadPoints(:, 1:(4 * 2)), quadPoints(:, 9:(4 * 4)))
+
+A = magic(5);
+A(2:3, 2:4) = 1:6
