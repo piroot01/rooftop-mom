@@ -6,6 +6,9 @@ classdef BasisFunctions < handle
         % store the rooftops (positive and negative)
         pointsPositive_ double;
         pointsNegative_ double;
+
+        quadPoints_ double;
+        rooftopPoints_ double;
     end
 
     methods
@@ -54,8 +57,10 @@ classdef BasisFunctions < handle
             obj.pointsPositive_ = zeros(3, basisFuncCount);
             order2 = double(quadraturePoints.getOrder())^2;
 
-            obj.pointsPositive_ = zeros(3, order2 * basisFuncCount);
-            obj.pointsNegative_ = zeros(3, order2 * basisFuncCount);
+            pointCount = order2 * basisFuncCount;
+
+            obj.quadPoints_ = zeros(3, pointCount, 2);
+            obj.rooftopPoints_ = zeros(3, pointCount, 2);
 
             for n = 1:basisFuncCount
                 bIdx = obj.faces_(:, n);
@@ -64,8 +69,10 @@ classdef BasisFunctions < handle
                 q = quadraturePoints.getTransformedBasisFunc(f);
                 [pP, pN] = obj.computeRooftop(f, q);
                 slice = (order2 * (n - 1) + 1):(order2 * n);
-                obj.pointsPositive_(:, slice) = pP;
-                obj.pointsNegative_(:, slice) = pN;
+                obj.quadPoints_(:, slice, 1) = q(:, 1:4);
+                obj.quadPoints_(:, slice, 2) = q(:, 5:8);
+                obj.rooftopPoints_(:, slice, 1) = pP;
+                obj.rooftopPoints_(:, slice, 2) = pN;
             end
         end
 
@@ -73,9 +80,16 @@ classdef BasisFunctions < handle
             count = size(obj.faces_, 2);
         end
 
-        function [pP, pN] = getPoints(obj)
-            pP = obj.pointsPositive_;
-            pN = obj.pointsNegative_;
+        function faces = getFaces(obj)
+            faces = obj.faces_;
+        end
+
+        function points = getQuadPoints(obj)
+            points = obj.quadPoints_;
+        end
+
+        function points = getRooftopPoints(obj)
+            points = obj.rooftopPoints_;
         end
     end
 

@@ -1,4 +1,4 @@
-clc; clearvars;
+clc; clearvars; format long;
 
 currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
@@ -6,8 +6,8 @@ addpath(srcDir);
 
 countX = 2;
 countY = 2;
-sizeX = 0.1;
-sizeY = 0.2;
+sizeX = 1;
+sizeY = 1;
 origin = [0, 0, 0];
 
 % single Mesh2D
@@ -21,14 +21,12 @@ order = 2;
 
 quadPoints = mom.QuadPoints(order);
 
-basisFunc.generatePoints(myMesh, quadPoints)
+basisFunc.generatePoints(myMesh, quadPoints);
 
-[pointsPos, pointsNeg] = basisFunc.getPoints();
-
-memoryElementwise = 48;
+memoryElementwise = 16;
 
 memory_MB = memoryElementwise * 8 / 1e6;
 
 impedMatrix = mom.ImpedanceMatrixChunked(memory_MB, order, basisFunc);
 
-impedMatrix.compute();
+impedMatrix.compute(basisFunc, quadPoints.getWeights4D());

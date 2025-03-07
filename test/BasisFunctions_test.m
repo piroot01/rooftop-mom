@@ -6,8 +6,8 @@ addpath(srcDir);
 
 countX = 2;
 countY = 2;
-sizeX = 0.1;
-sizeY = 0.2;
+sizeX = 1;
+sizeY = 1;
 origin = [0, 0, 0];
 
 tic;
@@ -23,8 +23,11 @@ order = 2;
 
 quadPoints = mom.QuadPoints(order);
 
-basisFunc.generatePoints(myMesh, quadPoints)
+basisFunc.generatePoints(myMesh, quadPoints);
 
-[pointsPos, pointsNeg] = basisFunc.getPoints();
+basisFunc.getFaces()
+
+qP = basisFunc.getQuadPoints();
+rP = basisFunc.getRooftopPoints();
 
 toc;

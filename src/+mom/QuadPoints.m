@@ -20,15 +20,16 @@ classdef QuadPoints
             obj.points2Du_ = p2Du(:).';
             obj.points2Dv_ = p2Dv(:).';
 
-            [w4D1, w4D2, w4D3, w4D4] = ndgrid(w1D, w1D, w1D, w1D);
-            obj.weights4D_ = w4D1(:) .* w4D2(:) .* w4D3(:) .* w4D4(:);
+            [w2D1, w2D2] = ndgrid(w1D, w1D);
+            weights2D = w2D1(:) .* w2D2(:);
+            obj.weights4D_ = weights2D * weights2D.';
         end
     end
 
     methods
         function points = getTransformed(obj, faceVertices)
             % we expect the faceVertices to be 3 by (4N) matrix, where N is the number of faces
-            faceCount = size(faceVertices, 2) / 4
+            faceCount = size(faceVertices, 2) / 4;
 
             v1 = faceVertices(:, 1:4:end);
             v2 = faceVertices(:, 2:4:end);
@@ -70,6 +71,10 @@ classdef QuadPoints
 
         function order = getOrder(obj)
             order = obj.order_;
+        end
+
+        function weights = getWeights4D(obj)
+            weights = obj.weights4D_;
         end
     end
 end

@@ -1,7 +1,13 @@
 classdef ImpedanceMatrixChunked < handle
-    properties
+    properties (Access = private)
+        order_ double;
         rowChunkIndices_ uint32;
         colChunkIndices_ uint32;
+    end
+
+    properties (Access = private, Constant)
+        polarityComb_ = [0, 0; 0, 1; 1, 0; 1, 1] + 1;
+        polarityCombCount_ = 4;
     end
 
     methods
@@ -9,18 +15,45 @@ classdef ImpedanceMatrixChunked < handle
             % input:
             %   memory_MB :: memory allocated to the matrix computation
             %   basisFunctions :: mom.BasisFunctions
+            obj.order_ = order;
 
             obj.generateChunkIndices(memory_MB, order, basisFunctions);
         end
     end
 
     methods
-        function Z = compute(obj)
+        function Z = compute(obj, basisFunctions, weights4D)
+            % input:
+            %   iPolarity, jPolarity: 0 = pos, 1 = neg
             chunkCount = size(obj.rowChunkIndices_, 2);
+
+            quadPoints = basisFunctions.getQuadPoints();
+            rooftopPoints = basisFunctions.getRooftopPoints();
+
+            order2 = obj.order_^2;
 
             for n = 1:chunkCount
                 % for debugging
                 fprintf("Chunk ID=%d, ROW=[%d, %d], COL=[%d, %d]\n", n, obj.rowChunkIndices_(1, n), obj.rowChunkIndices_(2, n), obj.colChunkIndices_(1, n), obj.colChunkIndices_(2, n));
+
+                iStart = obj.rowChunkIndices_(1, n);
+                iEnd = obj.rowChunkIndices_(2, n);
+                jStart = obj.colChunkIndices_(1, n);
+                jEnd = obj.colChunkIndices_(2, n);
+
+                iSlice = ((iStart - 1) * order2 + 1):(iEnd * order2);
+                jSlice = ((jStart - 1) * order2 + 1):(jEnd * order2);
+
+                r = numel(iSlice) / order2;
+                s = numel(jSlice) / order2;
+
+                iQP = quadPoints(:, iSlice, :);
+                jQP = quadPoints(:, jSlice, :);
+
+                iRP = rooftopPoints(:, iSlice, :);
+                jRP = rooftopPoints(:, jSlice, :);
+
+                ZBlock = obj.computeBlock(r, s, iQP, jQP, iRP, jRP, weights4D);
             end
         end
     end
@@ -92,6 +125,28 @@ classdef ImpedanceMatrixChunked < handle
 
             obj.rowChunkIndices_ = rowIndices;
             obj.colChunkIndices_ = colIndices;
+        end
+
+        function Zblock = computeBlock(obj, m, n, iQP, jQP, iRP, jRP, W4D)
+            order2 = obj.order_^2;
+            Zblock = zeros(m, n);
+            W = repmat(W4D, m, n);
+            for n = 1
+                iQPp = iQP(:, :, obj.polarityComb_(n, 1))
+                jQPp = jQP(:, :, obj.polarityComb_(n, 2))
+                iRPp = iRP(:, :, obj.polarityComb_(n, 1))
+                jRPp = jRP(:, :, obj.polarityComb_(n, 2))
+
+                D = mom.DistMatrix.getChunk(iQPp, jQPp)
+                RPDot = iRPp.' * jRPp
+                G = exp(-1i * D) ./ D;
+                G(D == 0) = 0;
+                I = W .* RPDot .* G
+                Ir = reshape(I, order2, m, order2, []);
+                Zblock = Zblock + squeeze(sum(sum(Ir, 1), 3));
+            end
+
+            disp(Zblock)
         end
     end
 end
