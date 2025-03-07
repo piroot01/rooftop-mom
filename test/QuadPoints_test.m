@@ -1,7 +1,8 @@
 clc; clearvars;
 
-currentFolder = fileparts(mfilename('fullpath'));
-addpath(currentFolder, '..', 'src/');
+currentDir = fileparts(mfilename('fullpath'));
+srcDir = fullfile(currentDir, '..', 'src');
+addpath(srcDir);
 
 countX = 3;
 countY = 3;

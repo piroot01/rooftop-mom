@@ -1,7 +1,11 @@
-classdef BasisFunctions
+classdef BasisFunctions < handle
     properties (Access = private)
         % store the rooftop basis functions as a pair of face indices
-        functions_ uint32;
+        faces_ uint32;
+
+        % store the rooftops (positive and negative)
+        pointsPositive_ double;
+        pointsNegative_ double;
     end
 
     methods
@@ -9,25 +13,19 @@ classdef BasisFunctions
             function edges = generateEdges(faces)
                 faceCount = size(faces, 2);
 
-                % each face has 4 edges, each edge will be represented with a pair of vertex indices and one face index
                 edges = zeros(4 * faceCount, 3, 'uint32');
 
-                m = 1;
-                for n = 1:faceCount
-                    face = faces(:, n);
+                faceIndices = (1:faceCount)';
 
-                    edge1 = [min(face(1), face(2)), max(face(1), face(2))];
-                    edge2 = [min(face(2), face(3)), max(face(2), face(3))];
-                    edge3 = [min(face(3), face(4)), max(face(3), face(4))];
-                    edge4 = [min(face(4), face(1)), max(face(4), face(1))];
+                v1 = faces(1, :);
+                v2 = faces(2, :);
+                v3 = faces(3, :);
+                v4 = faces(4, :);
 
-                    edges(m, :) = [edge1, n];
-                    edges(m + 1, :) = [edge2, n];
-                    edges(m + 2, :) = [edge3, n];
-                    edges(m + 3, :) = [edge4, n];
-
-                    m = m + 4;
-                end
+                edges(1:4:end, :) = [min(v1, v2).', max(v1, v2).', faceIndices];
+                edges(2:4:end, :) = [min(v2, v3).', max(v2, v3).', faceIndices];
+                edges(3:4:end, :) = [min(v3, v4).', max(v3, v4).', faceIndices];
+                edges(4:4:end, :) = [min(v4, v1).', max(v4, v1).', faceIndices];
             end
 
             function faces = getDoubleFaces(edges)
@@ -42,11 +40,67 @@ classdef BasisFunctions
                 faces = [min(face1, face2), max(face1, face2)];
             end
 
-            obj.functions_ = getDoubleFaces(generateEdges(mesh.getFaces())).';
+            obj.faces_ = getDoubleFaces(generateEdges(mesh.getFaces())).';
+        end
+    end
+
+    methods
+        function generatePoints(obj, mesh, quadraturePoints)
+            % input:
+            %   mesh :: Mesh2D
+            %   quadraturePoints :: QuadPoints
+
+            basisFuncCount = obj.getCount();
+            obj.pointsPositive_ = zeros(3, basisFuncCount);
+            order2 = double(quadraturePoints.getOrder())^2;
+
+            obj.pointsPositive_ = zeros(3, order2 * basisFuncCount);
+            obj.pointsNegative_ = zeros(3, order2 * basisFuncCount);
+
+            for n = 1:basisFuncCount
+                bIdx = obj.faces_(:, n);
+                vIdx = mesh.faces(:, bIdx);
+                f = mesh.vertices(:, vIdx(:));
+                q = quadraturePoints.getTransformedBasisFunc(f);
+                [pP, pN] = obj.computeRooftop(f, q);
+                slice = (order2 * (n - 1) + 1):(order2 * n);
+                obj.pointsPositive_(:, slice) = pP;
+                obj.pointsNegative_(:, slice) = pN;
+            end
         end
 
-        function func = get(obj)
-            func = obj.functions_;
+        function count = getCount(obj)
+            count = size(obj.faces_, 2);
+        end
+
+        function [pP, pN] = getPoints(obj)
+            pP = obj.pointsPositive_;
+            pN = obj.pointsNegative_;
+        end
+    end
+
+    methods (Access = private)
+        function [rooftopP, rooftopN] = computeRooftop(~, basisFunctionMesh, quadraturePoints)
+            % input:
+            %   basisFunctionMesh: 3x8 matrix (8 vertices - technically 6 is enough)
+            %   polarity: 0 = positive, 1 = negative
+            %   quadraturePoints: 3xN matrix (N is the order of the qudrature squared)
+
+            v1p = basisFunctionMesh(:, 1);
+            v1n = basisFunctionMesh(:, 5);
+            v2n = basisFunctionMesh(:, 6);
+
+            % Compute the difference vector and its norm.
+            d1 = v1n - v1p;
+            d2 = v2n - v1n;
+            l1 = sqrt(sum(d1 .^ 2));
+            l2 = sqrt(sum(d2 .^ 2));
+            e1 = d1 / l1;
+            e2 = d2 / l2;
+
+            % Compute the rooftop using a vectorized projection.
+            rooftopP = (1 / l1) * (e1 * (e1.' * (quadraturePoints(:, 1:4) - v1p)));
+            rooftopN = (-1 / l2) * (e2 * (e2.' * (quadraturePoints(:, 5:8) - v2n)));
         end
     end
 end
