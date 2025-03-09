@@ -36,11 +36,11 @@ classdef MeshRect < handle
             end
 
             function faces = getFaces(countX, countY)
-                [ii, jj] = meshgrid(1:countX, 1:countY);
-                v1 = ii + (jj - 1) .* (countX + 1);
-                v2 = ii + 1 + (jj - 1) .* (countX + 1);
-                v3 = ii + 1 + jj .* (countX + 1);
-                v4 = ii + jj * (countX + 1);
+                [p, q] = meshgrid(1:countX, 1:countY);
+                v1 = (countX + 1) * (q.' - 1) + p.';
+                v2 = v1 + 1;
+                v3 = v1 + countX + 2;
+                v4 = v1 + countX + 1;
                 faces = uint32([v1(:), v2(:), v3(:), v4(:)].');
             end
 
