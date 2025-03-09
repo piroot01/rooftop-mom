@@ -5,14 +5,13 @@ classdef Mesh2D < handle
 
         % faces will be represented as an array of index lists which represent a vertices of given face
         faces uint32;
-
-        % mesh plane description
-        % origin must be a 3D column vector
-        origin double;
-        transformation double;
     end
 
     methods
+        function vertices = getVertices(obj)
+            vertices = obj.vertices;
+        end
+
         function faces = getFaces(obj)
             faces = obj.faces;
         end

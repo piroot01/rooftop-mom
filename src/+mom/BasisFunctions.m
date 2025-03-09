@@ -3,10 +3,6 @@ classdef BasisFunctions < handle
         % store the rooftop basis functions as a pair of face indices
         faces_ uint32;
 
-        % store the rooftops (positive and negative)
-        pointsPositive_ double;
-        pointsNegative_ double;
-
         quadPoints_ double;
         rooftopPoints_ double;
     end
@@ -41,6 +37,9 @@ classdef BasisFunctions < handle
                 face2 = sortedEdges(doubleEdgesIndices + 1, 3);
 
                 faces = [min(face1, face2), max(face1, face2)];
+
+                % TODO: think of a better basis function finding algorithm
+                % faces = sortrows(faces, [1, 2]);
             end
 
             obj.faces_ = getDoubleFaces(generateEdges(mesh.getFaces())).';
@@ -48,14 +47,13 @@ classdef BasisFunctions < handle
     end
 
     methods
-        function generatePoints(obj, mesh, quadraturePoints)
+        function generatePoints(obj, mesh, quadrature)
             % input:
-            %   mesh :: Mesh2D
-            %   quadraturePoints :: QuadPoints
+            %   mesh :: mom.Mesh2D
+            %   quadrature :: mom.Quadrature
 
             basisFuncCount = obj.getCount();
-            obj.pointsPositive_ = zeros(3, basisFuncCount);
-            order2 = double(quadraturePoints.getOrder())^2;
+            order2 = quadrature.getOrder()^2;
 
             pointCount = order2 * basisFuncCount;
 
@@ -66,7 +64,7 @@ classdef BasisFunctions < handle
                 bIdx = obj.faces_(:, n);
                 vIdx = mesh.faces(:, bIdx);
                 f = mesh.vertices(:, vIdx(:));
-                q = quadraturePoints.getTransformedBasisFunc(f);
+                q = quadrature.get(f);
                 [pP, pN] = obj.computeRooftop(f, q);
                 slice = (order2 * (n - 1) + 1):(order2 * n);
                 obj.quadPoints_(:, slice, 1) = q(:, 1:4);

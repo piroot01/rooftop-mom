@@ -29,6 +29,8 @@ classdef Mesh2DCluster < handle
             obj.meshes = [obj.meshes, mesh];
         end
 
+        %TODO: add getVertices method
+
         function faces = getFaces(obj)
             meshCount = obj.getMeshCount();
             faceCells = cell(1, meshCount);

@@ -26,7 +26,7 @@ classdef MeshRect < handle
                 points = double(rawPoints) .* size;
             end
 
-            function [vertices, transformation] = getVertices(pointsX, pointsY)
+            function vertices = getVertices(pointsX, pointsY)
                 [x, y] = meshgrid(pointsX, pointsY);
                 points = [x(:), y(:), zeros(numel(x), 1)];
 
@@ -53,8 +53,7 @@ classdef MeshRect < handle
             pointsY = rectSide(countY, sizeY);
 
             mesh = mom.Mesh2D();
-            mesh.origin = obj.origin_(:);
-            [mesh.vertices, mesh.transformation] = getVertices(pointsX, pointsY);
+            mesh.vertices = getVertices(pointsX, pointsY);
             mesh.faces = getFaces(countX, countY);
        end
     end

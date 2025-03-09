@@ -9,25 +9,28 @@ countY = 2;
 sizeX = 1;
 sizeY = 1;
 origin = [0, 0, 0];
+order = 2;
 
 tic;
 
-% single Mesh2D
+% 1.step: generate a mesh
 myRectMeshPrimitive = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
 myRectMesh = mom.MeshRect(myRectMeshPrimitive, origin, 0, 0, 0);
-
 myMesh = myRectMesh.getAsMesh();
-basisFunc = mom.BasisFunctions(myMesh);
 
-order = 2;
+% 2. step: create Quadrature
+quadrature = mom.Quadrature(order);
 
-quadPoints = mom.QuadPoints(order);
+% 3. step: create BasisFunctions
+basisFuncs = mom.BasisFunctions(myMesh);
 
-basisFunc.generatePoints(myMesh, quadPoints);
+% 4. step: generate quadrature points and rooftop points
+basisFuncs.generatePoints(myMesh, quadrature);
 
-basisFunc.getFaces()
+% 5. step: get the basis function faces
+basisFuncs.getFaces()
 
-qP = basisFunc.getQuadPoints();
-rP = basisFunc.getRooftopPoints();
+% qP = basisFunc.getQuadPoints();
+% rP = basisFunc.getRooftopPoints();
 
 toc;

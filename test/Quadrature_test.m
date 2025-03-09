@@ -15,10 +15,9 @@ rectMesh = mom.MeshRect(rectPrim, origin, 0, 0, 0);
 
 mesh = rectMesh.getAsMesh();
 
-vertexIndices = mesh.faces(:, [1, 2, 3]);
-faces = mesh.vertices(:, vertexIndices(:))
+vertexIndices = mesh.faces(:, 1:2);
+vertexCoords = mesh.vertices(:, vertexIndices(:));
 
 order = 2;
-
-myQuadPoints = mom.QuadPoints(order);
-myQuadPoints.getTransformed(faces)
+myQuadrature = mom.Quadrature(order);
+myQuadrature.get(vertexCoords)
