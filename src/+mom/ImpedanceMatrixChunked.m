@@ -5,6 +5,9 @@ classdef ImpedanceMatrixChunked < handle
 
         rowChunkIndices_ uint32;
         colChunkIndices_ uint32;
+
+        % impedance matrix constants
+        minusIK0_ = -1i;
     end
 
     properties (Access = private, Constant)
@@ -59,6 +62,49 @@ classdef ImpedanceMatrixChunked < handle
                 ZBlock = obj.computeBlock(r, s, iQP, jQP, iRP, jRP, weights4D, order2);
             end
         end
+
+        function Zm = computeMag(obj)
+            chunkCount = obj.getChunkCount();
+            order2 = obj.quadrature_.getOrder()^2;
+            weights = obj.quadrature_.getWeights();
+            quadPoints = obj.basisFunctions_.getQuadPoints();
+            rooftopPoints = obj.basisFunctions_.getRooftopPoints();
+            basisFuncCount = obj.basisFunctions_.getCount();
+
+            [rowStarts, rowEnds, colStarts, colEnds] = obj.generateSlices(order2);
+            [r, c] = obj.generateSliceSizes();
+            singularityMask = obj.generateSingularityMask();
+            IDMask = obj.generateIDMask();
+
+            Zm = zeros(basisFuncCount);
+            for n = 1:chunkCount
+                % for debugging
+                fprintf("Chunk ID=%d, ROW=[%d, %d], COL=[%d, %d]\n", n, obj.rowChunkIndices_(1, n), obj.rowChunkIndices_(2, n), obj.colChunkIndices_(1, n), obj.colChunkIndices_(2, n));
+
+                iSlice = rowStarts(n):rowEnds(n);
+                jSlice = colStarts(n):colEnds(n);
+
+                iQP = quadPoints(:, iSlice, :);
+                jQP = quadPoints(:, jSlice, :);
+                iRP = rooftopPoints(:, iSlice, :);
+                jRP = rooftopPoints(:, jSlice, :);
+
+                iChunk = obj.rowChunkIndices_(1, n):obj.rowChunkIndices_(2, n);
+                jChunk = obj.colChunkIndices_(1, n):obj.colChunkIndices_(2, n);
+
+                singularityMaskChunk = singularityMask(iChunk, jChunk, :);
+                IDMaskChunk = IDMask(iChunk, jChunk);
+
+                ZmBlock = obj.computeZmBlock(r(n), c(n), iQP, jQP, iRP, jRP, weights, order2, singularityMaskChunk, IDMaskChunk);
+                Zm(iChunk, jChunk) = ZmBlock;
+            end
+
+            disp(Zm);
+        end
+
+        function count = getChunkCount(obj)
+            count = size(obj.rowChunkIndices_, 2);
+        end
     end
 
     methods (Access = private)
@@ -71,19 +117,13 @@ classdef ImpedanceMatrixChunked < handle
             end
 
             function [a, b] = getChunkShape(blockCount)
-                factors = [];
-                for p = 1:blockCount
-                    if mod(blockCount, p) == 0
-                        q = blockCount / p;
-                        factors = [factors; p, q];
-                    end
-                end
+                upperBound = floor(sqrt(blockCount));
+                p = find(mod(blockCount, 1:upperBound) == 0);
+                q = blockCount ./ p;
 
-                [~, idx] = min(abs(factors(:, 1) - factors(:, 2)))
-                chunkShape = factors(idx, :);
-
-                a = chunkShape(1);
-                b = chunkShape(2);
+                [~, idx] = min(abs(p - q));
+                a = p(idx);
+                b = q(idx);
             end
 
             function count = getBlockCountPerChunk(elementCount, order)
@@ -94,7 +134,7 @@ classdef ImpedanceMatrixChunked < handle
 
             elementCount = toElementCount(memory_MB);
             if elementCount < order^4
-                error("The given memory does not suffice!");
+                error('The given memory does not suffice!');
             end
 
             blockCountPerChunk = getBlockCountPerChunk(elementCount, order);
@@ -125,25 +165,105 @@ classdef ImpedanceMatrixChunked < handle
             obj.colChunkIndices_ = colIndices;
         end
 
-        function Zblock = computeBlock(obj, m, n, iQP, jQP, iRP, jRP, W4D, o2)
-            Zblock = zeros(m, n);
-            W = repmat(W4D, m, n);
-            for n = 1
-                iQPp = iQP(:, :, obj.polarityComb_(n, 1))
-                jQPp = jQP(:, :, obj.polarityComb_(n, 2))
-                iRPp = iRP(:, :, obj.polarityComb_(n, 1))
-                jRPp = jRP(:, :, obj.polarityComb_(n, 2))
+        function [rowStarts, rowEnds, colStarts, colEnds] = generateSlices(obj, blockSize)
+            rowStarts = (obj.rowChunkIndices_(1, :) - 1) * blockSize + 1;
+            rowEnds = obj.rowChunkIndices_(2, :) * blockSize;
+            colStarts = (obj.colChunkIndices_(1, :) - 1) * blockSize + 1;
+            colEnds = obj.colChunkIndices_(2, :) * blockSize;
+        end
 
-                D = mom.DistMatrix.getChunk(iQPp, jQPp)
-                RPDot = iRPp.' * jRPp
+        function [r, c] = generateSliceSizes(obj)
+            r = (obj.rowChunkIndices_(2, :) - obj.rowChunkIndices_(1, :) + 1);
+            c = (obj.colChunkIndices_(2, :) - obj.colChunkIndices_(1, :) + 1);
+        end
+
+        function ZmBlock = computeZmBlock(obj, r, c, iQP, jQP, iRP, jRP, W4D, o2, SM, IDM)
+            ZmBlock = zeros(r, c, 4);
+            W = repmat(W4D, r, c);
+
+            for n = 1:obj.polarityCombCount_
+                p1 = obj.polarityComb_(n, 1);
+                p2 = obj.polarityComb_(n, 2);
+
+                iQPp = iQP(:, :, p1);
+                jQPp = jQP(:, :, p2);
+                iRPp = iRP(:, :, p1);
+                jRPp = jRP(:, :, p2);
+
+                SMp = logical(kron(SM(:, :, n), ones(o2)));
+
+                D = mom.DistMatrix.getChunk(iQPp, jQPp);
+                D0 = (D < eps);
+
+                RPDot = iRPp.' * jRPp;
+
                 G = exp(-1i * D) ./ D;
-                G(D == 0) = 0;
-                I = W .* RPDot .* G
-                Ir = reshape(I, o2, m, o2, []);
-                Zblock = Zblock + squeeze(sum(sum(Ir, 1), 3));
+                GS = G - 1 ./ D;
+
+                I = RPDot .* G;
+                I(SMp) = RPDot(SMp) .* GS(SMp);
+                I(D0) = RPDot(D0) .* obj.minusIK0_;
+
+                I = W .* I;
+                Ir = reshape(I, o2, r, o2, c);
+                SS = sum(sum(Ir, 1), 3);
+                ZmBlock(:, :, n) = reshape(SS, [r, c]);
             end
 
-            disp(Zblock)
+            % if the output is zero, assume that the basis functions were perpendicular
+            ZmBlock0 = (abs(ZmBlock) < eps);
+            mask = SM & ~ZmBlock0;
+
+            ZmBlock = obj.applyMagSingularities(ZmBlock, mask, IDM);
+
+            ZmBlock = sum(ZmBlock, 3);
+        end
+
+        function ZmBlock = applyMagSingularities(obj, ZmBlock, SM, IDM)
+            IDCount = obj.basisFunctions_.getIDCount();
+            rooftopLengths = obj.basisFunctions_.getRooftopLengths();
+
+            for n = 1:obj.polarityCombCount_
+                ZmBlockp = ZmBlock(:, :, n);
+
+                for k = 1:IDCount
+                    M1 = (IDM == k);
+                    M2 = M1 & SM(:, :, n);
+                    [idx, ~] = find(M2);
+                    xs = rooftopLengths(:, idx);
+                    ss = obj.computeMagSingularities(xs, n);
+                    ZmBlockp(M2) = ZmBlockp(M2) + ss(:);
+                end
+
+                ZmBlock(:, :, n) = ZmBlockp;
+            end
+        end
+
+        function mask = generateSingularityMask(obj)
+            basisFuncsCount = obj.basisFunctions_.getCount();
+            basisFuncs = obj.basisFunctions_.getFaces();
+
+            mask = false(basisFuncsCount);
+
+            for n = 1:obj.polarityCombCount_
+                p1 = obj.polarityComb_(n, 1);
+                p2 = obj.polarityComb_(n, 2);
+
+                mask(:, :, n) = (basisFuncs(p1, :).' == basisFuncs(p2, :));
+            end
+        end
+
+        function mask = generateIDMask(obj)
+            basisFuncIDs = double(obj.basisFunctions_.getFuncIDs());
+            mask = (basisFuncIDs == basisFuncIDs.') .* (basisFuncIDs.' * ones(1, numel(basisFuncIDs)));
+        end
+
+        function singularities = computeMagSingularities(~, xs, polarity)
+            if (polarity == 1 || polarity == 4)
+                singularities = mom.singularity.singularity_1(xs(1, :), xs(2, :));
+            else
+                singularities = mom.singularity.singularity_5(xs(1, :), xs(2, :));
+            end
         end
     end
 end

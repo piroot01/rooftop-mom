@@ -1,10 +1,14 @@
 classdef BasisFunctions < handle
     properties (Access = private)
         % store the rooftop basis functions as a pair of face indices
+        mesh_;
+
         faces_ uint32;
+        funcIDs_ uint32;
 
         quadPoints_ double;
         rooftopPoints_ double;
+        rooftopLengths_ double;
     end
 
     methods
@@ -42,12 +46,28 @@ classdef BasisFunctions < handle
                 % faces = sortrows(faces, [1, 2]);
             end
 
+            function IDs = generateIDs(mesh, faces)
+                if isa(mesh, 'mom.Mesh2DCluster')
+                    basisFuncsCount = size(faces, 2);
+                    IDs = nan(1, basisFuncsCount);
+
+                    % NOTE: can be further optimised cause the basisFuncs are sorted
+                    for n = 1:basisFuncsCount
+                        IDs(n) = mesh.getMeshID(faces(1, n));
+                    end
+                else
+                    IDs = ones(1, size(faces, 2));
+                end
+            end
+
+            obj.mesh_ = mesh;
             obj.faces_ = getDoubleFaces(generateEdges(mesh.getFaces())).';
+            obj.funcIDs_ = generateIDs(mesh, obj.faces_);
         end
     end
 
     methods
-        function generatePoints(obj, mesh, quadrature)
+        function generatePoints(obj, quadrature)
             % input:
             %   mesh :: mom.Mesh2D
             %   quadrature :: mom.Quadrature
@@ -59,18 +79,23 @@ classdef BasisFunctions < handle
 
             obj.quadPoints_ = zeros(3, pointCount, 2);
             obj.rooftopPoints_ = zeros(3, pointCount, 2);
+            obj.rooftopLengths_ = zeros(2, basisFuncCount);
+
+            meshFaces = obj.mesh_.getFaces();
+            meshVertices = obj.mesh_.getVertices();
 
             for n = 1:basisFuncCount
                 bIdx = obj.faces_(:, n);
-                vIdx = mesh.faces(:, bIdx);
-                f = mesh.vertices(:, vIdx(:));
+                vIdx = meshFaces(:, bIdx);
+                f = meshVertices(:, vIdx(:));
                 q = quadrature.get(f);
-                [pP, pN] = obj.computeRooftop(f, q);
+                [pP, pN, l1, l2] = obj.computeRooftop(f, q);
                 slice = (order2 * (n - 1) + 1):(order2 * n);
                 obj.quadPoints_(:, slice, 1) = q(:, 1:4);
                 obj.quadPoints_(:, slice, 2) = q(:, 5:8);
                 obj.rooftopPoints_(:, slice, 1) = pP;
                 obj.rooftopPoints_(:, slice, 2) = pN;
+                obj.rooftopLengths_(:, n) = [l1; l2];
             end
         end
 
@@ -82,6 +107,18 @@ classdef BasisFunctions < handle
             faces = obj.faces_;
         end
 
+        function IDs = getFuncIDs(obj)
+            IDs = obj.funcIDs_;
+        end
+
+        function count = getIDCount(obj)
+            if isa(obj.mesh_, 'mom.Mesh2DCluster')
+                count = obj.mesh_.getMeshCount();
+            else
+                count = 1;
+            end
+        end
+
         function points = getQuadPoints(obj)
             points = obj.quadPoints_;
         end
@@ -89,30 +126,33 @@ classdef BasisFunctions < handle
         function points = getRooftopPoints(obj)
             points = obj.rooftopPoints_;
         end
+
+        function lengths = getRooftopLengths(obj)
+            lengths = obj.rooftopLengths_;
+        end
     end
 
     methods (Access = private)
-        function [rooftopP, rooftopN] = computeRooftop(~, basisFunctionMesh, quadraturePoints)
+        function [rooftopP, rooftopN, l1, l2] = computeRooftop(~, basisFunctionMesh, quadraturePoints)
             % input:
             %   basisFunctionMesh: 3x8 matrix (8 vertices - technically 6 is enough)
             %   polarity: 0 = positive, 1 = negative
             %   quadraturePoints: 3xN matrix (N is the order of the qudrature squared)
 
             v1p = basisFunctionMesh(:, 1);
+            v3p = basisFunctionMesh(:, 3);
             v1n = basisFunctionMesh(:, 5);
-            v2n = basisFunctionMesh(:, 6);
+            vn = basisFunctionMesh(:, 7);
 
-            % Compute the difference vector and its norm.
             d1 = v1n - v1p;
-            d2 = v2n - v1n;
             l1 = sqrt(sum(d1 .^ 2));
+            e = d1 / l1;
+            g = v3p - v1p;
+            d2 = g - d1;
             l2 = sqrt(sum(d2 .^ 2));
-            e1 = d1 / l1;
-            e2 = d2 / l2;
 
-            % Compute the rooftop using a vectorized projection.
-            rooftopP = (1 / l1) * (e1 * (e1.' * (quadraturePoints(:, 1:4) - v1p)));
-            rooftopN = (-1 / l2) * (e2 * (e2.' * (quadraturePoints(:, 5:8) - v2n)));
+            rooftopP = (1 / l1) * (e * (e.' * (quadraturePoints(:, 1:4) - v1p)));
+            rooftopN = (-1 / l1) * (e * (e.' * (quadraturePoints(:, 5:8) - vn)));
         end
     end
 end

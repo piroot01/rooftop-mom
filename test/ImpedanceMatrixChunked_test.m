@@ -4,14 +4,14 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 2;
-countY = 2;
-sizeX = 1;
-sizeY = 1;
+countX = 3;
+countY = 3;
+sizeX = 1.5;
+sizeY = 0.5;
 origin = [0, 0, 0];
 order = 2;
 
-memoryElementwise = 1024;
+memoryElementwise = 10000;
 memory_MB = memoryElementwise * 8 / 1e6;
 
 % 1. step: generate a mesh
@@ -26,11 +26,11 @@ quadrature = mom.Quadrature(order);
 basisFuncs = mom.BasisFunctions(myMesh);
 
 % 4. step: generate quadrature points and rooftop points
-basisFuncs.generatePoints(myMesh, quadrature);
+basisFuncs.generatePoints(quadrature);
 basisFuncs.getFaces()
 
 % 5. step: create ImpedanceMatrixChunked
 impedMatrix = mom.ImpedanceMatrixChunked(quadrature, basisFuncs, memory_MB);
 
 % 6. step: compute the impedance matrix
-impedMatrix.compute();
+impedMatrix.computeMag();

@@ -12,24 +12,38 @@ classdef Mesh2DCluster < handle
         end
 
         function loadMesh(obj, mesh)
-            function vertexIndex = getLastIndex(mesh)
-                vertexIndex = uint32(size(mesh(end).vertices, 2));
+            function index = getLastIndex(mesh)
+                index = uint32(size(mesh.vertices, 2));
             end
 
-            currMeshLastIndex = getLastIndex(mesh);
+            function faceCount = getFaceCount(mesh)
+                faceCount = uint32(size(mesh.faces, 2));
+            end
+
+            currFacecount = getFaceCount(mesh);
             if isempty(obj.meshes)
-                prevMeshLastIndex = uint32(0);
-                obj.meshRanges = [obj.meshRanges; 1, currMeshLastIndex];
+                prevMeshLastIndex = 0;
+                obj.meshRanges = uint32([1, currFacecount]);
             else
                 prevMeshLastIndex = getLastIndex(obj.meshes(end));
-                obj.meshRanges = [obj.meshRanges; prevMeshLastIndex + 1, prevMeshLastIndex + currMeshLastIndex];
+                prevFaceSum = obj.meshRanges(end, 2);
+                obj.meshRanges = [obj.meshRanges; prevFaceSum + 1, prevFaceSum + currFacecount];
             end
 
             mesh.faces = mesh.faces + prevMeshLastIndex;
             obj.meshes = [obj.meshes, mesh];
         end
 
-        %TODO: add getVertices method
+        function vertices = getVertices(obj)
+            meshCount = obj.getMeshCount();
+            verticesCells = cell(1, meshCount);
+
+            for n = 1:meshCount
+                verticesCells{n} = obj.meshes(n).getVertices();
+            end
+
+            vertices = [verticesCells{:}];
+        end
 
         function faces = getFaces(obj)
             meshCount = obj.getMeshCount();
@@ -44,6 +58,14 @@ classdef Mesh2DCluster < handle
 
         function count = getMeshCount(obj)
             count = numel(obj.meshes);
+        end
+
+        function ID = getMeshID(obj, face)
+            ID = find(face >= obj.meshRanges(:, 1) & face <= obj.meshRanges(:, 2), 1, 'first');
+
+            if isempty(ID)
+                error('The face was not found!');
+            end
         end
     end
 end

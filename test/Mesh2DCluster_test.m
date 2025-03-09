@@ -1,7 +1,8 @@
 clc; clearvars;
 
-currentFolder = fileparts(mfilename('fullpath'));
-addpath(currentFolder, '..', 'src/');
+currentDir = fileparts(mfilename('fullpath'));
+srcDir = fullfile(currentDir, '..', 'src');
+addpath(srcDir);
 
 countX = 3;
 countY = 3;
@@ -22,6 +23,10 @@ myMeshes.loadMesh(myMesh1);
 myMeshes.loadMesh(myMesh2);
 
 mesh = myMeshes.getMesh(1);
+
 disp(mesh.faces);
 disp(myMeshes.meshRanges);
 disp(myMeshes.getFaces());
+disp(myMeshes.getVertices());
+
+myMeshes.getMeshID(12);
