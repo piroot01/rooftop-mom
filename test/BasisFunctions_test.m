@@ -4,8 +4,8 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 2;
-countY = 2;
+countX = 100;
+countY = 1;
 sizeX = 0.4;
 sizeY = 0.5;
 origin = [0, 0, 0];
@@ -25,7 +25,7 @@ meshCluster = mom.Mesh2DCluster();
 meshCluster.loadMesh(myMesh1);
 meshCluster.loadMesh(myMesh2);
 
-meshCluster.getFaces()
+% meshCluster.getFaces()
 
 % 2. step: create Quadrature
 quadrature = mom.Quadrature(order);
@@ -39,10 +39,10 @@ basisFuncs.generatePoints(quadrature);
 % 5. step: get the basis function faces
 basisFuncs.getFaces();
 
-basisFuncs.getRooftopLengths()
+basisFuncs.getRooftopLengths();
 % qP = basisFunc.getQuadPoints();
 % rP = basisFunc.getRooftopPoints();
 
-basisFuncs.getFuncIDs()
+% basisFuncs.getFuncIDs()
 
 toc;

@@ -11,7 +11,7 @@ sings1 = nan(1, numel(a));
 sings2 = nan(1, numel(b));
 for n = 1:numel(a)
     sings1(n) = mom.singularity.singularity_1(a(n), b(n));
-    sings2(n) = mom.singularity.singularity_3(a(n), b(n));
+    sings2(n) = mom.singularity.singularity_5(a(n), b(n));
 end
 
 figure;

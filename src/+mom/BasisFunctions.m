@@ -8,7 +8,9 @@ classdef BasisFunctions < handle
 
         quadPoints_ double;
         rooftopPoints_ double;
+
         rooftopLengths_ double;
+        rooftopLengthsIdx_ uint32;
     end
 
     methods
@@ -79,7 +81,10 @@ classdef BasisFunctions < handle
 
             obj.quadPoints_ = zeros(3, pointCount, 2);
             obj.rooftopPoints_ = zeros(3, pointCount, 2);
-            obj.rooftopLengths_ = zeros(2, basisFuncCount);
+
+            rooftopLengthsMap = containers.Map('KeyType', 'char', 'ValueType', 'uint32');
+            obj.rooftopLengths_ = [];
+            obj.rooftopLengthsIdx_ = zeros(1, basisFuncCount);
 
             meshFaces = obj.mesh_.getFaces();
             meshVertices = obj.mesh_.getVertices();
@@ -95,7 +100,17 @@ classdef BasisFunctions < handle
                 obj.quadPoints_(:, slice, 2) = q(:, 5:8);
                 obj.rooftopPoints_(:, slice, 1) = pP;
                 obj.rooftopPoints_(:, slice, 2) = pN;
-                obj.rooftopLengths_(:, n) = [l1; l2];
+
+                key = sprintf('%.8f_%.8f', l1, l2);
+
+                if rooftopLengthsMap.isKey(key)
+                    obj.rooftopLengthsIdx_(n) = rooftopLengthsMap(key);
+                else
+                    idx = size(obj.rooftopLengths_, 2) + 1;
+                    rooftopLengthsMap(key) = idx;
+                    obj.rooftopLengths_(:, end + 1) = [l1; l2];
+                    obj.rooftopLengthsIdx_(n) = idx;
+                end
             end
         end
 
@@ -127,8 +142,9 @@ classdef BasisFunctions < handle
             points = obj.rooftopPoints_;
         end
 
-        function lengths = getRooftopLengths(obj)
+        function [lengths, indices] = getRooftopLengths(obj)
             lengths = obj.rooftopLengths_;
+            indices = obj.rooftopLengthsIdx_;
         end
     end
 

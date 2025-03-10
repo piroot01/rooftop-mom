@@ -98,8 +98,6 @@ classdef ImpedanceMatrixChunked < handle
                 ZmBlock = obj.computeZmBlock(r(n), c(n), iQP, jQP, iRP, jRP, weights, order2, singularityMaskChunk, IDMaskChunk);
                 Zm(iChunk, jChunk) = ZmBlock;
             end
-
-            disp(Zm);
         end
 
         function count = getChunkCount(obj)
@@ -179,6 +177,7 @@ classdef ImpedanceMatrixChunked < handle
 
         function ZmBlock = computeZmBlock(obj, r, c, iQP, jQP, iRP, jRP, W4D, o2, SM, IDM)
             ZmBlock = zeros(r, c, 4);
+            singMask = zeros(r, c, 4);
             W = repmat(W4D, r, c);
 
             for n = 1:obj.polarityCombCount_
@@ -190,18 +189,21 @@ classdef ImpedanceMatrixChunked < handle
                 iRPp = iRP(:, :, p1);
                 jRPp = jRP(:, :, p2);
 
-                SMp = logical(kron(SM(:, :, n), ones(o2)));
+                SMp = repelem(SM(:, :, n), o2, o2);
 
                 D = mom.DistMatrix.getChunk(iQPp, jQPp);
                 D0 = (D < eps);
 
                 RPDot = iRPp.' * jRPp;
 
+                RPDot0 = (RPDot < eps);
+                SMpP = ~RPDot0 & SMp;
+                singMask(:, :, n) = SMpP(1:o2:end, 1:o2:end);
+
                 G = exp(-1i * D) ./ D;
-                GS = G - 1 ./ D;
+                G(SMpP) = G(SMpP) - 1 ./ D(SMpP);
 
                 I = RPDot .* G;
-                I(SMp) = RPDot(SMp) .* GS(SMp);
                 I(D0) = RPDot(D0) .* obj.minusIK0_;
 
                 I = W .* I;
@@ -210,32 +212,29 @@ classdef ImpedanceMatrixChunked < handle
                 ZmBlock(:, :, n) = reshape(SS, [r, c]);
             end
 
-            % if the output is zero, assume that the basis functions were perpendicular
-            ZmBlock0 = (abs(ZmBlock) < eps);
-            mask = SM & ~ZmBlock0;
-
-            ZmBlock = obj.applyMagSingularities(ZmBlock, mask, IDM);
+            ZmBlock = ZmBlock + obj.computeMagSingularities(singMask, IDM);
 
             ZmBlock = sum(ZmBlock, 3);
         end
 
-        function ZmBlock = applyMagSingularities(obj, ZmBlock, SM, IDM)
+        function singularities = computeMagSingularities(obj, SM, IDM)
             IDCount = obj.basisFunctions_.getIDCount();
-            rooftopLengths = obj.basisFunctions_.getRooftopLengths();
+            [RL, RLI] = obj.basisFunctions_.getRooftopLengths();
+            singularities = zeros(size(SM));
 
             for n = 1:obj.polarityCombCount_
-                ZmBlockp = ZmBlock(:, :, n);
+                singularitiesp = singularities(:, :, n);
+                ss = obj.evalMagSingularities(RL, n);
 
                 for k = 1:IDCount
                     M1 = (IDM == k);
                     M2 = M1 & SM(:, :, n);
                     [idx, ~] = find(M2);
-                    xs = rooftopLengths(:, idx);
-                    ss = obj.computeMagSingularities(xs, n);
-                    ZmBlockp(M2) = ZmBlockp(M2) + ss(:);
+                    ssi = RLI(:, idx);
+                    singularitiesp(M2) = singularitiesp(M2) + ss(ssi).';
                 end
 
-                ZmBlock(:, :, n) = ZmBlockp;
+                singularities(:, :, n) = singularitiesp;
             end
         end
 
@@ -258,7 +257,7 @@ classdef ImpedanceMatrixChunked < handle
             mask = (basisFuncIDs == basisFuncIDs.') .* (basisFuncIDs.' * ones(1, numel(basisFuncIDs)));
         end
 
-        function singularities = computeMagSingularities(~, xs, polarity)
+        function singularities = evalMagSingularities(~, xs, polarity)
             if (polarity == 1 || polarity == 4)
                 singularities = mom.singularity.singularity_1(xs(1, :), xs(2, :));
             else
