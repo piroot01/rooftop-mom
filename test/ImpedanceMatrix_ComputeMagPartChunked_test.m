@@ -6,8 +6,8 @@ addpath(srcDir);
 
 countX = 2;
 countY = 2;
-sizeX = 1;
-sizeY = 1;
+sizeX = 0.5;
+sizeY = 1.5;
 origin = [0, 0, 0];
 order = 2;
 
