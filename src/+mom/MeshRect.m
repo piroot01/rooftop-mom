@@ -27,7 +27,7 @@ classdef MeshRect < handle
             end
 
             function vertices = getVertices(pointsX, pointsY)
-                [x, y] = meshgrid(pointsX, pointsY);
+                [y, x] = meshgrid(pointsY, pointsX);
                 points = [x(:), y(:), zeros(numel(x), 1)];
 
                 transformationH = makehgtform('xrotate', obj.rotX_, 'yrotate', obj.rotY_, 'zrotate', obj.rotZ_);
