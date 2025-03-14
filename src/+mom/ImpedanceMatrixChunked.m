@@ -29,40 +29,6 @@ classdef ImpedanceMatrixChunked < handle
     end
 
     methods
-        function Z = compute(obj)
-            chunkCount = size(obj.rowChunkIndices_, 2);
-
-            quadPoints = obj.basisFunctions_.getQuadPoints();
-            rooftopPoints = obj.basisFunctions_.getRooftopPoints();
-
-            weights4D = obj.quadrature_.getWeights();
-            order2 = obj.quadrature_.getOrder()^2;
-
-            for n = 1:chunkCount
-                % for debugging
-                fprintf("Chunk ID=%d, ROW=[%d, %d], COL=[%d, %d]\n", n, obj.rowChunkIndices_(1, n), obj.rowChunkIndices_(2, n), obj.colChunkIndices_(1, n), obj.colChunkIndices_(2, n));
-
-                iStart = obj.rowChunkIndices_(1, n);
-                iEnd = obj.rowChunkIndices_(2, n);
-                jStart = obj.colChunkIndices_(1, n);
-                jEnd = obj.colChunkIndices_(2, n);
-
-                iSlice = ((iStart - 1) * order2 + 1):(iEnd * order2);
-                jSlice = ((jStart - 1) * order2 + 1):(jEnd * order2);
-
-                r = numel(iSlice) / order2;
-                s = numel(jSlice) / order2;
-
-                iQP = quadPoints(:, iSlice, :);
-                jQP = quadPoints(:, jSlice, :);
-
-                iRP = rooftopPoints(:, iSlice, :);
-                jRP = rooftopPoints(:, jSlice, :);
-
-                ZBlock = obj.computeBlock(r, s, iQP, jQP, iRP, jRP, weights4D, order2);
-            end
-        end
-
         function Zm = computeMag(obj)
             chunkCount = obj.getChunkCount();
             order2 = obj.quadrature_.getOrder()^2;
@@ -191,7 +157,7 @@ classdef ImpedanceMatrixChunked < handle
 
                 SMp = repelem(SM(:, :, n), o2, o2);
 
-                D = mom.DistMatrix.getChunk(iQPp, jQPp);
+                D = mom.DistMatrix.getChunk(iQPp, jQPp)
                 D0 = (D < eps);
 
                 RPDot = iRPp.' * jRPp;
@@ -204,7 +170,7 @@ classdef ImpedanceMatrixChunked < handle
                 G(SMpP) = G(SMpP) - 1 ./ D(SMpP);
 
                 I = RPDot .* G;
-                I(D0) = RPDot(D0) .* obj.minusIK0_;
+                I(D0) = RPDot(D0) .* -1i;
 
                 I = W .* I;
                 Ir = reshape(I, o2, r, o2, c);

@@ -6,12 +6,12 @@ addpath(srcDir);
 
 countX = 2;
 countY = 2;
-sizeX = 1.5;
-sizeY = 0.5;
+sizeX = 1;
+sizeY = 1;
 origin = [0, 0, 0];
 order = 2;
 
-memoryElementwise = 1000000;
+memoryElementwise = 1024;
 memory_MB = memoryElementwise * 8 / 1e6;
 
 % 1. step: generate a mesh
@@ -20,7 +20,7 @@ myRectMesh1 = mom.MeshRect(myRectMeshPrimitive, origin, 0, 0, 0);
 myRectMesh2 = mom.MeshRect(myRectMeshPrimitive, origin + [0, 0, 1], 0, 0, 0);
 myMeshCluster = mom.Mesh2DCluster();
 myMeshCluster.loadMesh(myRectMesh1.getAsMesh());
-myMeshCluster.loadMesh(myRectMesh2.getAsMesh());
+%myMeshCluster.loadMesh(myRectMesh2.getAsMesh());
 
 % 2. step: create Quadrature
 quadrature = mom.Quadrature(order);

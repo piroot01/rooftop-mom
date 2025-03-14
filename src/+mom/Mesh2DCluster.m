@@ -67,5 +67,18 @@ classdef Mesh2DCluster < handle
                 error('The face was not found!');
             end
         end
+
+        function [a, b] = getMeshSize(obj, ID)
+            mesh = obj.meshes(ID);
+            sampleFace = mesh.faces(:, 1);
+            vertices = obj.getVertices();
+
+            v1 = vertices(:, sampleFace(1));
+            v2 = vertices(:, sampleFace(2));
+            v4 = vertices(:, sampleFace(4));
+
+            a = norm(v2 - v1);
+            b = norm(v4 - v1);
+        end
     end
 end

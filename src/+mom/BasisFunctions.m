@@ -146,6 +146,14 @@ classdef BasisFunctions < handle
             lengths = obj.rooftopLengths_;
             indices = obj.rooftopLengthsIdx_;
         end
+
+        function [a, b] = getFaceSize(obj, ID)
+            if isa(obj.mesh_, 'mom.Mesh2DCluster')
+                [a, b] = obj.mesh_.getMeshSize(ID);
+            else
+                [a, b] = obj.mesh_.getMeshSize();
+            end
+        end
     end
 
     methods (Access = private)
