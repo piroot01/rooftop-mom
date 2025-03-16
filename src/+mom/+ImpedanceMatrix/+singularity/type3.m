@@ -1,4 +1,4 @@
-function result = singularity_9(a, b)
+function result = type3(a, b)
     % computes the integral of: 1 / R
     assert(isequal(size(a), size(b)), 'Inputs a and b must have the same dimensions!');
 
