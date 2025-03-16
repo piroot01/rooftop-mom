@@ -4,12 +4,15 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 1;
-countY = 10;
-sizeX = 0.5;
-sizeY = 1.5;
+countX = 2;
+countY = 2;
+sizeX = 1.5;
+sizeY = 0.5;
 origin = [0, 0, 0];
 order = 2;
+
+lambda = 6;
+k = 2 * pi / lambda;
 
 memoryElementwise = 10e6;
 memory_MB = memoryElementwise * 8 / 1e6;
@@ -35,7 +38,7 @@ basisFuncs.generatePoints(quadrature);
 
 % 5. step: create a strategy for mag part of Z
 
-stratCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFuncs);
+stratCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFuncs, k);
 compStratCtx = mom.ImpedanceMatrix.ComputeChunkedContext(memory_MB, order, basisFuncs.getCount());
 
 tic;
@@ -47,7 +50,7 @@ Ze = elStrat.compute(stratCtx);
 
 toc;
 
-% disp(Zm - Ze);
+disp(Zm - Ze);
 
 tic;
 
@@ -56,4 +59,4 @@ Z = combStrat.compute(stratCtx);
 
 toc;
 
-% disp(Z);
+disp(Z);

@@ -11,6 +11,9 @@ classdef ComputeElPartChunked < mom.ImpedanceMatrix.ComputeStrategy
 
     methods
         function Z = compute(obj, strategyContext)
+            k = strategyContext.constants.k;
+            Z0 = strategyContext.constants.Z0;
+
             chunkCount = obj.computeContext_.getChunkCount();
             order2 = strategyContext.quadrature.getOrder()^2;
             weights = strategyContext.quadrature.getWeights();
@@ -48,12 +51,14 @@ classdef ComputeElPartChunked < mom.ImpedanceMatrix.ComputeStrategy
                 Z(iChunk, jChunk) = ZBlock;
             end
 
-            Z = Z .* jacobians;
+            Z = 1i * Z0 / (4 * pi * k) .* Z .* jacobians;
         end
     end
 
     methods (Access = private)
         function ZBlock = computeZBlock(obj, strategyContext, r, c, iQP, jQP, iRPDiv, jRPDiv, W4D, o2, SM, IDM)
+            k = strategyContext.constants.k;
+
             ZBlock4 = zeros(r, c, 4);
             RPDiv = zeros(r, c, 4);
             W = repmat(W4D, r, c);
@@ -74,11 +79,11 @@ classdef ComputeElPartChunked < mom.ImpedanceMatrix.ComputeStrategy
 
                 RPDiv(:, :, n) = iRPDivp.' * jRPDivp;
 
-                G = exp(-1i * D) ./ D;
+                G = exp(-1i * k * D) ./ D;
                 G(SMp) = G(SMp) - 1 ./ D(SMp);
 
                 I = G;
-                I(D0) = -1i;
+                I(D0) = -1i * k;
 
                 IW = I .* W;
                 Ir = reshape(IW, o2, r, o2, c);

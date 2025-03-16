@@ -11,6 +11,9 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
 
     methods
         function Z = compute(obj, strategyContext)
+            k = strategyContext.constants.k;
+            Z0 = strategyContext.constants.Z0;
+
             chunkCount = obj.computeContext_.getChunkCount();
             order2 = strategyContext.quadrature.getOrder()^2;
             weights = strategyContext.quadrature.getWeights();
@@ -49,12 +52,14 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
                 Z(iChunk, jChunk) = ZBlock;
             end
 
-            Z = Z .* jacobians;
+            Z = 1i * k * Z0 / (4 * pi) .* Z .* jacobians;
         end
     end
 
     methods (Access = private)
         function ZBlock = computeZBlock(obj, strategyContext, r, c, iQP, jQP, iRP, jRP, W4D, o2, SM, IDM)
+            k = strategyContext.constants.k;
+
             ZBlock4 = zeros(r, c, 4);
             singMask = false(r, c, 4);
             W = repmat(W4D, r, c);
@@ -79,11 +84,11 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
                 SMpRP = ~RPDot0 & SMp;
                 singMask(:, :, n) = SMpRP(1:o2:end, 1:o2:end);
 
-                G = exp(-1i * D) ./ D;
+                G = exp(-1i * k * D) ./ D;
                 G(SMpRP) = G(SMpRP) - 1 ./ D(SMpRP);
 
                 I = RPDot .* G;
-                I(D0) = RPDot(D0) .* -1i;
+                I(D0) = RPDot(D0) .* -1i * k;
 
                 IW = I .* W;
                 Ir = reshape(IW, o2, r, o2, c);

@@ -6,10 +6,13 @@ addpath(srcDir);
 
 countX = 2;
 countY = 2;
-sizeX = 0.5;
-sizeY = 1.5;
+sizeX = 1.5;
+sizeY = 0.5;
 origin = [0, 0, 0];
 order = 2;
+
+lambda = 6;
+k = 2 * pi / lambda;
 
 memoryElementwise = 100000;
 memory_MB = memoryElementwise * 8 / 1e6;
@@ -34,7 +37,7 @@ disp(basisFuncs.getFaces());
 basisFuncs.generatePoints(quadrature);
 
 % 5. step: create a strategy for mag part of Z
-stratCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFuncs);
+stratCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFuncs, k);
 elStratContext = mom.ImpedanceMatrix.ComputeChunkedContext(memory_MB, order, basisFuncs.getCount());
 elStrat = mom.ImpedanceMatrix.ComputeElPartChunked(elStratContext);
 Ze = elStrat.compute(stratCtx);

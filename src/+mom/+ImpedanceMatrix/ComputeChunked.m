@@ -11,6 +11,9 @@ classdef ComputeChunked < mom.ImpedanceMatrix.ComputeStrategy
 
     methods
         function Z = compute(obj, strategyContext)
+            k = strategyContext.constants.k;
+            Z0 = strategyContext.constants.Z0;
+
             chunkCount = obj.computeContext_.getChunkCount();
             order2 = strategyContext.quadrature.getOrder()^2;
             weights = strategyContext.quadrature.getWeights();
@@ -54,12 +57,14 @@ classdef ComputeChunked < mom.ImpedanceMatrix.ComputeStrategy
                 Z(iChunk, jChunk) = ZBlock;
             end
 
-            Z = Z .* jacobians;
+            Z = 1i * k * Z0 / (4 * pi) .* Z .* jacobians;
         end
     end
 
     methods (Access = private)
         function ZBlock = computeZBlock(obj, strategyContext, r, c, iQP, jQP, iRP, jRP, iRPDiv, jRPDiv, W4D, o2, SM, IDM)
+            k = strategyContext.constants.k;
+
             ZmBlock4 = zeros(r, c, 4);
             ZeBlock4 = zeros(r, c, 4);
             RPDiv = zeros(r, c, 4);
@@ -76,7 +81,7 @@ classdef ComputeChunked < mom.ImpedanceMatrix.ComputeStrategy
                 D = mom.DistMatrix.getChunk(iQPp, jQPp);
                 D0 = (D < eps);
 
-                G = exp(-1i * D) ./ D;
+                G = exp(-1i * k * D) ./ D;
 
                 % magnetical part
                 iRPp = iRP(:, :, p1);
@@ -92,7 +97,7 @@ classdef ComputeChunked < mom.ImpedanceMatrix.ComputeStrategy
                 Gm(SMpRP) = Gm(SMpRP) - 1 ./ D(SMpRP);
 
                 Im = RPDot .* Gm;
-                Im(D0) = RPDot(D0) .* -1i;
+                Im(D0) = RPDot(D0) .* -1i * k;
                 ImW = Im .* W;
                 Imr = reshape(ImW, o2, r, o2, c);
                 SSm = sum(sum(Imr, 1), 3);
@@ -107,7 +112,7 @@ classdef ComputeChunked < mom.ImpedanceMatrix.ComputeStrategy
                 Ge(SMp) = Ge(SMp) - 1 ./ D(SMp);
 
                 Ie = Ge;
-                Ie(D0) = -1i;
+                Ie(D0) = -1i * k;
                 IeW = Ie .* W;
                 Ier = reshape(IeW, o2, r, o2, c);
                 SSe = sum(sum(Ier, 1), 3);
@@ -117,7 +122,7 @@ classdef ComputeChunked < mom.ImpedanceMatrix.ComputeStrategy
             ZmSings4 = obj.computeMagSingularities(strategyContext, singMaskMag, IDM);
             ZeSings4 = obj.computeElSingularities(strategyContext, SM, IDM);
 
-            ZBlock4 = (ZmBlock4 + ZmSings4) - ((ZeBlock4 + ZeSings4) .* RPDiv);
+            ZBlock4 = (ZmBlock4 + ZmSings4) - 1 / k^2 * ((ZeBlock4 + ZeSings4) .* RPDiv);
             ZBlock = sum(ZBlock4, 3);
         end
 
