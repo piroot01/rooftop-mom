@@ -45,8 +45,10 @@ classdef BasisFunctions < handle
 
                 faces = [min(face1, face2), max(face1, face2)];
 
-                % TODO: think of a better basis function finding algorithm
-                % faces = sortrows(faces, [1, 2]);
+                faceDiff = faces(:, 2) - faces(:, 1);
+                adjacentIdx = (faceDiff == 1);
+
+                faces = [faces(adjacentIdx, :); faces(~adjacentIdx, :)];
             end
 
             function IDs = generateIDs(mesh, faces)

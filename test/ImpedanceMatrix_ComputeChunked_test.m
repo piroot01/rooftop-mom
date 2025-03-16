@@ -6,12 +6,12 @@ addpath(srcDir);
 
 countX = 2;
 countY = 2;
-sizeX = 1.5;
-sizeY = 0.5;
+sizeX = 1;
+sizeY = 1;
 origin = [0, 0, 0];
 order = 2;
 
-lambda = 6;
+lambda = 4;
 k = 2 * pi / lambda;
 
 memoryElementwise = 10e6;
@@ -59,4 +59,4 @@ Z = combStrat.compute(stratCtx);
 
 toc;
 
-disp(Z);
+% disp(Z);
