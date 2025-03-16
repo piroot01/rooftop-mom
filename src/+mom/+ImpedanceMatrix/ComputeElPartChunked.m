@@ -117,7 +117,7 @@ classdef ComputeElPartChunked < mom.ImpedanceMatrix.ComputeStrategy
         end
 
         function singularities = evalMagSingularities(~, xs)
-            singularities = mom.singularity.singularity_9(xs(1, :), xs(2, :));
+            singularities = mom.ImpedanceMatrix.singularity.type3(xs(1, :), xs(2, :));
         end
     end
 end

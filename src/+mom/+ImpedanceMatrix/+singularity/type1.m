@@ -1,4 +1,4 @@
-function result = singularity_1(a, b)
+function result = type1(a, b)
     % computes the integral of: l1 * l1' / R
     assert(isequal(size(a), size(b)), 'Inputs a and b must have the same dimensions!');
 

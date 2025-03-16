@@ -118,9 +118,9 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
 
         function singularities = evalMagSingularities(~, xs, polarity)
             if (polarity == 1 || polarity == 4)
-                singularities = mom.singularity.singularity_1(xs(1, :), xs(2, :));
+                singularities = mom.ImpedanceMatrix.singularity.type1(xs(1, :), xs(2, :));
             else
-                singularities = mom.singularity.singularity_5(xs(1, :), xs(2, :));
+                singularities = mom.ImpedanceMatrix.singularity.type2(xs(1, :), xs(2, :));
             end
         end
     end
