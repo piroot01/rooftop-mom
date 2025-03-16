@@ -95,7 +95,7 @@ classdef ComputeElPartChunked < mom.ImpedanceMatrix.ComputeStrategy
             [RL, RLI] = strategyContext.basisFunctions.getRooftopLengths();
             singularities = zeros(size(SM));
 
-            ss = obj.evalMagSingularities(RL);
+            ss = obj.evalElSingularities(RL);
 
             for n = 1:strategyContext.constants.polaritiesCount
                 SP = singularities(:, :, n);
@@ -116,7 +116,7 @@ classdef ComputeElPartChunked < mom.ImpedanceMatrix.ComputeStrategy
             end
         end
 
-        function singularities = evalMagSingularities(~, xs)
+        function singularities = evalElSingularities(~, xs)
             singularities = mom.ImpedanceMatrix.singularity.type3(xs(1, :), xs(2, :));
         end
     end

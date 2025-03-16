@@ -23,8 +23,6 @@ myMeshCluster = mom.Mesh2DCluster();
 myMeshCluster.loadMesh(myRectMesh1.getAsMesh());
 %myMeshCluster.loadMesh(myRectMesh2.getAsMesh());
 
-disp(myRectMesh1.getAsMesh().vertices);
-
 % 2. step: create Quadrature
 quadrature = mom.Quadrature(order);
 
