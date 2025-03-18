@@ -4,10 +4,10 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 2;
-countY = 2;
-sizeX = 1;
-sizeY = 1;
+countX = 1;
+countY = 5;
+sizeX = 1.5;
+sizeY = 0.5;
 origin = [0, 0, 0];
 order = 2;
 
@@ -59,4 +59,5 @@ Z = combStrat.compute(stratCtx);
 
 toc;
 
-% disp(Z);
+[~, ~, idx] = unique(round(Z, 5), 'stable');
+ridx = reshape(idx, size(Z))
