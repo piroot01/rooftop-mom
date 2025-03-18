@@ -3,7 +3,9 @@ classdef BasisFunctions < handle
         % store the rooftop basis functions as a pair of face indices
         mesh_;
 
-        faces_ uint32;
+        facesX_ uint32;
+        facesY_ uint32;
+
         funcIDs_ uint32;
 
         quadPoints_ double;
@@ -34,7 +36,7 @@ classdef BasisFunctions < handle
                 edges(4:4:end, :) = [min(v4, v1).', max(v4, v1).', faceIndices];
             end
 
-            function faces = getDoubleFaces(edges)
+            function [facesX, facesY] = getDoubleFaces(edges)
                 sortedEdges = sortrows(edges, [1, 2]);
                 diffEdges = diff(sortedEdges(:, 1:2));
 
@@ -48,7 +50,8 @@ classdef BasisFunctions < handle
                 faceDiff = faces(:, 2) - faces(:, 1);
                 adjacentIdx = (faceDiff == 1);
 
-                faces = [faces(adjacentIdx, :); faces(~adjacentIdx, :)];
+                facesX = faces(adjacentIdx, :);
+                facesY = faces(~adjacentIdx, :);
             end
 
             function IDs = generateIDs(mesh, faces)
@@ -66,8 +69,9 @@ classdef BasisFunctions < handle
             end
 
             obj.mesh_ = mesh;
-            obj.faces_ = getDoubleFaces(generateEdges(mesh.getFaces())).';
-            obj.funcIDs_ = generateIDs(mesh, obj.faces_);
+            [facesX, facesY] = getDoubleFaces(generateEdges(mesh.getFaces()));
+            [obj.facesX_, obj.facesY_] = deal(facesX.', facesY.');
+            obj.funcIDs_ = generateIDs(mesh, obj.getFaces());
         end
     end
 
@@ -76,6 +80,7 @@ classdef BasisFunctions < handle
             % input:
             %   mesh :: mom.Mesh2D
             %   quadrature :: mom.Quadrature
+            faces = obj.getFaces();
 
             basisFuncCount = obj.getCount();
             order2 = quadrature.getOrder()^2;
@@ -94,7 +99,7 @@ classdef BasisFunctions < handle
             meshVertices = obj.mesh_.getVertices();
 
             for n = 1:basisFuncCount
-                bIdx = obj.faces_(:, n);
+                bIdx = faces(:, n);
                 vIdx = meshFaces(:, bIdx);
                 f = meshVertices(:, vIdx(:));
                 q = quadrature.get(f);
@@ -124,11 +129,19 @@ classdef BasisFunctions < handle
         end
 
         function count = getCount(obj)
-            count = size(obj.faces_, 2);
+            count = size(obj.getFaces(), 2);
         end
 
         function faces = getFaces(obj)
-            faces = obj.faces_;
+            faces = [obj.facesX_, obj.facesY_];
+        end
+
+        function faces = getFacesX(obj)
+            faces = obj.facesX_;
+        end
+
+        function faces = getFacesY(obj)
+            faces = obj.facesY_;
         end
 
         function IDs = getFuncIDs(obj)
