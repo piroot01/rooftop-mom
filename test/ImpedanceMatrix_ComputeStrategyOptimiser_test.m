@@ -42,6 +42,8 @@ compStratOpt = mom.ImpedanceMatrix.ComputeStrategyOptimiser(basisFuncs, [countX,
 
 tic;
 
-[mask, iBasisFunctions, jBasisFunctions] = compStratOpt.getMaskAndInteractions()
+[mask, interactions] = compStratOpt.getMaskAndInteractions();
+
+disp(interactions);
 
 toc;

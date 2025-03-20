@@ -6,7 +6,7 @@ classdef RooftopBasisFunctions < handle
 
         quadraturePoints_ double;
         rooftopPoints_ double;
-        rooftopPointsDiv_ double;
+        rooftopDivPoints_ double;
 
         uniqueRooftopSizes_ double;
         uniqueRooftopSizesIndices_ uint32;
@@ -30,7 +30,7 @@ classdef RooftopBasisFunctions < handle
 
             obj.quadraturePoints_ = zeros(3, pointCount, 2);
             obj.rooftopPoints_ = zeros(3, pointCount, 2);
-            obj.rooftopPointsDiv_ = zeros(1, pointCount, 2);
+            obj.rooftopDivPoints_ = zeros(1, pointCount, 2);
 
             meshVertices = obj.mesh_.getVertices();
             meshFaces = obj.mesh_.getFaces();
@@ -52,12 +52,24 @@ classdef RooftopBasisFunctions < handle
                 obj.quadraturePoints_(:, slice, 2) = basisFunctionQuadraturePoints(:, 5:8); 
                 obj.rooftopPoints_(:, slice, 1) = rooftopPointsPositive;
                 obj.rooftopPoints_(:, slice, 2) = rooftopPointsNegative;
-                obj.rooftopPointsDiv_(:, n, 1) = 1 / l1;
-                obj.rooftopPointsDiv_(:, n, 2) = (-1) / l1;
+                obj.rooftopDivPoints_(:, n, 1) = 1 / l1;
+                obj.rooftopDivPoints_(:, n, 2) = (-1) / l1;
             end
 
             % NOTE: the round is limiting the resolution of the overall algorithm precision, but 10 places are fine :D
             [obj.uniqueRooftopSizes_, ~, obj.uniqueRooftopSizesIndices_] = unique(round(allRooftopSizes.', 10), 'rows', 'stable');
+        end
+
+        function points = getQuadraturePoints(obj)
+            points = obj.quadraturePoints_;
+        end
+
+        function points = getRooftopPoints(obj)
+            points = obj.rooftopPoints_;
+        end
+
+        function points = getRooftopDivPoints(obj)
+            points = obj.rooftopDivPoints_;
         end
     end
 

@@ -12,23 +12,19 @@ classdef ComputeStrategyOptimiser < handle
     end
 
     methods
-        function [mask, iBasisFunctions, jBasisFunctions] = getMaskAndInteractions(obj)
+        function [mask, interactions] = getMaskAndInteractions(obj)
             [maskXX, interactionsXX] = obj.generateMaskXX(obj.basisFunctions_.getFacesX());
             [maskXY, interactionsXY] = obj.generateMaskXY(obj.basisFunctions_.getFacesX(), obj.basisFunctions_.getFacesY());
 
             % TODO: decide what kind of sub strategy we use
             % for now we stick to the general case
             [mask, interactions] = obj.generateFullMask(maskXX, maskXY, interactionsXX, interactionsXY);
-
-            basisFunctions = obj.basisFunctions_.getFaces();
-            iBasisFunctions = basisFunctions(:, interactions(1, :));
-            jBasisFunctions = basisFunctions(:, interactions(2, :));
         end
     end
 
     methods (Access = private)
         function [mask, interactions] = generateFullMask(~, maskXX, maskXY, interactionsXX, interactionsXY)
-            interactionsXXCount = size(interactionsXX, 1);
+            interactionsXXCount = size(interactionsXX, 2);
 
             maskXXLastIndex = max(maskXX(:));
             maskXYLastIndex = maskXXLastIndex + max(maskXY(:));

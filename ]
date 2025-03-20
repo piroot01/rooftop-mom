@@ -1,0 +1,158 @@
+classdef ComputeChunkedContext < handle
+    properties (Access = public)
+        memory_MB_;
+
+        rowChunkIndices uint32;
+        colChunkIndices uint32;
+    end
+
+    properties (Access = private, Constant)
+        bytesPerElement_ = 8;
+        bytesInMegabyte_ = 1e6;
+    end
+
+    methods
+        function obj = ComputeChunkedContext(memory_MB)
+            obj.memory_MB_ = memory_MB;
+        end
+    end
+
+    methods
+        function generateIndicesAllInteractions(obj, quadratureOrder, basisFunctionCount)
+            elementCount = obj.memory_MB_ * obj.bytesInMegabyte_ / obj.bytesPerElement_;
+            if elementCount < quadratureOrder^4
+                error('The given memory does not suffice!');
+            end
+
+            function [a, b] = getChunkShape(blockCountPerChunk)
+                upperBound = floor(sqrt(blockCountPerChunk));
+                p = find(mod(blockCountPerChunk, 1:upperBound) == 0);
+                q = blockCountPerChunk ./ p;
+
+                [~, idx] = min(abs(p - q));
+                a = p(idx);
+                b = q(idx);
+            end
+
+            elementCountPerBlock = quadratureOrder^4;
+            blockCountPerChunk = floor(elementCount / elementCountPerBlock);
+            [a, b] = getChunkShape(blockCountPerChunk);
+
+            chunkCountVert = ceil(basisFunctionCount / a);
+            chunkCountHorz = ceil(basisFunctionCount / b);
+            totalChunks = chunkCountVert * chunkCountHorz;
+
+            rowIndices = zeros(2, totalChunks);
+            colIndices = zeros(2, totalChunks);
+            chunks = cell(1);
+
+            chunkIndex = 1;
+            for m = 1:chunkCountVert
+                for n = 1:chunkCountHorz
+                    rStart = (m - 1) * a + 1;
+                    cStart = (n - 1) * b + 1;
+                    rEnd = min(m * a, basisFunctionCount);
+                    cEnd = min(n * b, basisFunctionCount);
+                    chunks{chunkIndex} = sub2ind([basisFunctionCount, basisFunctionCount], rStart:rEnd, cStart:cEnd);
+                    rowIndices(:, chunkIndex) = [rStart; rEnd];
+                    colIndices(:, chunkIndex) = [cStart, cEnd];
+                    chunkIndex = chunkIndex + 1;
+                end
+            end
+
+            disp(rowIndices);
+            disp(colIndices);
+
+            obj.rowChunkIndices = rowIndices;
+            obj.colChunkIndices = colIndices;
+        end
+
+        function generateIndicesSpecificInteractions(obj, quadratureOrder, interactions)
+            elementCount = obj.memory_MB_ * obj.bytesInMegabyte_ / obj.bytesPerElement_;
+            if elementCount < quadratureOrder^4
+                error('The given memory does not suffice!');
+            end
+
+            elementCountPerBlock = quadratureOrder^4;
+            blockCountPerChunk = floor(elementCount / elementCountPerBlock);
+            interactionCount = size(interactions, 2);
+            chunkCount = ceil(interactionCount / blockCountPerChunk);
+
+            for n = 1:chunkCount
+                sliceStart = ((n - 1) * blockCountPerChunk + 1);
+                sliceEnd = min(n * blockCountPerChunk, interactionCount);
+                slice = sliceStart:sliceEnd;
+                selectedInteractions = interactions(:, slice)
+            end
+        end
+
+        function count = getChunkCount(obj)
+            count = size(obj.rowChunkIndices, 2);
+        end
+
+        function [rowStarts, rowEnds, colStarts, colEnds] = getSlices(obj, blockSize)
+            rowStarts = (obj.rowChunkIndices(1, :) - 1) * blockSize + 1;
+            rowEnds = obj.rowChunkIndices(2, :) * blockSize;
+            colStarts = (obj.colChunkIndices(1, :) - 1) * blockSize + 1;
+            colEnds = obj.colChunkIndices(2, :) * blockSize;
+        end
+
+        function [r, c] = getSliceSizes(obj)
+            r = (obj.rowChunkIndices(2, :) - obj.rowChunkIndices(1, :) + 1);
+            c = (obj.colChunkIndices(2, :) - obj.colChunkIndices(1, :) + 1);
+        end
+    end
+
+    methods (Access = private)
+        function generateChunkIndices(obj, memory_MB, quadOrder, basisFuncCount)
+            function count = toElementCount(obj, memory_MB)
+                count = memory_MB * obj.bytesInMegabyte_ / obj.bytesPerElement_;
+            end
+
+            function [a, b] = getChunkShape(blockCount)
+                upperBound = floor(sqrt(blockCount));
+                p = find(mod(blockCount, 1:upperBound) == 0);
+                q = blockCount ./ p;
+
+                [~, idx] = min(abs(p - q));
+                a = p(idx);
+                b = q(idx);
+            end
+
+            function count = getBlockCountPerChunk(elementCount, quadOrder)
+                count = floor(elementCount / (quadOrder^4));
+            end
+
+            elementCount = toElementCount(memory_MB);
+            if elementCount < quadOrder^4
+                error('The given memory does not suffice!');
+            end
+
+            blockCountPerChunk = getBlockCountPerChunk(elementCount, quadOrder);
+            [a, b] = getChunkShape(blockCountPerChunk);
+
+            chunkCountVert = ceil(basisFuncCount / a);
+            chunkCountHorz = ceil(basisFuncCount / b);
+            totalChunks = chunkCountVert * chunkCountHorz;
+
+            rowIndices = zeros(2, totalChunks);
+            colIndices = zeros(2, totalChunks);
+
+            chunkIndex = 1;
+            for m = 1:chunkCountVert
+                for n = 1:chunkCountHorz
+                    rStart = (m - 1) * a + 1;
+                    cStart = (n - 1) * b + 1;
+                    rEnd = min(m * a, basisFuncCount);
+                    cEnd = min(n * b, basisFuncCount);
+                    rowIndices(:, chunkIndex) = [rStart; rEnd];
+                    colIndices(:, chunkIndex) = [cStart, cEnd];
+                    chunkIndex = chunkIndex + 1;
+                end
+            end
+
+            obj.rowChunkIndices = rowIndices;
+            obj.colChunkIndices = colIndices;
+        end
+    end
+end
