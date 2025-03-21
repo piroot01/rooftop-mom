@@ -9,7 +9,7 @@ classdef RooftopBasisFunctions < handle
         rooftopDivPoints_ double;
 
         uniqueRooftopSizes_ double;
-        uniqueRooftopSizesIndices_ uint32;
+        uniqueRooftopSizeIndices_ uint32;
     end
 
     methods
@@ -57,7 +57,7 @@ classdef RooftopBasisFunctions < handle
             end
 
             % NOTE: the round is limiting the resolution of the overall algorithm precision, but 10 places are fine :D
-            [obj.uniqueRooftopSizes_, ~, obj.uniqueRooftopSizesIndices_] = unique(round(allRooftopSizes.', 10), 'rows', 'stable');
+            [obj.uniqueRooftopSizes_, ~, obj.uniqueRooftopSizeIndices_] = unique(round(allRooftopSizes.', 10), 'rows', 'stable');
         end
 
         function points = getQuadraturePoints(obj)
@@ -70,6 +70,11 @@ classdef RooftopBasisFunctions < handle
 
         function points = getRooftopDivPoints(obj)
             points = obj.rooftopDivPoints_;
+        end
+
+        function [sizes, indices] = getUniqueRooftopSizes(obj)
+            sizes = obj.uniqueRooftopSizes_;
+            indices = obj.uniqueRooftopSizeIndices_;
         end
     end
 

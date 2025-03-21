@@ -46,11 +46,15 @@ classdef ComputeChunkedContext < handle
             chunkIndex = 1;
             for m = 1:chunkCountVert
                 for n = 1:chunkCountHorz
-                    rStart = (m - 1) * a + 1;
-                    cStart = (n - 1) * b + 1;
-                    rEnd = min(m * a, basisFunctionCount);
-                    cEnd = min(n * b, basisFunctionCount);
-                    chunks{chunkIndex} = sub2ind([basisFunctionCount, basisFunctionCount], rStart:rEnd, cStart:cEnd);
+                    rowStart = (m - 1) * a + 1;
+                    colStart = (n - 1) * b + 1;
+                    rowEnd = min(m * a, basisFunctionCount);
+                    colEnd = min(n * b, basisFunctionCount);
+
+                    % NOTE: this may consume a bit of memory
+                    chunk.rowIndices = rowStart:rowEnd;
+                    chunk.columnIndices = colStart:colEnd;
+                    chunks{chunkIndex} = chunk;
                     chunkIndex = chunkIndex + 1;
                 end
             end
@@ -80,7 +84,7 @@ classdef ComputeChunkedContext < handle
             chunkGroups = mat2cell(sortedInteractionIndices(:), groupSizes);
 
             groupCount = numel(groupSizes);
-    
+
             chunks = cell(1);
             chunkIndex = 1;
             for m = 1:groupCount
@@ -93,18 +97,17 @@ classdef ComputeChunkedContext < handle
             end
         end
 
-        function slices = generateSlicesFromChunks(~, chunks, blockSize, basisFunctionCount)
+        function slices = generateSlicesFromChunks(~, chunks, blockSize)
             chunkCount = numel(chunks);
             slices = cell(chunkCount, 1);
 
             for m = 1:chunkCount
                 chunk = chunks{m};
-                [rows, cols] = ind2sub([basisFunctionCount, basisFunctionCount], chunk);
 
-                rowMin = min(rows);
-                rowMax = max(rows);
-                colMin = min(cols);
-                colMax = max(cols);
+                rowMin = chunk.rowIndices(1);
+                rowMax = chunk.rowIndices(end);
+                colMin = chunk.columnIndices(1);
+                colMax = chunk.columnIndices(end);
 
                 rowStart = (rowMin - 1) * blockSize + 1;
                 rowEnd = rowMax * blockSize;

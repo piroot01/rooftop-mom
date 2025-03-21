@@ -1,19 +1,11 @@
 classdef BasisFunctions < handle
     properties (Access = private)
-        % store the rooftop basis functions as a pair of face indices
         mesh_;
 
         facesX_ uint32;
         facesY_ uint32;
 
         funcIDs_ uint32;
-
-        quadPoints_ double;
-        rooftopPoints_ double;
-        rooftopPointsDiv_ double;
-
-        rooftopLengths_ double;
-        rooftopLengthsIdx_ uint32;
     end
 
     methods
@@ -76,58 +68,6 @@ classdef BasisFunctions < handle
     end
 
     methods
-        function generatePoints(obj, quadrature)
-            % input:
-            %   mesh :: mom.Mesh2D
-            %   quadrature :: mom.Quadrature
-            faces = obj.getFaces();
-
-            basisFuncCount = obj.getCount();
-            order2 = quadrature.getOrder()^2;
-
-            pointCount = order2 * basisFuncCount;
-
-            obj.quadPoints_ = zeros(3, pointCount, 2);
-            obj.rooftopPoints_ = zeros(3, pointCount, 2);
-            obj.rooftopPointsDiv_ = zeros(1, basisFuncCount, 2);
-
-            rooftopLengthsMap = containers.Map('KeyType', 'char', 'ValueType', 'uint32');
-            obj.rooftopLengths_ = [];
-            obj.rooftopLengthsIdx_ = zeros(1, basisFuncCount);
-
-            meshFaces = obj.mesh_.getFaces();
-            meshVertices = obj.mesh_.getVertices();
-
-            for n = 1:basisFuncCount
-                bIdx = faces(:, n);
-                vIdx = meshFaces(:, bIdx);
-                f = meshVertices(:, vIdx(:));
-                q = quadrature.get(f);
-
-                [pP, pN, l1, l2] = obj.computeRooftop(f, q);
-
-                slice = (order2 * (n - 1) + 1):(order2 * n);
-
-                obj.quadPoints_(:, slice, 1) = q(:, 1:4);
-                obj.quadPoints_(:, slice, 2) = q(:, 5:8);
-                obj.rooftopPoints_(:, slice, 1) = pP;
-                obj.rooftopPoints_(:, slice, 2) = pN;
-                obj.rooftopPointsDiv_(:, n, 1) = 1 / l1;
-                obj.rooftopPointsDiv_(:, n, 2) = -1 / l1;
-
-                key = sprintf('%.8f_%.8f', l1, l2);
-
-                if rooftopLengthsMap.isKey(key)
-                    obj.rooftopLengthsIdx_(n) = rooftopLengthsMap(key);
-                else
-                    idx = size(obj.rooftopLengths_, 2) + 1;
-                    rooftopLengthsMap(key) = idx;
-                    obj.rooftopLengths_(:, end + 1) = [l1; l2];
-                    obj.rooftopLengthsIdx_(n) = idx;
-                end
-            end
-        end
-
         function count = getCount(obj)
             count = size(obj.getFaces(), 2);
         end
@@ -156,53 +96,12 @@ classdef BasisFunctions < handle
             end
         end
 
-        function points = getQuadPoints(obj)
-            points = obj.quadPoints_;
-        end
-
-        function points = getRooftopPoints(obj)
-            points = obj.rooftopPoints_;
-        end
-
-        function points = getRooftopPointsDiv(obj)
-            points = obj.rooftopPointsDiv_;
-        end
-
-        function [lengths, indices] = getRooftopLengths(obj)
-            lengths = obj.rooftopLengths_;
-            indices = obj.rooftopLengthsIdx_;
-        end
-
         function [a, b] = getFaceSize(obj, ID)
             if isa(obj.mesh_, 'mom.Mesh2DCluster')
                 [a, b] = obj.mesh_.getMeshSize(ID);
             else
                 [a, b] = obj.mesh_.getMeshSize();
             end
-        end
-    end
-
-    methods (Access = private)
-        function [rooftopP, rooftopN, l1, l2] = computeRooftop(~, basisFunctionMesh, quadraturePoints)
-            % input:
-            %   basisFunctionMesh: 3x8 matrix (8 vertices - technically 6 is enough)
-            %   polarity: 0 = positive, 1 = negative
-            %   quadraturePoints: 3xN matrix (N is the order of the qudrature squared)
-
-            v1p = basisFunctionMesh(:, 1);
-            v3p = basisFunctionMesh(:, 3);
-            v1n = basisFunctionMesh(:, 5);
-            vn = basisFunctionMesh(:, 7);
-
-            d1 = v1n - v1p;
-            l1 = sqrt(sum(d1 .^ 2));
-            e = d1 / l1;
-            g = v3p - v1p;
-            d2 = g - d1;
-            l2 = sqrt(sum(d2 .^ 2));
-
-            rooftopP = (1 / l1) * (e * (e.' * (quadraturePoints(:, 1:4) - v1p)));
-            rooftopN = (-1 / l1) * (e * (e.' * (quadraturePoints(:, 5:8) - vn)));
         end
     end
 end
