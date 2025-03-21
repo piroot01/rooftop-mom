@@ -18,7 +18,7 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
             basisFunctionCount = strategyContext.basisFunctions.getCount();
 
             if nargin == 3
-                chunks = varargin(1);
+                chunks = varargin{1};
             else
                 chunks = obj.computeContext_.generateChunksAllInteractions(order, basisFunctionCount);
             end

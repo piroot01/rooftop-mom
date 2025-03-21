@@ -68,12 +68,13 @@ classdef ComputeChunkedContext < handle
 
             elementCountPerBlock = quadratureOrder^4;
             blockCountPerChunk = floor(elementCount / elementCountPerBlock);
-            interactionCount = size(interactions, 2);
+            interactionCount = numel(interactions);
 
-            allInteractionIndices = sub2ind([basisFunctionCount, basisFunctionCount], interactions(1, :), interactions(2, :));
-            sortedInteractionIndices = sort(allInteractionIndices);
+            disp(interactions);
 
-            groupBoundaries = [true, diff(sortedInteractionIndices) ~= 1];
+            sortedInteractions = sort(interactions).'
+
+            groupBoundaries = [true, diff(sortedInteractions) ~= 1];
             groupIndices = cumsum(groupBoundaries);
             groupStarts = find(groupBoundaries);
             groupMask = (1:interactionCount) - groupStarts(groupIndices) + 1;
@@ -81,7 +82,7 @@ classdef ComputeChunkedContext < handle
             splitGroupMask = groupBoundaries | groupMaskFiltered;
             splitGroupMaskIndices = find(splitGroupMask);
             groupSizes = diff([splitGroupMaskIndices, interactionCount + 1]);
-            chunkGroups = mat2cell(sortedInteractionIndices(:), groupSizes);
+            chunkGroups = mat2cell(sortedInteractions(:), groupSizes);
 
             groupCount = numel(groupSizes);
 
@@ -91,7 +92,16 @@ classdef ComputeChunkedContext < handle
                 chunkCount = ceil(numel(chunkGroups{m}) / blockCountPerChunk);
                 for n = 1:chunkCount
                     slice = ((n - 1) * blockCountPerChunk + 1):min(numel(chunkGroups{m}),(n * blockCountPerChunk));
-                    chunks{chunkIndex} = chunkGroups{m}(slice);
+                    chunkIndices = chunkGroups{m}(slice);
+                    [rows, cols] = ind2sub([basisFunctionCount, basisFunctionCount], chunkIndices);
+                    rowStart = rows(1);
+                    colStart = cols(1);
+                    rowEnd = rows(end);
+                    colEnd = cols(end);
+
+                    chunk.rowIndices = rowStart:rowEnd;
+                    chunk.columnIndices = colStart:colEnd;
+                    chunks{chunkIndex} = chunk;
                     chunkIndex = chunkIndex + 1;
                 end
             end

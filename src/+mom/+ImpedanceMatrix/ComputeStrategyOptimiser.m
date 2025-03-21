@@ -13,26 +13,81 @@ classdef ComputeStrategyOptimiser < handle
 
     methods
         function [mask, interactions] = getMaskAndInteractions(obj)
-            [maskXX, interactionsXX] = obj.generateMaskXX(obj.basisFunctions_.getFacesX());
-            [maskXY, interactionsXY] = obj.generateMaskXY(obj.basisFunctions_.getFacesX(), obj.basisFunctions_.getFacesY());
-
             % TODO: decide what kind of sub strategy we use
             % for now we stick to the general case
-            [mask, interactions] = obj.generateFullMask(maskXX, maskXY, interactionsXX, interactionsXY);
+
+            [a, b] = obj.basisFunctions_.getFaceSize();
+
+            if any(obj.gridSize_ == 1)
+                [mask, interactions] = obj.generateToeplitzMask();
+            else
+                [maskXX, interactionsXX] = obj.generateMaskXX(obj.basisFunctions_.getFacesX());
+                [maskXY, interactionsXY] = obj.generateMaskXY(obj.basisFunctions_.getFacesX(), obj.basisFunctions_.getFacesY());
+
+                if abs(a - b) < eps
+                    [mask, interactions] = obj.generateSquareMask(maskXX, maskXY, interactionsXX, interactionsXY);
+                else
+                    [mask, interactions] = obj.generateFullMask(maskXX, maskXY, interactionsXX, interactionsXY);
+                end
+            end
+        end
+
+        function matrix = applyMask(~, matrixUniqueValues, mask, interactions)
+            interactionValues = matrixUniqueValues(interactions);
+            matrix = interactionValues(mask);
         end
     end
 
     methods (Access = private)
+        function [mask, interactions] = generateToeplitzMask(obj)
+            basisFunctionCount = obj.basisFunctions_.getCount();
+            mask = toeplitz(1:basisFunctionCount);
+            interactions = (1:basisFunctionCount).';
+        end
+
+        function [mask, interactions] = generateSquareMask(~, maskXX, maskXY, interactionsXX, interactionsXY)
+            interactionsXXCount = numel(interactionsXX);
+
+            maskXXLastIndex = max(maskXX(:));
+            maskXYShifted = maskXY + maskXXLastIndex;
+
+            mask = [maskXX, maskXYShifted; ...
+                    maskXYShifted.', maskXX];
+
+            function indices = transformIndices(maskSize, blockSize, blockIndices, rowStart, colStart)
+                [rows, cols] = ind2sub(blockSize, blockIndices);
+                rows = rows + rowStart;
+                cols = cols + colStart;
+                indices = sub2ind(maskSize, rows, cols);
+            end
+
+            interactionsXYTransformed = transformIndices(size(mask), size(maskXY), interactionsXY, 0, interactionsXXCount);
+
+            interactions = [interactionsXX; interactionsXYTransformed];
+        end
+
         function [mask, interactions] = generateFullMask(~, maskXX, maskXY, interactionsXX, interactionsXY)
-            interactionsXXCount = size(interactionsXX, 2);
+            interactionsXXCount = numel(interactionsXX);
 
             maskXXLastIndex = max(maskXX(:));
             maskXYLastIndex = maskXXLastIndex + max(maskXY(:));
 
             maskXYShifted = maskXY + maskXXLastIndex;
 
-            mask = [maskXX, maskXYShifted; maskXYShifted.', maskXX + maskXYLastIndex];
-            interactions = [interactionsXX, interactionsXY + uint32([0; interactionsXXCount]), interactionsXX + uint32([interactionsXXCount; interactionsXXCount])];
+            mask = [maskXX, maskXYShifted; ...
+                    maskXYShifted.', maskXX + maskXYLastIndex];
+
+            function indices = transformIndices(maskSize, blockSize, blockIndices, rowStart, colStart)
+                [rows, cols] = ind2sub(blockSize, blockIndices);
+                rows = rows + rowStart;
+                cols = cols + colStart;
+                indices = sub2ind(maskSize, rows, cols);
+            end
+
+            interactionsXYTransformed = transformIndices(size(mask), size(maskXY), interactionsXY, 0, interactionsXXCount);
+            interactionsXXTransformed = transformIndices(size(mask), size(maskXX), interactionsXX, interactionsXXCount, interactionsXXCount);
+
+            interactions = [interactionsXX; interactionsXYTransformed; interactionsXXTransformed];
         end
 
         function [mask, interactions] = generateMaskXX(obj, basisFunctionsX)
@@ -88,14 +143,8 @@ classdef ComputeStrategyOptimiser < handle
             interactions = obj.findUniqueInteractions(mask, uniqueDistances);
         end
 
-        function interactions = findUniqueInteractions(~, mask, uniqueDistances)
-            uniqueDistancesCount = size(uniqueDistances, 1);
-            interactions = zeros(2, uniqueDistancesCount, 'uint32');
-
-            for n = 1:uniqueDistancesCount
-                [r, c] = find(mask == n, 1, 'first');
-                interactions(:, n) = [r; c];
-            end
+        function interactions = findUniqueInteractions(~, mask, ~)
+            interactions = uint32(accumarray(mask(:), (1:numel(mask)).', [], @min));
         end
     end
 end

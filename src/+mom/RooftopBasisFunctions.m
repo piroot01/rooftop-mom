@@ -44,12 +44,12 @@ classdef RooftopBasisFunctions < handle
 
                 basisFunctionQuadraturePoints = quadrature.get(basisFunctionVertices);
 
-                [rooftopPointsPositive, rooftopPointsNegative, l1, l2] = obj.computeRooftopValues(basisFunctionVertices, basisFunctionQuadraturePoints);
+                [rooftopPointsPositive, rooftopPointsNegative, l1, l2] = obj.computeRooftopValues(basisFunctionVertices, basisFunctionQuadraturePoints, orderSquared);
                 allRooftopSizes(:, n) = [l1; l2];
 
                 slice = ((n - 1) * orderSquared + 1):(n * orderSquared);
-                obj.quadraturePoints_(:, slice, 1) = basisFunctionQuadraturePoints(:, 1:4); 
-                obj.quadraturePoints_(:, slice, 2) = basisFunctionQuadraturePoints(:, 5:8); 
+                obj.quadraturePoints_(:, slice, 1) = basisFunctionQuadraturePoints(:, 1:orderSquared); 
+                obj.quadraturePoints_(:, slice, 2) = basisFunctionQuadraturePoints(:, (orderSquared + 1):end); 
                 obj.rooftopPoints_(:, slice, 1) = rooftopPointsPositive;
                 obj.rooftopPoints_(:, slice, 2) = rooftopPointsNegative;
                 obj.rooftopDivPoints_(:, n, 1) = 1 / l1;
@@ -79,7 +79,7 @@ classdef RooftopBasisFunctions < handle
     end
 
     methods (Access = private)
-        function [rooftopP, rooftopN, l1, l2] = computeRooftopValues(~, basisFunctionMesh, quadraturePoints)
+        function [rooftopP, rooftopN, l1, l2] = computeRooftopValues(~, basisFunctionMesh, quadraturePoints, blockSize)
             % input:
             %   basisFunctionMesh: 3x8 matrix (8 vertices - technically 6 is enough)
             %   polarity: 0 = positive, 1 = negative
@@ -97,8 +97,8 @@ classdef RooftopBasisFunctions < handle
             d2 = g - d1;
             l2 = sqrt(sum(d2 .^ 2));
 
-            rooftopP = (1 / l1) * (e * (e.' * (quadraturePoints(:, 1:4) - v1p)));
-            rooftopN = (-1 / l1) * (e * (e.' * (quadraturePoints(:, 5:8) - vn)));
+            rooftopP = (1 / l1) * (e * (e.' * (quadraturePoints(:, 1:blockSize) - v1p)));
+            rooftopN = (-1 / l1) * (e * (e.' * (quadraturePoints(:, (blockSize + 1):end) - vn)));
         end
 
     end
