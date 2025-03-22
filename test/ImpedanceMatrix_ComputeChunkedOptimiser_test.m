@@ -4,7 +4,7 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 1;
+countX = 10;
 countY = 10;
 sizeX = 1;
 sizeY = 1;
@@ -15,7 +15,7 @@ gridSize = [countX, countY];
 lambda = 5;
 k = 2 * pi / lambda;
 
-memoryElementwise = 1000000000;
+memoryElementwise = uint32(1000000);
 memory_MB = memoryElementwise * 8 / 1e6;
 
 % 1. step: generate a mesh

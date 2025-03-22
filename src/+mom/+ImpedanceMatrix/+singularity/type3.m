@@ -1,7 +1,5 @@
 function result = type3(a, b)
     % computes the integral of: 1 / R
-    assert(isequal(size(a), size(b)), 'Inputs a and b must have the same dimensions!');
-
     sqrt_term = sqrt(a.^2 + b.^2);
     log_term1 = log((a + sqrt_term) ./ b);
     log_term2 = log((b + sqrt_term) ./ a);

@@ -14,6 +14,8 @@ classdef ComputeChunkedContext < handle
     methods
         function obj = ComputeChunkedContext(memory_MB)
             obj.memory_MB_ = memory_MB;
+
+            fprintf("Memory used: %lu MB\n", obj.memory_MB_);
         end
     end
 
@@ -70,9 +72,7 @@ classdef ComputeChunkedContext < handle
             blockCountPerChunk = floor(elementCount / elementCountPerBlock);
             interactionCount = numel(interactions);
 
-            disp(interactions);
-
-            sortedInteractions = sort(interactions).'
+            sortedInteractions = sort(interactions).';
 
             groupBoundaries = [true, diff(sortedInteractions) ~= 1];
             groupIndices = cumsum(groupBoundaries);
@@ -89,7 +89,7 @@ classdef ComputeChunkedContext < handle
             chunks = cell(1);
             chunkIndex = 1;
             for m = 1:groupCount
-                chunkCount = ceil(numel(chunkGroups{m}) / blockCountPerChunk);
+                chunkCount = ceil(numel(chunkGroups{m}) / double(blockCountPerChunk));
                 for n = 1:chunkCount
                     slice = ((n - 1) * blockCountPerChunk + 1):min(numel(chunkGroups{m}),(n * blockCountPerChunk));
                     chunkIndices = chunkGroups{m}(slice);

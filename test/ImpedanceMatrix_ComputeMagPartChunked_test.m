@@ -4,8 +4,8 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 3;
-countY = 3;
+countX = 10;
+countY = 10;
 sizeX = 1.5;
 sizeY = 0.5;
 origin = [0, 0, 0];
@@ -14,7 +14,7 @@ order = 2;
 lambda = 5;
 k = 2 * pi / lambda;
 
-memoryElementwise = 10000;
+memoryElementwise = 1000000;
 memory_MB = memoryElementwise * 8 / 1e6;
 
 % 1. step: generate a mesh
@@ -49,4 +49,4 @@ Zm = magStrat.compute(stratCtx);
 
 toc;
 
-disp(Zm);
+disp(size(Zm));
