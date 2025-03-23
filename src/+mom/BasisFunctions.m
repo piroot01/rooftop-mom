@@ -1,15 +1,116 @@
 classdef BasisFunctions < handle
     properties (Access = private)
         mesh_;
+        isMesh2DCluster_ logical;
 
-        facesX_ uint32;
-        facesY_ uint32;
+        facesX_;
+        facesY_;
 
         funcIDs_ uint32;
     end
 
     methods
         function obj = BasisFunctions(mesh)
+            obj.mesh_ = mesh;
+
+            if isa(mesh, 'mom.Mesh2DCluster')
+                obj.isMesh2DCluster_ = true;
+                mesh2DCount = mesh.getMeshCount();
+
+                for n = 1:mesh2DCount
+                    [facesX, facesY] = obj.generateBasisFunctionFaceIndices(mesh.getMesh(n));
+                    obj.facesX_{n} = facesX;
+                    obj.facesY_{n} = facesY;
+                end
+            else
+                obj.isMesh2DCluster_ = false;
+                [obj.facesX_, obj.facesY_] = obj.generateBasisFunctionFaceIndices(obj.mesh_);
+            end
+        end
+    end
+
+    methods
+        function count = getCount(obj)
+            if obj.isMesh2DCluster_
+                count = size([obj.facesX_{:}], 2) + size([obj.facesY_{:}], 2);
+            else
+                count = size(obj.facesX_, 2) + size(obj.facesY_, 2);
+            end
+        end
+
+        function faces = getFaces(obj)
+            if obj.isMesh2DCluster_
+                mesh2DCount = obj.mesh_.getMeshCount();
+                offset = 0;
+                faces = cell(1, mesh2DCount);
+
+                for n = 1:mesh2DCount
+                    facesX = [obj.facesX_{n}];
+                    facesY = [obj.facesY_{n}];
+                    facesXY = [facesX, facesY];
+
+                    faces{n} = facesXY + offset;
+
+                    offset = offset + max(facesXY(:));
+                end
+
+                faces = [faces{:}];
+            else
+                faces = [obj.facesX_, obj.facesY_];
+            end
+        end
+
+        function faces = getFacesAsCell(obj)
+            if obj.isMesh2DCluster_
+                mesh2DCount = obj.mesh_.getMeshCount();
+                facesX = obj.facesX_;
+                facesY = obj.facesY_;
+
+                faces = arrayfun(@(n) [facesX{n}, facesY{n}], 1:mesh2DCount, 'UniformOutput', false);
+            else
+                faces{1} = [obj.facesX_, obj.facesY_];
+            end
+        end
+
+        function faces = getFacesXAsCell(obj)
+            if obj.isMesh2DCluster_
+                mesh2DCount = obj.mesh_.getMeshCount();
+                facesX = obj.facesX_;
+
+                faces = arrayfun(@(n) [facesX{n}], 1:mesh2DCount, 'UniformOutput', false);
+            else
+                faces{1} = obj.facesX_;
+            end
+        end
+
+        function faces = getFacesYAsCell(obj)
+            if obj.isMesh2DCluster_
+                mesh2DCount = obj.mesh_.getMeshCount();
+                facesY = obj.facesY_;
+
+                faces = arrayfun(@(n) [facesY{n}], 1:mesh2DCount, 'UniformOutput', false);
+            else
+                faces{1} = obj.facesY_;
+            end
+        end
+
+        function IDs = getIDs(obj)
+            faces = obj.getFacesAsCell();
+            meshCount = numel(faces);
+
+            BasisFunctionCounts = cellfun(@(x) size(x, 2), faces);
+
+            IDs = repelem(1:meshCount, BasisFunctionCounts);
+        end
+
+        function count = getIDCount(obj)
+            faces = obj.getFacesAsCell();
+            count = numel(faces);
+        end
+    end
+
+    methods (Access = private)
+        function [facesX, facesY] = generateBasisFunctionFaceIndices(~, mesh)
             function edges = generateEdges(faces)
                 faceCount = size(faces, 2);
 
@@ -44,64 +145,26 @@ classdef BasisFunctions < handle
 
                 facesX = faces(adjacentIdx, :);
                 facesY = faces(~adjacentIdx, :);
-            end
 
-            function IDs = generateIDs(mesh, faces)
-                if isa(mesh, 'mom.Mesh2DCluster')
-                    basisFuncsCount = size(faces, 2);
-                    IDs = nan(1, basisFuncsCount);
+                %{
+                % resort the facesY so they has the same mapping scheme as facesX
+                gap = facesY(1, 2) - facesY(1, 1);
+                facesYCount = size(facesY, 1);
 
-                    % NOTE: can be further optimised cause the basisFuncs are sorted
-                    for n = 1:basisFuncsCount
-                        IDs(n) = mesh.getMeshID(faces(1, n));
-                    end
+                if mod(facesYCount, gap) == 0
+                    groupCount = facesYCount / gap;
+                    idx = reshape(1:facesYCount, gap, groupCount).';
+                    newOrder = idx(:);
                 else
-                    IDs = ones(1, size(faces, 2));
+                    newOrder = cell2mat(arrayfun(@(r) r:gap:facesYCount, 'UniformOutput', false));
                 end
+                facesY = facesY(newOrder, :);
+                %}
             end
 
-            obj.mesh_ = mesh;
             [facesX, facesY] = getDoubleFaces(generateEdges(mesh.getFaces()));
-            [obj.facesX_, obj.facesY_] = deal(facesX.', facesY.');
-            obj.funcIDs_ = generateIDs(mesh, obj.getFaces());
-        end
-    end
-
-    methods
-        function count = getCount(obj)
-            count = size(obj.getFaces(), 2);
-        end
-
-        function faces = getFaces(obj)
-            faces = [obj.facesX_, obj.facesY_];
-        end
-
-        function faces = getFacesX(obj)
-            faces = obj.facesX_;
-        end
-
-        function faces = getFacesY(obj)
-            faces = obj.facesY_;
-        end
-
-        function IDs = getFuncIDs(obj)
-            IDs = obj.funcIDs_;
-        end
-
-        function count = getIDCount(obj)
-            if isa(obj.mesh_, 'mom.Mesh2DCluster')
-                count = obj.mesh_.getMeshCount();
-            else
-                count = 1;
-            end
-        end
-
-        function [a, b] = getFaceSize(obj, ID)
-            if isa(obj.mesh_, 'mom.Mesh2DCluster')
-                [a, b] = obj.mesh_.getMeshSize(ID);
-            else
-                [a, b] = obj.mesh_.getMeshSize();
-            end
+            facesX = uint32(facesX.');
+            facesY = uint32(facesY.');
         end
     end
 end

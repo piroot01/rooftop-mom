@@ -4,7 +4,7 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 3;
+countX = 2;
 countY = 3;
 sizeX = 0.4;
 sizeY = 0.5;
@@ -15,7 +15,7 @@ tic;
 
 % 1.step: generate a mesh
 myRectMeshPrimitive1 = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
-myRectMeshPrimitive2 = mom.MeshRectPrimitive(countX, countY, sizeX * 2, sizeY / 2, []);
+myRectMeshPrimitive2 = mom.MeshRectPrimitive(countX + 1, countY, sizeX * 2, sizeY / 2, []);
 myRectMesh1 = mom.MeshRect(myRectMeshPrimitive1, origin, 0, 0, 0);
 myRectMesh2 = mom.MeshRect(myRectMeshPrimitive2, origin + [0, 0, 2], 0, 0, 0);
 myMesh1 = myRectMesh1.getAsMesh();
@@ -23,26 +23,29 @@ myMesh2 = myRectMesh2.getAsMesh();
 
 meshCluster = mom.Mesh2DCluster();
 meshCluster.loadMesh(myMesh1);
-%meshCluster.loadMesh(myMesh2);
+meshCluster.loadMesh(myMesh2);
 
 %meshCluster.getFaces()
 
 % 2. step: create Quadrature
 quadrature = mom.Quadrature(order);
 
+
 % 3. step: create BasisFunctions
-basisFuncs = mom.BasisFunctions(meshCluster);
-
-% 4. step: generate quadrature points and rooftop points
-basisFuncs.generatePoints(quadrature);
-
-% 5. step: get the basis function faces
+% mesh
+basisFuncs = mom.BasisFunctions(myMesh1);
 basisFuncs.getFaces()
+%basisFuncs.getCount()
+%celldisp(basisFuncs.getFacesAsCell());
+celldisp(basisFuncs.getFacesXAsCell());
+basisFuncs.getIDs()
 
-basisFuncs.getRooftopLengths();
-% qP = basisFunc.getQuadPoints();
-% rP = basisFunc.getRooftopPoints();
-
-% basisFuncs.getFuncIDs()
+% cluster
+basisFuncsCluster = mom.BasisFunctions(meshCluster);
+basisFuncsCluster.getFaces()
+%basisFuncsCluster.getCount()
+%celldisp(basisFuncsCluster.getFacesAsCell());
+celldisp(basisFuncsCluster.getFacesXAsCell());
+basisFuncsCluster.getIDs()
 
 toc;
