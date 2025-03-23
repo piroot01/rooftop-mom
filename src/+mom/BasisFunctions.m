@@ -40,19 +40,9 @@ classdef BasisFunctions < handle
 
         function faces = getFaces(obj)
             if obj.isMesh2DCluster_
-                mesh2DCount = obj.mesh_.getMeshCount();
-                offset = 0;
-                faces = cell(1, mesh2DCount);
-
-                for n = 1:mesh2DCount
-                    facesX = [obj.facesX_{n}];
-                    facesY = [obj.facesY_{n}];
-                    facesXY = [facesX, facesY];
-
-                    faces{n} = facesXY + offset;
-
-                    offset = offset + max(facesXY(:));
-                end
+                faces = obj.getFacesAsCell();
+                offsets = cumsum([0, cellfun(@(x) max(x(:)), faces)]);
+                faces = cellfun(@(x, offset) x + offset, faces, num2cell(offsets(1:(end - 1))), 'UniformOutput', false);
 
                 faces = [faces{:}];
             else

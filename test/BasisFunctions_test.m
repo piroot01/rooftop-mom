@@ -33,19 +33,20 @@ quadrature = mom.Quadrature(order);
 
 % 3. step: create BasisFunctions
 % mesh
-basisFuncs = mom.BasisFunctions(myMesh1);
-basisFuncs.getFaces()
+%basisFuncs = mom.BasisFunctions(myMesh1);
+%basisFuncs.getFaces()
 %basisFuncs.getCount()
 %celldisp(basisFuncs.getFacesAsCell());
-celldisp(basisFuncs.getFacesXAsCell());
-basisFuncs.getIDs()
+%celldisp(basisFuncs.getFacesXAsCell());
+%basisFuncs.getIDs()
 
 % cluster
 basisFuncsCluster = mom.BasisFunctions(meshCluster);
+celldisp(basisFuncsCluster.getFacesAsCell())
 basisFuncsCluster.getFaces()
 %basisFuncsCluster.getCount()
 %celldisp(basisFuncsCluster.getFacesAsCell());
-celldisp(basisFuncsCluster.getFacesXAsCell());
-basisFuncsCluster.getIDs()
+%celldisp(basisFuncsCluster.getFacesXAsCell());
+%basisFuncsCluster.getIDs()
 
 toc;
