@@ -4,12 +4,12 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 2;
-countY = 2;
+countX = 3;
+countY = 3;
 sizeX = 1.5;
 sizeY = 0.5;
 origin = [0, 0, 0];
-order = 2;
+order = 3;
 
 lambda = 5;
 k = 2 * pi / lambda;
