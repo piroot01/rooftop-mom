@@ -4,8 +4,8 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 10;
-countY = 10;
+countX = 3;
+countY = 2;
 sizeX = 1;
 sizeY = 1;
 origin = [0, 0, 0];
@@ -50,5 +50,7 @@ tic;
 Zm = chunkedOptimiser.compute(stratCtx, gridSize);
 
 toc;
+
+disp(Zm);
 
 disp(size(Zm));

@@ -4,8 +4,8 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 10;
-countY = 10;
+countX = 2;
+countY = 2;
 sizeX = 1.5;
 sizeY = 0.5;
 origin = [0, 0, 0];
@@ -49,4 +49,6 @@ Zm = magStrat.compute(stratCtx);
 
 toc;
 
-disp(size(Zm));
+disp(Zm);
+
+%disp(size(Zm));

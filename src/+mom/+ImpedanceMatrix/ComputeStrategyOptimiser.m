@@ -21,14 +21,16 @@ classdef ComputeStrategyOptimiser < handle
             if any(obj.gridSize_ == 1)
                 [mask, interactions] = obj.generateToeplitzMask();
             else
-                [maskXX, interactionsXX] = obj.generateMaskXX(obj.basisFunctions_.getFacesX());
+                sameSize = (abs(a - b) < eps);
                 [maskXY, interactionsXY] = obj.generateMaskXY(obj.basisFunctions_.getFacesX(), obj.basisFunctions_.getFacesY());
 
-                if abs(a - b) < eps
-                    [mask, interactions] = obj.generateSquareMask(maskXX, maskXY, interactionsXX, interactionsXY);
+                if sameSize
+                    [maskXX, maskYY, interactionsXX, interactionsYY] = obj.generateMaskXXAndYYSameSize(obj.basisFunctions_.getFacesX(), obj.basisFunctions_.getFacesY());
                 else
-                    [mask, interactions] = obj.generateFullMask(maskXX, maskXY, interactionsXX, interactionsXY);
+                    [maskXX, maskYY, interactionsXX, interactionsYY] = obj.generateMaskXXAndYY(obj.basisFunctions_.getFacesX(), obj.basisFunctions_.getFacesY());
                 end
+
+                [mask, interactions] = obj.generateFullMask(maskXX, maskXY, maskYY, interactionsXX, interactionsXY, interactionsYY, sameSize);
             end
         end
 
@@ -45,64 +47,103 @@ classdef ComputeStrategyOptimiser < handle
             interactions = (1:basisFunctionCount).';
         end
 
-        function [mask, interactions] = generateSquareMask(~, maskXX, maskXY, interactionsXX, interactionsXY)
-            interactionsXXCount = numel(interactionsXX);
+        function [mask, interactions] = generateFullMask(~, maskXX, maskXY, maskYY, interactionsXX, interactionsXY, interactionsYY, sameSize)
+            if ~sameSize
+                maskYY = maskYY + max(maskXX(:));
+            end
 
-            maskXXLastIndex = max(maskXX(:));
-            maskXYShifted = maskXY + maskXXLastIndex;
+            maskYYLastIndex = max(maskYY(:));
+            maskXYShifted = maskXY + maskYYLastIndex;
 
             mask = [maskXX, maskXYShifted; ...
-                    maskXYShifted.', maskXX];
+                    maskXYShifted.', maskYY];
 
             function indices = transformIndices(maskSize, blockSize, blockIndices, rowStart, colStart)
+                blockRows = blockSize(1);
+                tmp = blockIndices - 1;
+                rows = mod(tmp, blockRows) + rowStart + 1;
+                cols = floor(tmp / blockRows) + colStart + 1;
+                indices = (cols - 1) * maskSize(1) + rows;
+
+                %{
                 [rows, cols] = ind2sub(blockSize, blockIndices);
                 rows = rows + rowStart;
                 cols = cols + colStart;
-                indices = sub2ind(maskSize, rows, cols);
+                indices2 = uint32(sub2ind(maskSize, rows, cols))
+                %}
             end
 
-            interactionsXYTransformed = transformIndices(size(mask), size(maskXY), interactionsXY, 0, interactionsXXCount);
-
-            interactions = [interactionsXX; interactionsXYTransformed];
-        end
-
-        function [mask, interactions] = generateFullMask(~, maskXX, maskXY, interactionsXX, interactionsXY)
             interactionsXXCount = numel(interactionsXX);
 
-            maskXXLastIndex = max(maskXX(:));
-            maskXYLastIndex = maskXXLastIndex + max(maskXY(:));
-
-            maskXYShifted = maskXY + maskXXLastIndex;
-
-            mask = [maskXX, maskXYShifted; ...
-                    maskXYShifted.', maskXX + maskXYLastIndex];
-
-            function indices = transformIndices(maskSize, blockSize, blockIndices, rowStart, colStart)
-                [rows, cols] = ind2sub(blockSize, blockIndices);
-                rows = rows + rowStart;
-                cols = cols + colStart;
-                indices = sub2ind(maskSize, rows, cols);
-            end
-
             interactionsXYTransformed = transformIndices(size(mask), size(maskXY), interactionsXY, 0, interactionsXXCount);
-            interactionsXXTransformed = transformIndices(size(mask), size(maskXX), interactionsXX, interactionsXXCount, interactionsXXCount);
+            interactionsYYTransformed = transformIndices(size(mask), size(maskYY), interactionsYY, interactionsXXCount, interactionsXXCount);
 
-            interactions = [interactionsXX; interactionsXYTransformed; interactionsXXTransformed];
+            interactions = [interactionsXX; interactionsYYTransformed; interactionsXYTransformed];
         end
 
-        function [mask, interactions] = generateMaskXX(obj, basisFunctionsX)
-            positiveFaces = basisFunctionsX(1, :);
+        function [maskXX, maskYY, interactionsXX, interactionsYY] = generateMaskXXAndYY(obj, basisFunctionsX, basisFunctionsY)
+            positiveFacesX = basisFunctionsX(1, :);
+            positiveFacesY = basisFunctionsY(1, :);
             basisFunctionXCount = size(basisFunctionsX, 2);
+            basisFunctionYCount = size(basisFunctionsY, 2);
 
-            [xs, ys] = ind2sub(obj.gridSize_, positiveFaces);
+            [xsX, ysX] = ind2sub(obj.gridSize_, positiveFacesX);
+            [xsY, ysY] = ind2sub(obj.gridSize_, positiveFacesY);
 
-            dx = abs(xs - xs.');
-            dy = abs(ys - ys.');
+            dxX = abs(xsX - xsX.');
+            dyX = abs(ysX - ysX.');
 
-            distances = [dx(:), dy(:)];
-            [uniqueDistances, ~, indices] = unique(distances, 'rows', 'stable');
-            mask = reshape(indices, basisFunctionXCount, basisFunctionXCount);
-            interactions = obj.findUniqueInteractions(mask, uniqueDistances);
+            dxY = abs(xsY - xsY.');
+            dyY = abs(ysY - ysY.');
+
+            distancesX = [dxX(:), dyX(:)];
+            distancesY = [dxY(:), dyY(:)];
+
+            [~, ~, indicesX] = unique(distancesX, 'rows', 'stable');
+            [~, ~, indicesY] = unique(distancesY, 'rows', 'stable');
+
+            maskXX = reshape(indicesX, basisFunctionXCount, basisFunctionXCount);
+            maskYY = reshape(indicesY, basisFunctionYCount, basisFunctionYCount);
+
+            interactionsXX = (1:size(maskXX, 1)).';
+            interactionsYY = (1:size(maskYY, 1)).';
+        end
+
+        function [maskXX, maskYY, interactionsXX, interactionsYY] = generateMaskXXAndYYSameSize(obj, basisFunctionsX, basisFunctionsY)
+            positiveFacesX = basisFunctionsX(1, :);
+            positiveFacesY = basisFunctionsY(1, :);
+            basisFunctionXCount = size(basisFunctionsX, 2);
+            basisFunctionYCount = size(basisFunctionsY, 2);
+
+            [xsX, ysX] = ind2sub(obj.gridSize_, positiveFacesX);
+            [ysY, xsY] = ind2sub(obj.gridSize_, positiveFacesY);
+
+            dxX = abs(xsX - xsX.');
+            dyX = abs(ysX - ysX.');
+
+            dxY = abs(xsY - xsY.');
+            dyY = abs(ysY - ysY.');
+
+            distancesX = [dxX(:), dyX(:)];
+            distancesY = [dxY(:), dyY(:)];
+            distances = [distancesX; distancesY];
+
+            [~, ~, indices] = unique(distances, 'rows', 'stable');
+
+            indicesXCount = numel(dxX);
+            indicesX = indices(1:indicesXCount);
+            indicesY = indices((indicesXCount + 1):end);
+
+            maskXX = reshape(indicesX, basisFunctionXCount, basisFunctionXCount);
+            maskYY = reshape(indicesY, basisFunctionYCount, basisFunctionYCount);
+
+            maskXXUniqueInteractions = maskXX(:, 1);
+            maskYYUniqueInteractions = maskYY(:, 1);
+
+            indicesX = ismember(maskYYUniqueInteractions, maskXXUniqueInteractions);
+
+            interactionsXX = maskXXUniqueInteractions;
+            interactionsYY = find(~indicesX);
         end
 
         function [mask, interactions] = generateMaskXY(obj, basisFunctionsX, basisFunctionsY)
@@ -138,12 +179,12 @@ classdef ComputeStrategyOptimiser < handle
             fsTranslated = fs - (fsMin - 1) .* (fsMin ~= 1);
 
             fsSorted = [min(fsTranslated(:, 1:2), [], 2), max(fsTranslated(:, 1:2), [], 2), min(fsTranslated(:, 3:4), [], 2), max(fsTranslated(:, 3:4), [], 2)];
-            [uniqueDistances, ~, indices] = unique(fsSorted, 'rows', 'stable');
+            [~, ~, indices] = unique(fsSorted, 'rows', 'stable');
             mask = reshape(indices, basisFunctionXCount, basisFunctionYCount);
-            interactions = obj.findUniqueInteractions(mask, uniqueDistances);
+            interactions = obj.findUniqueInteractions(mask);
         end
 
-        function interactions = findUniqueInteractions(~, mask, ~)
+        function interactions = findUniqueInteractions(~, mask)
             interactions = uint32(accumarray(mask(:), (1:numel(mask)).', [], @min));
         end
     end

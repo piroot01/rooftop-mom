@@ -37,7 +37,7 @@ classdef ComputeChunkedContext < handle
             end
 
             elementCountPerBlock = quadratureOrder^4;
-            blockCountPerChunk = floor(elementCount / elementCountPerBlock);
+            blockCountPerChunk = floor(double(elementCount) / elementCountPerBlock);
             [a, b] = getChunkShape(blockCountPerChunk);
 
             chunkCountVert = ceil(basisFunctionCount / a);
@@ -70,19 +70,27 @@ classdef ComputeChunkedContext < handle
 
             elementCountPerBlock = quadratureOrder^4;
             blockCountPerChunk = floor(elementCount / elementCountPerBlock);
-            interactionCount = numel(interactions);
+            %interactionCount = numel(interactions);
 
             sortedInteractions = sort(interactions).';
 
+            columnIndices = floor(double((sortedInteractions - 1)) / basisFunctionCount) + 1;
+            splitCols = [diff(columnIndices) ~= 0, true];
+            splitColIndices = find(splitCols);
+            groupSizes = diff([0, splitColIndices]);
+            chunkGroups = mat2cell(sortedInteractions(:), groupSizes);
+
+            %{
             groupBoundaries = [true, diff(sortedInteractions) ~= 1];
-            groupIndices = cumsum(groupBoundaries);
+            groupIndices = cumsum(groupBoundaries)
             groupStarts = find(groupBoundaries);
-            groupMask = (1:interactionCount) - groupStarts(groupIndices) + 1;
-            groupMaskFiltered = (mod(groupMask - 1, basisFunctionCount + 1) == 0) & (groupMask > 1);
+            groupMask = (1:interactionCount) - groupStarts(groupIndices) + 1
+            groupMaskFiltered = (mod(groupMask - 1, basisFunctionCount + 1) == 0) & (groupMask > 1)
             splitGroupMask = groupBoundaries | groupMaskFiltered;
             splitGroupMaskIndices = find(splitGroupMask);
-            groupSizes = diff([splitGroupMaskIndices, interactionCount + 1]);
-            chunkGroups = mat2cell(sortedInteractions(:), groupSizes);
+            groupSizes = diff([splitGroupMaskIndices, interactionCount + 1])
+            chunkGrops = mat2cell(sortedInteractions(:), groupSizes)
+            %}
 
             groupCount = numel(groupSizes);
 

@@ -19,6 +19,7 @@ classdef ComputeChunkedOptimiser < handle
             chunks = obj.computeChunkedContext_.generateChunksSpecificInteractions(strategyContext.quadrature.getOrder(), interactions, strategyContext.basisFunctions.getCount());
 
             ZUniqueValues = obj.computeStrategy_.compute(strategyContext, chunks);
+
             Z = computeStrategyOptimiser.applyMask(ZUniqueValues, mask, interactions);
         end
     end
