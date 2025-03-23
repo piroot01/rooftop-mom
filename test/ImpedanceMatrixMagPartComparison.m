@@ -33,10 +33,10 @@ myMeshCluster.loadMesh(myRectMesh2.getAsMesh());
 quadrature = mom.Quadrature(order);
 
 % 3. step: create BasisFunctions
-basisFuncs = mom.BasisFunctions(myRectMesh1.getAsMesh());
+basisFuncs = mom.BasisFunctions(myMeshCluster);
 
 % 4. step: create RooftopBasisFunctions
-rooftops = mom.RooftopBasisFunctions(myRectMesh1.getAsMesh(), basisFuncs.getFaces());
+rooftops = mom.RooftopBasisFunctions(myMeshCluster, basisFuncs.getFaces());
 
 % 5. step: generate quadrature points and rooftop points
 rooftops.generatePoints(quadrature);
@@ -61,7 +61,7 @@ ZmOptimiser = chunkedOptimiser.compute(stratCtx, gridSizes);
 
 toc;
 
-disp(ZmOptimiser);
+%disp(ZmOptimiser);
 
 %Zm(11:22, 11)
 %ZmOptimiser(11:22, 11)

@@ -42,6 +42,8 @@ classdef ComputeChunkedOptimiser < handle
                 chunks = obj.computeChunkedContext_.generateChunksSpecificInteractions(quadratureOrder, interactionsCell{n}, basisFunctionCount);
                 mask(IDMask == n) = masksCell{n};
             end
+
+            mask
         end
     end
 end
