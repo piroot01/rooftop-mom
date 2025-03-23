@@ -69,44 +69,38 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
     methods (Access = private)
         function [ZBlock, singularityMaskChunkNonZeroDot] = computeZBlock(~, strategyContext, chunkContext, quadratureWeights, blockSize)
             k = strategyContext.constants.k;
-
-            ZBlockPolarity = zeros([chunkContext.chunkSize, 4]);
-            singularityMaskChunkNonZeroDot = false([chunkContext.chunkSize, 4]);
             weights = repmat(quadratureWeights, chunkContext.chunkSize);
 
-            for n = 1:strategyContext.constants.polaritiesCount
-                p1 = strategyContext.constants.polarities(n, 1);
-                p2 = strategyContext.constants.polarities(n, 2);
+            p1 = strategyContext.constants.polarities(:, 1);
+            p2 = strategyContext.constants.polarities(:, 2);
 
-                rowQuadraturePointsPolarity = chunkContext.rowQuadraturePoints(:, :, p1);
-                columnQuadraturePointsPolarity = chunkContext.columnQuadraturePoints(:, :, p2);
-                rowRooftopPointsPolarity = chunkContext.rowRooftopPoints(:, :, p1);
-                columnRooftopPointsPolarity = chunkContext.columnRooftopPoints(:, :, p2);
+            rowQuadraturePointsPolarity = chunkContext.rowQuadraturePoints(:, :, p1);
+            columnQuadraturePointsPolarity = chunkContext.columnQuadraturePoints(:, :, p2);
+            rowRooftopPointsPolarity = chunkContext.rowRooftopPoints(:, :, p1);
+            columnRooftopPointsPolarity = chunkContext.columnRooftopPoints(:, :, p2);
 
-                bigSingularityMask = repelem(chunkContext.singularityMaskChunk(:, :, n), blockSize, blockSize);
+            bigSingularityMask = repelem(chunkContext.singularityMaskChunk, blockSize, blockSize);
 
-                distanceMatrix = mom.DistMatrix.getChunk(rowQuadraturePointsPolarity, columnQuadraturePointsPolarity);
-                distanceMatrixZero = (distanceMatrix < eps);
+            distanceMatrix = mom.DistanceMatrix.compute(rowQuadraturePointsPolarity, columnQuadraturePointsPolarity);
+            distanceMatrixZero = (distanceMatrix < eps);
 
-                rooftopPointsDot = rowRooftopPointsPolarity.' * columnRooftopPointsPolarity;
-                rooftopPointsDotZero = (rooftopPointsDot < eps);
+            rooftopPointsDot = pagemtimes(permute(rowRooftopPointsPolarity, [2, 1, 3]), columnRooftopPointsPolarity);
+            rooftopPointsDotZero = (rooftopPointsDot < eps);
 
-                bigSingularityMaskNonZeroDot = ~rooftopPointsDotZero & bigSingularityMask;
-                singularityMaskChunkNonZeroDot(:, :, n) = bigSingularityMaskNonZeroDot(1:blockSize:end, 1:blockSize:end);
+            bigSingularityMaskNonZeroDot = ~rooftopPointsDotZero & bigSingularityMask;
+            singularityMaskChunkNonZeroDot = bigSingularityMaskNonZeroDot(1:blockSize:end, 1:blockSize:end, :);
 
-                greensFunction = exp(-1i * k * distanceMatrix) ./ distanceMatrix;
-                greensFunction(bigSingularityMaskNonZeroDot) = greensFunction(bigSingularityMaskNonZeroDot) - 1 ./ distanceMatrix(bigSingularityMaskNonZeroDot);
+            greensFunction = exp(-1i * k * distanceMatrix) ./ distanceMatrix;
+            greensFunction(bigSingularityMaskNonZeroDot) = greensFunction(bigSingularityMaskNonZeroDot) - 1 ./ distanceMatrix(bigSingularityMaskNonZeroDot);
 
-                integrands = rooftopPointsDot .* greensFunction;
-                integrands(distanceMatrixZero) = rooftopPointsDot(distanceMatrixZero) .* -1i * k;
+            integrands = rooftopPointsDot .* greensFunction;
+            integrands(distanceMatrixZero) = rooftopPointsDot(distanceMatrixZero) * (-1i) * k;
 
-                integrals = integrands .* weights;
-                integralsReshaped = reshape(integrals, blockSize, chunkContext.chunkSize(1), blockSize, chunkContext.chunkSize(2));
-                integralsSummed = sum(sum(integralsReshaped, 1), 3);
-                ZBlockPolarity(:, :, n) = reshape(integralsSummed, chunkContext.chunkSize);
-            end
+            integrals = integrands .* weights;
+            integralsReshaped = reshape(integrals, blockSize, chunkContext.chunkSize(1), blockSize, chunkContext.chunkSize(2), strategyContext.constants.polaritiesCount);
+            integralsSummed = squeeze(sum(sum(integralsReshaped, 1), 3));
 
-            ZBlock = sum(ZBlockPolarity, 3);
+            ZBlock = sum(integralsSummed, 3);
         end
 
         function singularities = computeMagSingularities(obj, strategyContext, singularityMask, IDMask)
