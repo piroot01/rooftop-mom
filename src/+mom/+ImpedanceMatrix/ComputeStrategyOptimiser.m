@@ -1,33 +1,45 @@
 classdef ComputeStrategyOptimiser < handle
     properties (Access = private)
         basisFunctions_ mom.BasisFunctions;
-        gridSize_ uint32;
+        rooftopUniqueUniqueSizes_ double;
+
+        gridSizes_;
     end
 
     methods
-        function obj = ComputeStrategyOptimiser(basisFunctions, gridSize)
+        function obj = ComputeStrategyOptimiser(basisFunctions, rooftopUniqueUniqueSizes, gridSizes)
             obj.basisFunctions_ = basisFunctions;
-            obj.gridSize_ = gridSize;
+            obj.rooftopUniqueUniqueSizes_ = rooftopUniqueUniqueSizes;
+
+            obj.gridSizes_ = gridSizes;
         end
     end
 
     methods
-        function [mask, interactions] = getMaskAndInteractions(obj)
-            % TODO: decide what kind of sub strategy we use
-            % for now we stick to the general case
+        function [masks, interactions] = getAllMasksAndInteractions(obj)
+            meshCount = obj.basisFunctions_.getIDCount();
+            facesX = obj.basisFunctions_.getFacesXAsCell();
+            facesY = obj.basisFunctions_.getFacesYAsCell();
 
-            [a, b] = obj.basisFunctions_.getFaceSize();
+            masks = cell(1, meshCount);
+            interactions = cell(1, meshCount);
 
-            if any(obj.gridSize_ == 1)
+            for n = 1:meshCount
+                sameSize = (obj.rooftopUniqueUniqueSizes_(n, 1) == obj.rooftopUniqueUniqueSizes_(n, 2));
+                [masks{n}, interactions{n}] = obj.getMaskAndInteractions(facesX{n}, facesY{n}, obj.gridSizes_{n}, sameSize);
+            end
+        end
+
+        function [mask, interactions] = getMaskAndInteractions(obj, facesX, facesY, gridSize, sameSize)
+            if any(gridSize == 1)
                 [mask, interactions] = obj.generateToeplitzMask();
             else
-                sameSize = (abs(a - b) < eps);
-                [maskXY, interactionsXY] = obj.generateMaskXY(obj.basisFunctions_.getFacesX(), obj.basisFunctions_.getFacesY());
+                [maskXY, interactionsXY] = obj.generateMaskXY(facesX, facesY, gridSize);
 
                 if sameSize
-                    [maskXX, maskYY, interactionsXX, interactionsYY] = obj.generateMaskXXAndYYSameSize(obj.basisFunctions_.getFacesX(), obj.basisFunctions_.getFacesY());
+                    [maskXX, maskYY, interactionsXX, interactionsYY] = obj.generateMaskXXAndYYSameSize(facesX, facesY, gridSize);
                 else
-                    [maskXX, maskYY, interactionsXX, interactionsYY] = obj.generateMaskXXAndYY(obj.basisFunctions_.getFacesX(), obj.basisFunctions_.getFacesY());
+                    [maskXX, maskYY, interactionsXX, interactionsYY] = obj.generateMaskXXAndYY(facesX, facesY, gridSize);
                 end
 
                 [mask, interactions] = obj.generateFullMask(maskXX, maskXY, maskYY, interactionsXX, interactionsXY, interactionsYY, sameSize);
@@ -81,14 +93,14 @@ classdef ComputeStrategyOptimiser < handle
             interactions = [interactionsXX; interactionsYYTransformed; interactionsXYTransformed];
         end
 
-        function [maskXX, maskYY, interactionsXX, interactionsYY] = generateMaskXXAndYY(obj, basisFunctionsX, basisFunctionsY)
+        function [maskXX, maskYY, interactionsXX, interactionsYY] = generateMaskXXAndYY(~, basisFunctionsX, basisFunctionsY, gridSize)
             positiveFacesX = basisFunctionsX(1, :);
             positiveFacesY = basisFunctionsY(1, :);
             basisFunctionXCount = size(basisFunctionsX, 2);
             basisFunctionYCount = size(basisFunctionsY, 2);
 
-            [xsX, ysX] = ind2sub(obj.gridSize_, positiveFacesX);
-            [xsY, ysY] = ind2sub(obj.gridSize_, positiveFacesY);
+            [xsX, ysX] = ind2sub(gridSize, positiveFacesX);
+            [xsY, ysY] = ind2sub(gridSize, positiveFacesY);
 
             dxX = abs(xsX - xsX.');
             dyX = abs(ysX - ysX.');
@@ -109,14 +121,14 @@ classdef ComputeStrategyOptimiser < handle
             interactionsYY = (1:size(maskYY, 1)).';
         end
 
-        function [maskXX, maskYY, interactionsXX, interactionsYY] = generateMaskXXAndYYSameSize(obj, basisFunctionsX, basisFunctionsY)
+        function [maskXX, maskYY, interactionsXX, interactionsYY] = generateMaskXXAndYYSameSize(~, basisFunctionsX, basisFunctionsY, gridSize)
             positiveFacesX = basisFunctionsX(1, :);
             positiveFacesY = basisFunctionsY(1, :);
             basisFunctionXCount = size(basisFunctionsX, 2);
             basisFunctionYCount = size(basisFunctionsY, 2);
 
-            [xsX, ysX] = ind2sub(obj.gridSize_, positiveFacesX);
-            [ysY, xsY] = ind2sub(obj.gridSize_, positiveFacesY);
+            [xsX, ysX] = ind2sub(gridSize, positiveFacesX);
+            [ysY, xsY] = ind2sub(gridSize, positiveFacesY);
 
             dxX = abs(xsX - xsX.');
             dyX = abs(ysX - ysX.');
@@ -146,8 +158,8 @@ classdef ComputeStrategyOptimiser < handle
             interactionsYY = find(~indicesX);
         end
 
-        function [mask, interactions] = generateMaskXY(obj, basisFunctionsX, basisFunctionsY)
-            [xs, ys] = ind2sub(obj.gridSize_, 1:prod(obj.gridSize_));
+        function [mask, interactions] = generateMaskXY(obj, basisFunctionsX, basisFunctionsY, gridSize)
+            [xs, ys] = ind2sub(gridSize, 1:prod(gridSize));
 
             horz_x1 = xs(basisFunctionsX(1, :)).';
             horz_x2 = xs(basisFunctionsX(2, :)).';
@@ -169,10 +181,10 @@ classdef ComputeStrategyOptimiser < handle
             d4 = abs(rep_y - vert_y2.');
             y_far = vert_y1.' .* (d3 > d4) + vert_y2.' .* (d3 <= d4);
 
-            f1 = sub2ind(obj.gridSize_, rep_x, rep_y);
-            f2 = sub2ind(obj.gridSize_, x_far, y_far);
-            f3 = sub2ind(obj.gridSize_, rep_x, y_far);
-            f4 = sub2ind(obj.gridSize_, x_far, rep_y);
+            f1 = sub2ind(gridSize, rep_x, rep_y);
+            f2 = sub2ind(gridSize, x_far, y_far);
+            f3 = sub2ind(gridSize, rep_x, y_far);
+            f4 = sub2ind(gridSize, x_far, rep_y);
 
             fs = [f1(:), f2(:), f3(:), f4(:)];
             fsMin = min(fs, [], 2);

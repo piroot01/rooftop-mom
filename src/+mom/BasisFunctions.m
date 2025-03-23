@@ -94,8 +94,16 @@ classdef BasisFunctions < handle
         end
 
         function count = getIDCount(obj)
-            faces = obj.getFacesAsCell();
-            count = numel(faces);
+            %{
+            if obj.isMesh2DCluster_
+                count = obj.mesh_.getMeshCount();
+            else
+                count = 1;
+            end
+            %}
+
+            % fancier version
+            count = obj.isMesh2DCluster_ * obj.mesh_.getMeshCount() + ~obj.isMesh2DCluster_;
         end
     end
 

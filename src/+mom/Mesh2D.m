@@ -26,5 +26,9 @@ classdef Mesh2D < handle
             a = norm(v2 - v1);
             b = norm(v4 - v1);
         end
+
+        function count = getMeshCount(~)
+            count = 1;
+        end
     end
 end

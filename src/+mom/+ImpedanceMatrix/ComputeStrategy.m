@@ -22,8 +22,8 @@ classdef (Abstract) ComputeStrategy < handle
 
         function jacobians = getJacobians(~, strategyContext)
             basisFuncsIDs = strategyContext.basisFunctions.getIDs();
-            rooftopUniqueSizes = strategyContext.rooftopBasisFunctions.getUniqueRooftopSizes();
-            uniqueJacobians = prod(rooftopUniqueSizes(1:2:end, :), 2);
+            rooftopUniqueUniqueSizes = strategyContext.rooftopBasisFunctions.getUniqueUniqueRooftopSizes();
+            uniqueJacobians = prod(rooftopUniqueUniqueSizes, 2);
             jacobians2D = uniqueJacobians(basisFuncsIDs);
             jacobians = jacobians2D(:) * jacobians2D(:).';
         end

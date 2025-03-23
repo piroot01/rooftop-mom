@@ -4,7 +4,7 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 2;
+countX = 1;
 countY = 3;
 sizeX = 0.4;
 sizeY = 0.5;
@@ -44,6 +44,7 @@ quadrature = mom.Quadrature(order);
 basisFuncsCluster = mom.BasisFunctions(meshCluster);
 celldisp(basisFuncsCluster.getFacesAsCell())
 basisFuncsCluster.getFaces()
+basisFuncsCluster.getGridSizes()
 %basisFuncsCluster.getCount()
 %celldisp(basisFuncsCluster.getFacesAsCell());
 %celldisp(basisFuncsCluster.getFacesXAsCell());

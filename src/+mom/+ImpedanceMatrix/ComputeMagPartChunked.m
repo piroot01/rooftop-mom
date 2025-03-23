@@ -98,9 +98,10 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
 
             integrals = integrands .* weights;
             integralsReshaped = reshape(integrals, blockSize, chunkContext.chunkSize(1), blockSize, chunkContext.chunkSize(2), strategyContext.constants.polaritiesCount);
-            integralsSummed = squeeze(sum(sum(integralsReshaped, 1), 3));
+            integralsSummed = sum(sum(integralsReshaped, 1), 3);
+            integralsSummedReshaped = reshape(integralsSummed, [chunkContext.chunkSize, strategyContext.constants.polaritiesCount]);
 
-            ZBlock = sum(integralsSummed, 3);
+            ZBlock = sum(integralsSummedReshaped, 3);
         end
 
         function singularities = computeMagSingularities(obj, strategyContext, singularityMask, IDMask)

@@ -76,6 +76,11 @@ classdef RooftopBasisFunctions < handle
             sizes = obj.uniqueRooftopSizes_;
             indices = obj.uniqueRooftopSizeIndices_;
         end
+
+        function sizes = getUniqueUniqueRooftopSizes(obj)
+            uniqueSizes = obj.uniqueRooftopSizes_;
+            sizes = uniqueSizes(1:2:end, :);
+        end
     end
 
     methods (Access = private)

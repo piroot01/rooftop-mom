@@ -10,7 +10,9 @@ sizeX = 1.5;
 sizeY = 0.5;
 origin = [0, 0, 0];
 order = 2;
-gridSize = [countX, countY];
+
+gridSizes{1} = [countX, countY];
+gridSizes{2} = [countX, countY];
 
 lambda = 5;
 k = 2 * pi / lambda;
@@ -20,12 +22,12 @@ memory_MB = memoryElementwise * 8 / 1e6;
 
 % 1. step: generate a mesh
 myRectMeshPrimitive1 = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
-myRectMeshPrimitive2 = mom.MeshRectPrimitive(countX, countY, sizeX * 1.3, sizeY * 0.3, []);
+myRectMeshPrimitive2 = mom.MeshRectPrimitive(countX - 1, countY, 1, 1, []);
 myRectMesh1 = mom.MeshRect(myRectMeshPrimitive1, origin, 0, 0, 0);
 myRectMesh2 = mom.MeshRect(myRectMeshPrimitive2, origin + [0, 0, 1], 0, 0, 0);
 myMeshCluster = mom.Mesh2DCluster();
 myMeshCluster.loadMesh(myRectMesh1.getAsMesh());
-%myMeshCluster.loadMesh(myRectMesh2.getAsMesh());
+myMeshCluster.loadMesh(myRectMesh2.getAsMesh());
 
 % 2. step: create Quadrature
 quadrature = mom.Quadrature(order);
@@ -43,10 +45,10 @@ rooftops.generatePoints(quadrature);
 stratCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFuncs, rooftops, k);
 magStratContext = mom.ImpedanceMatrix.ComputeChunkedContext(memory_MB);
 magStrat = mom.ImpedanceMatrix.ComputeMagPartChunked(magStratContext);
-stratOptimiser = mom.ImpedanceMatrix.ComputeStrategyOptimiser(basisFuncs, gridSize);
+stratOptimiser = mom.ImpedanceMatrix.ComputeStrategyOptimiser(basisFuncs, rooftops.getUniqueUniqueRooftopSizes(), gridSizes);
 
 tic;
 
-stratOptimiser.getMaskAndInteractions()
+stratOptimiser.compute(stratCtx, gridSizes);
 
 toc;
