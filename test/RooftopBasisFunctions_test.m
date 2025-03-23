@@ -25,17 +25,16 @@ meshCluster = mom.Mesh2DCluster();
 meshCluster.loadMesh(myMesh1);
 meshCluster.loadMesh(myMesh2);
 
-%meshCluster.getFaces()
-
 % 2. step: create Quadrature
 quadrature = mom.Quadrature(order);
 
 % 3. step: create BasisFunctions
 basisFunctions = mom.BasisFunctions(meshCluster);
 
-basisFunctions.getFaces()
-%basisFunctions.getFacesReindexed()
+% 4. step: obtain all face indices for all basis functions
+basisFunctionsFaces = basisFunctions.getFaces();
+disp(basisFunctionsFaces);
 
-% 4. step: create RooftopBasisFunctions
-%rooftopBasisFunctions = mom.RooftopBasisFunctions(meshCluster, basisFunctions.getFaces());
-%rooftopBasisFunctions.generatePoints(quadrature);
+% 5. step: create a RooftopBasisFunctions instance
+rooftopBasisFunctions = mom.RooftopBasisFunctions(meshCluster, basisFunctionsFaces);
+rooftopBasisFunctions.generatePoints(quadrature);
