@@ -12,7 +12,7 @@ origin = [0, 0, 0];
 order = 2;
 
 gridSizes{1} = [countX, countY];
-%gridSizes{2} = [countX - 1, countY];
+gridSizes{2} = [countX - 1, countY];
 %gridSizes{3} = [countX - 1, countY];
 
 lambda = 5;
@@ -29,7 +29,7 @@ myRectMesh2 = mom.MeshRect(myRectMeshPrimitive2, origin + [0, 0, 1], 0, 0, 0);
 myRectMesh3 = mom.MeshRect(myRectMeshPrimitive2, origin + [0, 0, 2], 0, 0, 0);
 myMeshCluster = mom.Mesh2DCluster();
 myMeshCluster.loadMesh(myRectMesh1.getAsMesh());
-%myMeshCluster.loadMesh(myRectMesh2.getAsMesh());
+myMeshCluster.loadMesh(myRectMesh2.getAsMesh());
 %myMeshCluster.loadMesh(myRectMesh3.getAsMesh());
 
 % 2. step: create Quadrature
@@ -64,7 +64,7 @@ ZmOptimiser = chunkedOptimiser.compute(stratCtx, gridSizes);
 
 toc;
 
-disp(ZmOptimiser);
+%disp(ZmOptimiser);
 
 %Zm(11:22, 11)
 %ZmOptimiser(11:22, 11)

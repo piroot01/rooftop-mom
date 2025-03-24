@@ -110,6 +110,47 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
             [rooftopSizes, rooftopSizeIndices] = strategyContext.rooftopBasisFunctions.getUniqueRooftopSizes();
             singularities = zeros(size(singularityMask));
 
+            [rowCount, colCount, ~] = size(singularityMask);
+
+            rooftopSizeIndicesMatrix = repmat(rooftopSizeIndices, 1, colCount);
+
+            singularityValuesType1 = mom.ImpedanceMatrix.singularity.type1(rooftopSizes(:,1), rooftopSizes(:,2));
+            singularityValuesType2 = mom.ImpedanceMatrix.singularity.type2(rooftopSizes(:,1), rooftopSizes(:,2));
+
+            singularityValuesType1Matrix = singularityValuesType1(rooftopSizeIndicesMatrix)
+            singularityValuesType2Matrix = singularityValuesType2(rooftopSizeIndicesMatrix)
+
+            validIndices = (IDMask > 0);
+
+            combinedMask = bsxfun(@and, singularityMask, validIndices)
+
+            singularities = zeros(rowCount, colCount, strategyContext.constants.polaritiesCount);
+
+            samePolarities = [1, 4];
+            differentPolarities = [2, 3];
+
+            singularities(:, :, samePolarities) = combinedMask(:, :, samePolarities) .* repmat(singularityValuesType1Matrix, [1, 1, 2]);
+            singularities(:, :, differentPolarities) = combinedMask(:, :, differentPolarities) .* repmat(singularityValuesType2Matrix, [1, 1, 2]);
+
+            singularities = sum(singularities, 3)
+
+            singularities = zeros(size(singularityMask));
+
+            for n = 1:strategyContext.constants.polaritiesCount
+                singularityValues = obj.evalMagSingularities(rooftopSizes, n);
+
+                currentMask = singularityMask(:, :, n) & validIndices;
+
+                tempSingularities = zeros(rowCount, colCount);
+                tempSingularities(currentMask) = singularityValues(rooftopSizeIndicesMatrix(currentMask));
+
+                singularities(:, :, n) = tempSingularities;
+            end
+
+            singularities = sum(singularities, 3)
+
+            singularities = zeros(size(singularityMask));
+
             for n = 1:strategyContext.constants.polaritiesCount
                 singularitiesPolarity = singularities(:, :, n);
                 singularityValues = obj.evalMagSingularities(rooftopSizes, n);
@@ -125,7 +166,7 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
                 singularities(:, :, n) = singularitiesPolarity;
             end
 
-            singularities = sum(singularities, 3);
+            singularities = sum(singularities, 3)
         end
 
         function singularities = evalMagSingularities(~, xs, polarity)

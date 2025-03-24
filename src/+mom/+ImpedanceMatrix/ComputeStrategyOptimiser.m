@@ -48,11 +48,10 @@ classdef ComputeStrategyOptimiser < handle
 
         function matrix = applyMask(~, matrixUniqueValues, mask, interactions)
             interactionValues = matrixUniqueValues(interactions);
-            matrix = zeros(size(mask));
-            maskNonZero = (mask ~= 0);
-            maskZero = (mask == 0);
-            matrix(maskNonZero) = interactionValues(mask(maskNonZero));
-            matrix(maskZero) = matrixUniqueValues(maskZero) + matrix(maskZero);
+            matrix = zeros(size(mask), 'like', interactionValues);
+            nonZeroMask = (mask ~= 0);
+            matrix(nonZeroMask) = interactionValues(mask(nonZeroMask));
+            matrix(~nonZeroMask) = matrixUniqueValues(~nonZeroMask);
         end
     end
 
