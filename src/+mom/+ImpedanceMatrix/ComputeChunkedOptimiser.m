@@ -19,8 +19,6 @@ classdef ComputeChunkedOptimiser < handle
 
             [mask, interactions, chunks] = obj.generateMaskAndInteractionsAndChunks(strategyContext, masksCell, interactionsCell);
 
-            celldisp(chunks);
-
             ZUniqueValues = obj.computeStrategy_.compute(strategyContext, chunks);
 
             Z = computeStrategyOptimiser.applyMask(ZUniqueValues, mask, interactions);
@@ -34,16 +32,58 @@ classdef ComputeChunkedOptimiser < handle
             IDMask = obj.computeStrategy_.getIDMask(strategyContext);
             quadratureOrder = strategyContext.quadrature.getOrder();
 
+            basisFunctionCounts = cellfun(@(n) size(n, 2), basisFunctions);
+
+            maskMaxima = cellfun(@(m) max(m(:)), masksCell);
+            maskOffsets = [0, cumsum(maskMaxima(1:(end - 1)))];
+
+            chunkOffsets = [0, cumsum(basisFunctionCounts(1:(end - 1)))];
+
+            interactionCountPerCell = cellfun(@numel, interactionsCell);
+            interactionOffsets = [0, cumsum(interactionCountPerCell(1:(end - 1)))];
+
             mask = zeros(size(IDMask), 'uint32');
-            interactions = [interactionsCell{:}];
+            interactions = zeros(sum(interactionCountPerCell), 1);
+            chunksDiagonalSubmatrices = cell(1, IDCount);
 
             for n = 1:IDCount
-                basisFunctionCount = size(basisFunctions{n}, 2);
-                chunks = obj.computeChunkedContext_.generateChunksSpecificInteractions(quadratureOrder, interactionsCell{n}, basisFunctionCount);
-                mask(IDMask == n) = masksCell{n};
+                chunks = obj.computeChunkedContext_.generateChunksSpecificInteractions(quadratureOrder, interactionsCell{n}, basisFunctionCounts(n));
+
+                chunkOffset = chunkOffsets(n);
+                for k = 1:numel(chunks)
+                    chunks{k}.rowIndices = chunks{k}.rowIndices + chunkOffset;
+                    chunks{k}.columnIndices = chunks{k}.columnIndices + chunkOffset;
+                end
+                chunksDiagonalSubmatrices{n} = chunks;
+%{
+                dummyMatrix = zeros(basisFunctionCounts(n));
+                dummyMatrix(interactionsCell{n}) = 88;
+                disp(masksCell{n});
+                disp(dummyMatrix);
+%}
+                translatedInteractions = obj.translateLinearIndices(size(mask), [basisFunctionCounts(n), basisFunctionCounts(n)], interactionsCell{n}, chunkOffset, chunkOffset);
+
+                startIndex = interactionOffsets(n) + 1;
+                endIndex = interactionOffsets(n) + interactionCountPerCell(n);
+                interactions(startIndex:endIndex) = translatedInteractions;
+
+                mask(IDMask == n) = masksCell{n} + maskOffsets(n);
             end
 
-            mask
+            if IDCount > 1
+                chunksOffdiagonalSubmatrices = obj.computeChunkedContext_.generateChunksAllInteractions(quadratureOrder, basisFunctionCounts);
+            else
+                chunksOffdiagonalSubmatrices = {};
+            end
+
+            chunks = [[chunksDiagonalSubmatrices{:}], chunksOffdiagonalSubmatrices];
+        end
+
+        function indices = translateLinearIndices(~, maskSize, blockSize, blockIndices, rowStart, colStart)
+            [rows, cols] = ind2sub(blockSize, blockIndices);
+            rows = rows + rowStart;
+            cols = cols + colStart;
+            indices = uint32(sub2ind(maskSize, rows, cols));
         end
     end
 end

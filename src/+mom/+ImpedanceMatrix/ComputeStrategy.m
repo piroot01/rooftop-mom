@@ -10,7 +10,7 @@ classdef (Abstract) ComputeStrategy < handle
             polaritiesCount = strategyContext.constants.polaritiesCount;
 
             basisFunctionCount = strategyContext.basisFunctions.getCount();
-            basisFunctions = strategyContext.basisFunctions.getFaces();
+            basisFunctions = strategyContext.basisFunctions.getFaces()
 
             mask = (reshape(basisFunctions(p1, :).', basisFunctionCount, 1, polaritiesCount) == reshape(basisFunctions(p2, :).', 1, basisFunctionCount, polaritiesCount));
         end

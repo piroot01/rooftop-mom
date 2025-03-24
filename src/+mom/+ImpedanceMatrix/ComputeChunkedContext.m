@@ -1,26 +1,26 @@
 classdef ComputeChunkedContext < handle
     properties (Access = public)
-        memory_MB_;
+        memory_MB_ double;
 
         rowChunkIndices uint32;
         colChunkIndices uint32;
     end
 
     properties (Access = private, Constant)
-        bytesPerElement_ = 8;
-        bytesInMegabyte_ = 1e6;
+        bytesPerElement_ = double(8);
+        bytesInMegabyte_ = double(1e6);
     end
 
     methods
         function obj = ComputeChunkedContext(memory_MB)
-            obj.memory_MB_ = memory_MB;
+            obj.memory_MB_ = double(memory_MB);
 
             fprintf("Memory used: %lu MB\n", obj.memory_MB_);
         end
     end
 
     methods
-        function chunks = generateChunksAllInteractions(obj, quadratureOrder, basisFunctionCount)
+        function chunks = generateChunksAllInteractions(obj, quadratureOrder, basisFunctionCounts)
             elementCount = obj.memory_MB_ * obj.bytesInMegabyte_ / obj.bytesPerElement_;
             if elementCount < quadratureOrder^4
                 error('The given memory does not suffice!');
@@ -40,22 +40,46 @@ classdef ComputeChunkedContext < handle
             blockCountPerChunk = floor(double(elementCount) / elementCountPerBlock);
             [a, b] = getChunkShape(blockCountPerChunk);
 
-            chunkCountVert = ceil(basisFunctionCount / a);
-            chunkCountHorz = ceil(basisFunctionCount / b);
+            diagonalSubmatrixCount = numel(basisFunctionCounts);
+            diagonalSubmatrixOffsets = [0, cumsum(basisFunctionCounts(1:(end - 1)))];
 
-            chunks = cell(chunkCountVert * chunkCountHorz, 1);
+            [rowIndices, colIndices] = ndgrid(1:diagonalSubmatrixCount);
+            submatrixOffsets = [diagonalSubmatrixOffsets(rowIndices(:)); diagonalSubmatrixOffsets(colIndices(:))];
+            submatrixSizes = [basisFunctionCounts(rowIndices(:)); basisFunctionCounts(colIndices(:))];
 
+            if diagonalSubmatrixCount > 1
+                allSubmatrixIndices = 1:size(submatrixSizes, 2);
+                allSubmatrixIndicesCount = numel(allSubmatrixIndices);
+                skipDiagonalSubmatrixIndices = 1:(diagonalSubmatrixCount + 1):allSubmatrixIndicesCount;
+                submatrixIndices = setdiff(allSubmatrixIndices, skipDiagonalSubmatrixIndices);
+            else
+                submatrixIndices = 1;
+            end
+
+            chunks = cell(1);
             chunkIndex = 1;
-            for m = 1:chunkCountVert
-                for n = 1:chunkCountHorz
-                    rowStart = (m - 1) * a + 1;
-                    colStart = (n - 1) * b + 1;
-                    rowEnd = min(m * a, basisFunctionCount);
-                    colEnd = min(n * b, basisFunctionCount);
 
-                    % NOTE: this may consume a bit of memory
-                    chunk.rowIndices = rowStart:rowEnd;
-                    chunk.columnIndices = colStart:colEnd;
+            for m = submatrixIndices
+                submatrixSize = submatrixSizes(:, m);
+                submatrixOffset = submatrixOffsets(:, m);
+
+                rowChunkCount = ceil(submatrixSize(1) / a);
+                columnChunkCount = ceil(submatrixSize(2) / b);
+
+                [rowIndices, colIndices] = meshgrid(1:rowChunkCount, 1:columnChunkCount);
+                indices = [rowIndices(:), colIndices(:)].';
+
+                for n = indices
+                    p = n(1);
+                    q = n(2);
+
+                    rowStart = (p - 1) * a + 1;
+                    colStart = (q - 1) * b + 1;
+                    rowEnd = min(p * a, submatrixSize(1));
+                    colEnd = min(q * b, submatrixSize(2));
+
+                    chunk.rowIndices = (rowStart:rowEnd) + submatrixOffset(1);
+                    chunk.columnIndices = (colStart:colEnd) + submatrixOffset(2);
                     chunks{chunkIndex} = chunk;
                     chunkIndex = chunkIndex + 1;
                 end
@@ -70,7 +94,7 @@ classdef ComputeChunkedContext < handle
 
             elementCountPerBlock = quadratureOrder^4;
             blockCountPerChunk = floor(elementCount / elementCountPerBlock);
-            %interactionCount = numel(interactions);
+            % interactionCount = numel(interactions);
 
             sortedInteractions = sort(interactions).';
 

@@ -49,8 +49,10 @@ classdef ComputeStrategyOptimiser < handle
         function matrix = applyMask(~, matrixUniqueValues, mask, interactions)
             interactionValues = matrixUniqueValues(interactions);
             matrix = zeros(size(mask));
-            maskNonZeroIndices = (mask ~= 0);
-            matrix(maskNonZeroIndices) = interactionValues(mask(maskNonZeroIndices));
+            maskNonZero = (mask ~= 0);
+            maskZero = (mask == 0);
+            matrix(maskNonZero) = interactionValues(mask(maskNonZero));
+            matrix(maskZero) = matrixUniqueValues(maskZero) + matrix(maskZero);
         end
     end
 
@@ -73,18 +75,10 @@ classdef ComputeStrategyOptimiser < handle
                     maskXYShifted.', maskYY];
 
             function indices = transformIndices(maskSize, blockSize, blockIndices, rowStart, colStart)
-                blockRows = blockSize(1);
-                tmp = blockIndices - 1;
-                rows = mod(tmp, blockRows) + rowStart + 1;
-                cols = floor(tmp / blockRows) + colStart + 1;
-                indices = (cols - 1) * maskSize(1) + rows;
-
-                %{
                 [rows, cols] = ind2sub(blockSize, blockIndices);
                 rows = rows + rowStart;
                 cols = cols + colStart;
-                indices2 = uint32(sub2ind(maskSize, rows, cols))
-                %}
+                indices = uint32(sub2ind(maskSize, rows, cols));
             end
 
             interactionsXXCount = numel(interactionsXX);
