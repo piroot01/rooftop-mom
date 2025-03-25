@@ -4,16 +4,16 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 100;
+countX = 10;
 countY = 1;
-sizeX = 1;
-sizeY = 0.6;
+sizeX = 1.5;
+sizeY = 0.5;
 origin = [0, 0, 0];
 order = 2;
 
 gridSizes{1} = [countX, countY];
 gridSizes{2} = [countX - 1, countY];
-gridSizes{3} = [countX - 1, countY];
+gridSizes{3} = [countX - 2, countY];
 
 lambda = 5;
 k = 2 * pi / lambda;
@@ -23,7 +23,8 @@ memory_MB = memoryElementwise * 8 / 1e6;
 
 % 1. step: generate a mesh
 myRectMeshPrimitive1 = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
-myRectMeshPrimitive2 = mom.MeshRectPrimitive(countX - 1, countY, sizeX * 2, sizeY * 2, []);
+myRectMeshPrimitive2 = mom.MeshRectPrimitive(countX - 1, countY, sizeX * 2, sizeY / 3, []);
+myRectMeshPrimitive3 = mom.MeshRectPrimitive(countX - 2, countY, sizeX * 3, sizeY * 1.2, []);
 myRectMesh1 = mom.MeshRect(myRectMeshPrimitive1, origin, 0, 0, 0);
 myRectMesh2 = mom.MeshRect(myRectMeshPrimitive2, origin + [0, 0, 1], 0, 0, 0);
 myRectMesh3 = mom.MeshRect(myRectMeshPrimitive2, origin + [0, 0, -2], 0, 0, 0);

@@ -32,7 +32,7 @@ classdef ComputeStrategyOptimiser < handle
 
         function [mask, interactions] = getMaskAndInteractions(obj, facesX, facesY, gridSize, sameSize)
             if any(gridSize == 1)
-                [mask, interactions] = obj.generateToeplitzMask();
+                [mask, interactions] = obj.generateToeplitzMask(size(facesX, 2) + size(facesY, 2));
             else
                 [maskXY, interactionsXY] = obj.generateMaskXY(facesX, facesY, gridSize);
 
@@ -56,8 +56,7 @@ classdef ComputeStrategyOptimiser < handle
     end
 
     methods (Access = private)
-        function [mask, interactions] = generateToeplitzMask(obj)
-            basisFunctionCount = obj.basisFunctions_.getCount();
+        function [mask, interactions] = generateToeplitzMask(~, basisFunctionCount)
             mask = toeplitz(1:basisFunctionCount);
             interactions = (1:basisFunctionCount).';
         end

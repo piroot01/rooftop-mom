@@ -14,7 +14,7 @@ classdef ComputeChunkedOptimiser < handle
     methods
         % NOTE: does not work with multiple antennas yet
         function Z = compute(obj, strategyContext, gridSizes)
-            computeStrategyOptimiser = mom.ImpedanceMatrix.ComputeStrategyOptimiser(strategyContext.basisFunctions, strategyContext.rooftopBasisFunctions.getUniqueUniqueRooftopSizes(), gridSizes);
+            computeStrategyOptimiser = mom.ImpedanceMatrix.ComputeStrategyOptimiser(strategyContext.basisFunctions, strategyContext.rooftopBasisFunctions.getUniqueUniqueRooftopSizes(strategyContext.basisFunctions.getIDs()), gridSizes);
             [masksCell, interactionsCell] = computeStrategyOptimiser.getAllMasksAndInteractions();
 
             [mask, interactions, chunks] = obj.generateMaskAndInteractionsAndChunks(strategyContext, masksCell, interactionsCell);
