@@ -38,7 +38,7 @@ rooftops = mom.RooftopBasisFunctions(myMeshCluster, basisFuncs.getFaces());
 % 5. step: generate quadrature points and rooftop points
 rooftops.generatePoints(quadrature);
 
-% 5. step: create a strategy for mag part of Z
+% 6. step: create a strategy for mag part of Z
 stratCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFuncs, rooftops, k);
 magStratContext = mom.ImpedanceMatrix.ComputeChunkedContext(memory_MB);
 magStrat = mom.ImpedanceMatrix.ComputeMagPartChunked(magStratContext);

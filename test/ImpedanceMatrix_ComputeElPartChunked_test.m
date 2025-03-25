@@ -4,17 +4,17 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 2;
-countY = 2;
+countX = 1;
+countY = 10;
 sizeX = 1.5;
 sizeY = 0.5;
 origin = [0, 0, 0];
 order = 2;
 
-lambda = 6;
+lambda = 5;
 k = 2 * pi / lambda;
 
-memoryElementwise = 100000;
+memoryElementwise = 16;
 memory_MB = memoryElementwise * 8 / 1e6;
 
 % 1. step: generate a mesh
@@ -31,15 +31,24 @@ quadrature = mom.Quadrature(order);
 
 % 3. step: create BasisFunctions
 basisFuncs = mom.BasisFunctions(myMeshCluster);
-disp(basisFuncs.getFaces());
 
-% 4. step: generate quadrature points and rooftop points
-basisFuncs.generatePoints(quadrature);
+% 4. step: create RooftopBasisFunctions
+rooftops = mom.RooftopBasisFunctions(myMeshCluster, basisFuncs.getFaces());
 
-% 5. step: create a strategy for mag part of Z
-stratCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFuncs, k);
-elStratContext = mom.ImpedanceMatrix.ComputeChunkedContext(memory_MB, order, basisFuncs.getCount());
+% 5. step: generate quadrature points and rooftop points
+rooftops.generatePoints(quadrature);
+
+% 6. step: create a strategy for mag part of Z
+stratCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFuncs, rooftops, k);
+elStratContext = mom.ImpedanceMatrix.ComputeChunkedContext(memory_MB);
 elStrat = mom.ImpedanceMatrix.ComputeElPartChunked(elStratContext);
+
+tic;
+
 Ze = elStrat.compute(stratCtx);
 
+toc;
+
 disp(Ze);
+
+%disp(size(Ze));

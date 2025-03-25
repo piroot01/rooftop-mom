@@ -10,119 +10,116 @@ classdef ComputeElPartChunked < mom.ImpedanceMatrix.ComputeStrategy
     end
 
     methods
-        function Z = compute(obj, strategyContext)
+        function Z = compute(obj, strategyContext, varargin)
             k = strategyContext.constants.k;
             Z0 = strategyContext.constants.Z0;
+            polaritiesCount = strategyContext.constants.polaritiesCount;
 
-            chunkCount = obj.computeContext_.getChunkCount();
-            order2 = strategyContext.quadrature.getOrder()^2;
-            weights = strategyContext.quadrature.getWeights();
-            basisFuncCount = strategyContext.basisFunctions.getCount();
+            order = strategyContext.quadrature.getOrder();
+            basisFunctionCount = strategyContext.basisFunctions.getCount();
 
-            quadPoints = strategyContext.basisFunctions.getQuadPoints();
-            rooftopPointsDiv = strategyContext.basisFunctions.getRooftopPointsDiv();
+            if nargin == 3
+                chunks = varargin{1};
+            else
+                chunks = obj.computeContext_.generateChunksAllInteractions(order, basisFunctionCount);
+            end
 
-            [rowStarts, rowEnds, colStarts, colEnds] = obj.computeContext_.getSlices(order2);
-            [r, c] = obj.computeContext_.getSliceSizes();
+            chunkCount = numel(chunks);
+            blockSize = order^2;
+
+            quadratureWeights = strategyContext.quadrature.getWeights();
+            quadraturePoints = strategyContext.rooftopBasisFunctions.getQuadraturePoints();
+            rooftopDivPointsDot = obj.computeRooftopDivPointsDot(strategyContext);
+
+            slices = obj.computeContext_.generateSlicesFromChunks(chunks, blockSize);
 
             singularityMask = obj.getSingularityMask(strategyContext);
             IDMask = obj.getIDMask(strategyContext);
             jacobians = obj.getJacobians(strategyContext);
 
-            Z = zeros(basisFuncCount);
+            Z = zeros(basisFunctionCount, polaritiesCount);
             for n = 1:chunkCount
                 % for debugging
                 fprintf("Chunk ID=%d\n", n);
 
-                iSlice = rowStarts(n):rowEnds(n);
-                jSlice = colStarts(n):colEnds(n);
-                iChunk = obj.computeContext_.rowChunkIndices(1, n):obj.computeContext_.rowChunkIndices(2, n);
-                jChunk = obj.computeContext_.colChunkIndices(1, n):obj.computeContext_.colChunkIndices(2, n);
+                chunk = chunks{n};
+                slice = slices{n};
 
-                iQP = quadPoints(:, iSlice, :);
-                jQP = quadPoints(:, jSlice, :);
-                iRPDiv = rooftopPointsDiv(:, iChunk, :);
-                jRPDiv = rooftopPointsDiv(:, jChunk, :);
+                rowSlice = slice.rowIndicesStart:slice.rowIndicesEnd;
+                colSlice = slice.columnIndicesStart:slice.columnIndicesEnd;
 
-                singularityMaskChunk = singularityMask(iChunk, jChunk, :);
-                IDMaskChunk = IDMask(iChunk, jChunk);
+                chunkContext.chunkSize = [numel(chunk.rowIndices), numel(chunk.columnIndices)];
+                chunkContext.rowQuadraturePoints = quadraturePoints(:, rowSlice, :);
+                chunkContext.columnQuadraturePoints = quadraturePoints(:, colSlice, :);
+                chunkContext.rooftopDivPointsDot = rooftopDivPointsDot;
 
-                ZBlock = obj.computeZBlock(strategyContext, r(n), c(n), iQP, jQP, iRPDiv, jRPDiv, weights, order2, singularityMaskChunk, IDMaskChunk);
-                Z(iChunk, jChunk) = ZBlock;
+                chunkContext.singularityMaskChunk = singularityMask(chunk.rowIndices, chunk.columnIndices, :);
+
+                ZBlock = obj.computeZBlock(strategyContext, chunkContext, quadratureWeights, blockSize);
+                Z(chunk.rowIndices, chunk.columnIndices, 1:polaritiesCount) = ZBlock;
             end
 
+            Z = (Z + obj.computeElSingularities(strategyContext, singularityMask, IDMask)) .* rooftopDivPointsDot;
+
             Z = 1i * Z0 / (4 * pi * k) .* Z .* jacobians;
+
+            Z = sum(Z, 3);
         end
     end
 
     methods (Access = private)
-        function ZBlock = computeZBlock(obj, strategyContext, r, c, iQP, jQP, iRPDiv, jRPDiv, W4D, o2, SM, IDM)
+        function ZBlock = computeZBlock(~, strategyContext, chunkContext, quadratureWeights, blockSize)
             k = strategyContext.constants.k;
+            weights = repmat(quadratureWeights, chunkContext.chunkSize);
 
-            ZBlock4 = zeros(r, c, 4);
-            RPDiv = zeros(r, c, 4);
-            W = repmat(W4D, r, c);
+            p1 = strategyContext.constants.polarities(:, 1);
+            p2 = strategyContext.constants.polarities(:, 2);
 
-            for n = 1:strategyContext.constants.polaritiesCount
-                p1 = strategyContext.constants.polarities(n, 1);
-                p2 = strategyContext.constants.polarities(n, 2);
+            rowQuadraturePointsPolarity = chunkContext.rowQuadraturePoints(:, :, p1);
+            columnQuadraturePointsPolarity = chunkContext.columnQuadraturePoints(:, :, p2);
 
-                iQPp = iQP(:, :, p1);
-                jQPp = jQP(:, :, p2);
-                iRPDivp = iRPDiv(:, :, p1);
-                jRPDivp = jRPDiv(:, :, p2);
+            bigSingularityMask = repelem(chunkContext.singularityMaskChunk, blockSize, blockSize);
 
-                SMp = repelem(SM(:, :, n), o2, o2);
+            distanceMatrix = mom.DistanceMatrix.compute(rowQuadraturePointsPolarity, columnQuadraturePointsPolarity);
+            distanceMatrixZero = (distanceMatrix < eps);
 
-                D = mom.DistMatrix.getChunk(iQPp, jQPp);
-                D0 = (D < eps);
+            greensFunction = exp(-1i * k * distanceMatrix) ./ distanceMatrix;
+            greensFunction(bigSingularityMask) = greensFunction(bigSingularityMask) - 1 ./ distanceMatrix(bigSingularityMask);
 
-                RPDiv(:, :, n) = iRPDivp.' * jRPDivp;
+            integrands = greensFunction;
+            integrands(distanceMatrixZero) = (-1i) * k;
 
-                G = exp(-1i * k * D) ./ D;
-                G(SMp) = G(SMp) - 1 ./ D(SMp);
-
-                I = G;
-                I(D0) = -1i * k;
-
-                IW = I .* W;
-                Ir = reshape(IW, o2, r, o2, c);
-                SS = sum(sum(Ir, 1), 3);
-                ZBlock4(:, :, n) = reshape(SS, r, c);
-            end
-
-            ZBlock4 = (ZBlock4 + obj.computeElSingularities(strategyContext, SM, IDM)) .* RPDiv;
-            ZBlock = sum(ZBlock4, 3);
+            integrals = integrands .* weights;
+            integralsReshaped = reshape(integrals, blockSize, chunkContext.chunkSize(1), blockSize, chunkContext.chunkSize(2), strategyContext.constants.polaritiesCount);
+            integralsSummed = sum(sum(integralsReshaped, 1), 3);
+            ZBlock = reshape(integralsSummed, [chunkContext.chunkSize, strategyContext.constants.polaritiesCount]);
         end
 
-        function singularities = computeElSingularities(obj, strategyContext, SM, IDM)
-            IDCount = strategyContext.basisFunctions.getIDCount();
-            [RL, RLI] = strategyContext.basisFunctions.getRooftopLengths();
-            singularities = zeros(size(SM));
+        function singularities = computeElSingularities(~, strategyContext, singularityMask, IDMask)
+            [rooftopSizes, rooftopSizeIndices] = strategyContext.rooftopBasisFunctions.getUniqueRooftopSizes();
+            [~, colCount, ~] = size(singularityMask);
+            rooftopSizeIndicesMatrix = repmat(rooftopSizeIndices, 1, colCount);
 
-            ss = obj.evalElSingularities(RL);
+            singularityValuesType3 = mom.ImpedanceMatrix.singularity.type3(rooftopSizes(:,1), rooftopSizes(:,2));
 
-            for n = 1:strategyContext.constants.polaritiesCount
-                SP = singularities(:, :, n);
-                M2 = SM(:, :, n);
+            singularityValuesType3Matrix = singularityValuesType3(rooftopSizeIndicesMatrix);
 
-                for k = 1:IDCount
-                    M1 = (IDM == k);
-                    combinedMask = M1 & M2;
+            validIndices = (IDMask > 0);
+            combinedMask = bsxfun(@and, singularityMask, validIndices);
 
-                    if any(combinedMask(:))
-                        [idx, ~] = find(M2);
-                        ssi = RLI(:, idx);
-                        SP(combinedMask) = SP(combinedMask) + ss(ssi).';
-                    end
-                end
-
-                singularities(:, :, n) = SP;
-            end
+            singularities = combinedMask .* repmat(singularityValuesType3Matrix, [1, 1, strategyContext.constants.polaritiesCount]);
         end
 
-        function singularities = evalElSingularities(~, xs)
-            singularities = mom.ImpedanceMatrix.singularity.type3(xs(1, :), xs(2, :));
+        function result = computeRooftopDivPointsDot(~, strategyContext)
+            rooftopDivPoints = strategyContext.rooftopBasisFunctions.getRooftopDivPoints();
+
+            p1 = strategyContext.constants.polarities(:, 1);
+            p2 = strategyContext.constants.polarities(:, 2);
+
+            rowRooftopDivPointsPolarity = rooftopDivPoints(:, :, p1);
+            columnRooftopDivPointsPolarity = rooftopDivPoints(:, :, p2);
+
+            result = pagemtimes(permute(rowRooftopDivPointsPolarity, [2, 1, 3]), columnRooftopDivPointsPolarity);
         end
     end
 end

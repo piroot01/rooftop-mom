@@ -30,7 +30,7 @@ classdef RooftopBasisFunctions < handle
 
             obj.quadraturePoints_ = zeros(3, pointCount, 2);
             obj.rooftopPoints_ = zeros(3, pointCount, 2);
-            obj.rooftopDivPoints_ = zeros(1, pointCount, 2);
+            obj.rooftopDivPoints_ = zeros(1, basisFunctionCount, 2);
 
             meshVertices = obj.mesh_.getVertices();
             meshFaces = obj.mesh_.getFaces();
