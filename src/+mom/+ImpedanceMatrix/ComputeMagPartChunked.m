@@ -14,6 +14,8 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
             k = strategyContext.constants.k;
             Z0 = strategyContext.constants.Z0;
             polaritiesCount = strategyContext.constants.polaritiesCount;
+            p1 = strategyContext.constants.polarities(:, 1);
+            p2 = strategyContext.constants.polarities(:, 2);
 
             order = strategyContext.quadrature.getOrder();
             basisFunctionCount = strategyContext.basisFunctions.getCount();
@@ -50,19 +52,21 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
                 colSlice = slice.columnIndicesStart:slice.columnIndicesEnd;
 
                 chunkContext.chunkSize = [numel(chunk.rowIndices), numel(chunk.columnIndices)];
-                chunkContext.rowQuadraturePoints = quadraturePoints(:, rowSlice, :);
-                chunkContext.columnQuadraturePoints = quadraturePoints(:, colSlice, :);
                 chunkContext.rowRooftopPoints = rooftopPoints(:, rowSlice, :);
                 chunkContext.columnRooftopPoints = rooftopPoints(:, colSlice, :);
-
                 chunkContext.singularityMaskChunk = singularityMask(chunk.rowIndices, chunk.columnIndices, :);
 
-                [ZBlock, singularityMaskChunkNonZeroDot] = obj.computeZBlock(strategyContext, chunkContext, quadratureWeights, blockSize);
+                rowQuadraturePointsPolarity = quadraturePoints(:, rowSlice, p1);
+                columnQuadraturePointsPolarity = quadraturePoints(:, colSlice, p2);
+
+                chunkContext.integralKernel = mom.ImpedanceMatrix.IntegralKernel.compute(strategyContext, rowQuadraturePointsPolarity, columnQuadraturePointsPolarity);
+
+                [ZBlock, singularityMaskChunkNonZeroDot] = mom.ImpedanceMatrix.ComputeMagPartChunked.computeZBlock(strategyContext, chunkContext, quadratureWeights, blockSize);
                 Z(chunk.rowIndices, chunk.columnIndices, 1:polaritiesCount) = ZBlock;
                 singularityMaskNonZeroDot(chunk.rowIndices, chunk.columnIndices, :) = singularityMaskChunkNonZeroDot;
             end
 
-            Z = Z + obj.computeMagSingularities(strategyContext, singularityMaskNonZeroDot, IDMask);
+            Z = Z + mom.ImpedanceMatrix.ComputeMagPartChunked.computeMagSingularities(strategyContext, singularityMaskNonZeroDot, IDMask);
 
             Z = 1i * k * Z0 / (4 * pi) .* Z .* jacobians;
 
@@ -70,22 +74,20 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
         end
     end
 
-    methods (Access = private)
-        function [ZBlock, singularityMaskChunkNonZeroDot] = computeZBlock(~, strategyContext, chunkContext, quadratureWeights, blockSize)
+    methods (Access = public, Static)
+        function [ZBlock, singularityMaskChunkNonZeroDot] = computeZBlock(strategyContext, chunkContext, quadratureWeights, blockSize)
             k = strategyContext.constants.k;
             weights = repmat(quadratureWeights, chunkContext.chunkSize);
 
             p1 = strategyContext.constants.polarities(:, 1);
             p2 = strategyContext.constants.polarities(:, 2);
 
-            rowQuadraturePointsPolarity = chunkContext.rowQuadraturePoints(:, :, p1);
-            columnQuadraturePointsPolarity = chunkContext.columnQuadraturePoints(:, :, p2);
             rowRooftopPointsPolarity = chunkContext.rowRooftopPoints(:, :, p1);
             columnRooftopPointsPolarity = chunkContext.columnRooftopPoints(:, :, p2);
 
             bigSingularityMask = repelem(chunkContext.singularityMaskChunk, blockSize, blockSize);
 
-            distanceMatrix = mom.DistanceMatrix.compute(rowQuadraturePointsPolarity, columnQuadraturePointsPolarity);
+            distanceMatrix = chunkContext.integralKernel.distanceMatrix;
             distanceMatrixZero = (distanceMatrix < eps);
 
             rooftopPointsDot = pagemtimes(permute(rowRooftopPointsPolarity, [2, 1, 3]), columnRooftopPointsPolarity);
@@ -94,7 +96,7 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
             bigSingularityMaskNonZeroDot = ~rooftopPointsDotZero & bigSingularityMask;
             singularityMaskChunkNonZeroDot = bigSingularityMaskNonZeroDot(1:blockSize:end, 1:blockSize:end, :);
 
-            greensFunction = exp(-1i * k * distanceMatrix) ./ distanceMatrix;
+            greensFunction = chunkContext.integralKernel.greensFunction;
             greensFunction(bigSingularityMaskNonZeroDot) = greensFunction(bigSingularityMaskNonZeroDot) - 1 ./ distanceMatrix(bigSingularityMaskNonZeroDot);
 
             integrands = rooftopPointsDot .* greensFunction;
@@ -106,7 +108,7 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
             ZBlock = reshape(integralsSummed, [chunkContext.chunkSize, strategyContext.constants.polaritiesCount]);
         end
 
-        function singularities = computeMagSingularities(~, strategyContext, singularityMask, IDMask)
+        function singularities = computeMagSingularities(strategyContext, singularityMask, IDMask)
             [rooftopSizes, rooftopSizeIndices] = strategyContext.rooftopBasisFunctions.getUniqueRooftopSizes();
             [rowCount, colCount, ~] = size(singularityMask);
             rooftopSizeIndicesMatrix = repmat(rooftopSizeIndices, 1, colCount);

@@ -4,8 +4,8 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 1;
-countY = 5;
+countX = 3;
+countY = 3;
 sizeX = 1.5;
 sizeY = 0.5;
 origin = [0, 0, 0];
@@ -31,15 +31,15 @@ quadrature = mom.Quadrature(order);
 
 % 3. step: create BasisFunctions
 basisFuncs = mom.BasisFunctions(myMeshCluster);
-disp(basisFuncs.getFaces());
 
-% 4. step: generate quadrature points and rooftop points
-basisFuncs.generatePoints(quadrature);
+% 4. step: create RooftopBasisFunctions
+rooftops = mom.RooftopBasisFunctions(myMeshCluster, basisFuncs.getFaces());
 
-% 5. step: create a strategy for mag part of Z
+% 5. step: generate quadrature points and rooftop points
+rooftops.generatePoints(quadrature);
 
-stratCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFuncs, k);
-compStratCtx = mom.ImpedanceMatrix.ComputeChunkedContext(memory_MB, order, basisFuncs.getCount());
+stratCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFuncs, rooftops, k);
+compStratCtx = mom.ImpedanceMatrix.ComputeChunkedContext(memory_MB);
 
 tic;
 
@@ -58,6 +58,3 @@ combStrat = mom.ImpedanceMatrix.ComputeChunked(compStratCtx);
 Z = combStrat.compute(stratCtx);
 
 toc;
-
-[~, ~, idx] = unique(round(Z, 5), 'stable');
-ridx = reshape(idx, size(Z))
