@@ -37,7 +37,7 @@ classdef ComputeElPartChunked < mom.ImpedanceMatrix.ComputeStrategy
             IDMask = obj.getIDMask(strategyContext);
             jacobians = obj.getJacobians(strategyContext);
 
-            Z = zeros(basisFunctionCount, polaritiesCount);
+            Z = zeros(basisFunctionCount, basisFunctionCount, polaritiesCount);
             for n = 1:chunkCount
                 % for debugging
                 fprintf("Chunk ID=%d\n", n);
