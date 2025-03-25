@@ -38,6 +38,7 @@ classdef RooftopBasisFunctions < handle
             allRooftopSizes = zeros(2, basisFunctionCount);
 
             for n = 1:basisFunctionCount
+                fprintf("iteration: %d\n", n);
                 singleBasisFunctionIndices = basisFunctionIndices(:, n);
                 basisFunctionFaces = meshFaces(:, singleBasisFunctionIndices);
                 basisFunctionVertices = meshVertices(:, basisFunctionFaces(:));
@@ -77,9 +78,12 @@ classdef RooftopBasisFunctions < handle
             indices = obj.uniqueRooftopSizeIndices_;
         end
 
+        function sizes = getRooftopSizes(obj)
+            sizes = obj.uniqueRooftopSizes_(obj.uniqueRooftopSizeIndices_, :);
+        end
+
         function sizes = getUniqueUniqueRooftopSizes(obj)
-            uniqueSizes = obj.uniqueRooftopSizes_;
-            sizes = uniqueSizes(1:2:end, :);
+            uniqueSizes = obj.uniqueRooftopSizes_
         end
     end
 
@@ -97,6 +101,12 @@ classdef RooftopBasisFunctions < handle
 
             d1 = v1n - v1p;
             l1 = sqrt(sum(d1 .^ 2));
+
+            if l1 > 100
+                fprintf("weird mesh dimensions:");
+                disp(basisFunctionMesh);
+            end
+
             e = d1 / l1;
             g = v3p - v1p;
             d2 = g - d1;

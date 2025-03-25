@@ -1,65 +1,40 @@
 classdef Mesh2DCluster < handle
-    properties (Access = public)
-        meshes mom.Mesh2D = mom.Mesh2D.empty;
+    properties (Access = private)
+        meshes_ mom.Mesh2D = mom.Mesh2D.empty;
 
+        lastFaceIndex_ uint32 = 0;
         % starting and ending indexes of each mesh for fast face finding
-        meshRanges uint32 = [];
+        % meshRanges uint32 = [];
     end
 
     methods
         function mesh = getMesh(obj, index)
-            mesh = obj.meshes(index);
+            mesh = obj.meshes_(index);
         end
 
         function loadMesh(obj, mesh)
-            function index = getLastIndex(mesh)
-                index = uint32(size(mesh.vertices, 2));
-            end
+            meshVertexCount = size(mesh.vertices, 2);
 
-            function faceCount = getFaceCount(mesh)
-                faceCount = uint32(size(mesh.faces, 2));
-            end
-
-            currFacecount = getFaceCount(mesh);
-            if isempty(obj.meshes)
-                prevMeshLastIndex = 0;
-                obj.meshRanges = uint32([1, currFacecount]);
-            else
-                prevMeshLastIndex = getLastIndex(obj.meshes(end));
-                prevFaceSum = obj.meshRanges(end, 2);
-                obj.meshRanges = [obj.meshRanges; prevFaceSum + 1, prevFaceSum + currFacecount];
-            end
-
-            mesh.faces = mesh.faces + prevMeshLastIndex;
-            obj.meshes = [obj.meshes, mesh];
+            mesh.faces = mesh.faces + obj.lastFaceIndex_;
+            obj.meshes_ = [obj.meshes_, mesh];
+            obj.lastFaceIndex_ = obj.lastFaceIndex_ + meshVertexCount;
         end
 
         function vertices = getVertices(obj)
-            meshCount = obj.getMeshCount();
-            verticesCells = cell(1, meshCount);
-
-            for n = 1:meshCount
-                verticesCells{n} = obj.meshes(n).getVertices();
-            end
-
-            vertices = [verticesCells{:}];
+            verticesCell = arrayfun(@(m) m.getVertices(), obj.meshes_, 'UniformOutput', false);
+            vertices = [verticesCell{:}];
         end
 
         function faces = getFaces(obj)
-            meshCount = obj.getMeshCount();
-            faceCells = cell(1, meshCount);
-
-            for n = 1:meshCount
-                faceCells{n} = obj.meshes(n).getFaces();
-            end
-
+            faceCells = arrayfun(@(m) m.getFaces(), obj.meshes_, 'UniformOutput', false);
             faces = [faceCells{:}];
         end
 
         function count = getMeshCount(obj)
-            count = numel(obj.meshes);
+            count = numel(obj.meshes_);
         end
 
+        %{
         function ID = getMeshID(obj, face)
             ID = find(face >= obj.meshRanges(:, 1) & face <= obj.meshRanges(:, 2), 1, 'first');
 
@@ -67,9 +42,10 @@ classdef Mesh2DCluster < handle
                 error('The face was not found!');
             end
         end
+        %}
 
         function [a, b] = getMeshSize(obj, ID)
-            mesh = obj.meshes(ID);
+            mesh = obj.meshes_(ID);
             sampleFace = mesh.faces(:, 1);
             vertices = obj.getVertices();
 

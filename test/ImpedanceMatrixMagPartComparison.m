@@ -4,16 +4,16 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 3;
-countY = 3;
-sizeX = 1.5;
-sizeY = 0.5;
+countX = 100;
+countY = 1;
+sizeX = 1;
+sizeY = 0.6;
 origin = [0, 0, 0];
 order = 2;
 
 gridSizes{1} = [countX, countY];
 gridSizes{2} = [countX - 1, countY];
-%gridSizes{3} = [countX - 1, countY];
+gridSizes{3} = [countX - 1, countY];
 
 lambda = 5;
 k = 2 * pi / lambda;
@@ -23,14 +23,14 @@ memory_MB = memoryElementwise * 8 / 1e6;
 
 % 1. step: generate a mesh
 myRectMeshPrimitive1 = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
-myRectMeshPrimitive2 = mom.MeshRectPrimitive(countX - 1, countY, sizeX * 1.3, sizeY * 0.3, []);
+myRectMeshPrimitive2 = mom.MeshRectPrimitive(countX - 1, countY, sizeX * 2, sizeY * 2, []);
 myRectMesh1 = mom.MeshRect(myRectMeshPrimitive1, origin, 0, 0, 0);
 myRectMesh2 = mom.MeshRect(myRectMeshPrimitive2, origin + [0, 0, 1], 0, 0, 0);
-myRectMesh3 = mom.MeshRect(myRectMeshPrimitive2, origin + [0, 0, 2], 0, 0, 0);
+myRectMesh3 = mom.MeshRect(myRectMeshPrimitive2, origin + [0, 0, -2], 0, 0, 0);
 myMeshCluster = mom.Mesh2DCluster();
 myMeshCluster.loadMesh(myRectMesh1.getAsMesh());
 myMeshCluster.loadMesh(myRectMesh2.getAsMesh());
-%myMeshCluster.loadMesh(myRectMesh3.getAsMesh());
+myMeshCluster.loadMesh(myRectMesh3.getAsMesh());
 
 % 2. step: create Quadrature
 quadrature = mom.Quadrature(order);
@@ -64,7 +64,7 @@ ZmOptimiser = chunkedOptimiser.compute(stratCtx, gridSizes);
 
 toc;
 
-%disp(ZmOptimiser);
+disp(size(ZmOptimiser));
 
 %Zm(11:22, 11)
 %ZmOptimiser(11:22, 11)

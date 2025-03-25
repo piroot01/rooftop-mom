@@ -4,8 +4,8 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 2;
-countY = 2;
+countX = 100;
+countY = 1;
 sizeX = 1.5;
 sizeY = 0.5;
 origin = [0, 0, 0];
@@ -19,12 +19,12 @@ memory_MB = memoryElementwise * 8 / 1e6;
 
 % 1. step: generate a mesh
 myRectMeshPrimitive1 = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
-myRectMeshPrimitive2 = mom.MeshRectPrimitive(countX, countY, sizeX * 1.3, sizeY * 0.3, []);
+myRectMeshPrimitive2 = mom.MeshRectPrimitive(countX, countY, sizeX * 1.23, sizeY, []);
 myRectMesh1 = mom.MeshRect(myRectMeshPrimitive1, origin, 0, 0, 0);
 myRectMesh2 = mom.MeshRect(myRectMeshPrimitive2, origin + [0, 0, 1], 0, 0, 0);
 myMeshCluster = mom.Mesh2DCluster();
 myMeshCluster.loadMesh(myRectMesh1.getAsMesh());
-myMeshCluster.loadMesh(myRectMesh2.getAsMesh());
+%myMeshCluster.loadMesh(myRectMesh2.getAsMesh());
 
 % 2. step: create Quadrature
 quadrature = mom.Quadrature(order);
@@ -49,6 +49,6 @@ Zm = magStrat.compute(stratCtx);
 
 toc;
 
-disp(Zm);
+%disp(Zm);
 
-%disp(size(Zm));
+disp(size(Zm));
