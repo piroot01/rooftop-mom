@@ -4,21 +4,21 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 10;
-countY = 1;
+countX = 1;
+countY = 100;
 sizeX = 1.5;
 sizeY = 0.5;
 origin = [0, 0, 0];
-order = 2;
+order = 5;
 
 gridSizes{1} = [countX, countY];
-gridSizes{2} = [countX - 1, countY];
-gridSizes{3} = [countX - 2, countY];
+%gridSizes{2} = [countX - 1, countY];
+%gridSizes{3} = [countX - 2, countY];
 
 lambda = 5;
 k = 2 * pi / lambda;
 
-memoryElementwise = 10000;
+memoryElementwise = 1000000;
 memory_MB = memoryElementwise * 8 / 1e6;
 
 % 1. step: generate a mesh
@@ -30,8 +30,8 @@ myRectMesh2 = mom.MeshRect(myRectMeshPrimitive2, origin + [0, 0, 1], 0, 0, 0);
 myRectMesh3 = mom.MeshRect(myRectMeshPrimitive2, origin + [0, 0, -2], 0, 0, 0);
 myMeshCluster = mom.Mesh2DCluster();
 myMeshCluster.loadMesh(myRectMesh1.getAsMesh());
-myMeshCluster.loadMesh(myRectMesh2.getAsMesh());
-myMeshCluster.loadMesh(myRectMesh3.getAsMesh());
+%myMeshCluster.loadMesh(myRectMesh2.getAsMesh());
+%myMeshCluster.loadMesh(myRectMesh3.getAsMesh());
 
 % 2. step: create Quadrature
 quadrature = mom.Quadrature(order);
@@ -50,7 +50,7 @@ stratCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFuncs, rooftops,
 magStratContext = mom.ImpedanceMatrix.ComputeChunkedContext(memory_MB);
 
 % 7. step: create a strategy and optimiser
-magStrat = mom.ImpedanceMatrix.ComputeMagPartChunked(magStratContext);
+magStrat = mom.ImpedanceMatrix.ComputeChunked(magStratContext);
 chunkedOptimiser = mom.ImpedanceMatrix.ComputeChunkedOptimiser(magStrat, magStratContext);
 
 %tic;
