@@ -41,7 +41,7 @@ classdef BasisFunctions < handle
         function faces = getFaces(obj)
             if obj.isMesh2DCluster_
                 faces = obj.getFacesAsCell();
-                offsets = cumsum([0, cellfun(@(x) max(x(:)), faces)]);
+                offsets = cumsum([0, cellfun(@(x) max([x(:); 0]), faces)]);
                 faces = cellfun(@(x, offset) x + offset, faces, num2cell(offsets(1:(end - 1))), 'UniformOutput', false);
 
                 faces = [faces{:}];
@@ -143,21 +143,6 @@ classdef BasisFunctions < handle
 
                 facesX = faces(adjacentIdx, :);
                 facesY = faces(~adjacentIdx, :);
-
-                %{
-                % resort the facesY so they has the same mapping scheme as facesX
-                gap = facesY(1, 2) - facesY(1, 1);
-                facesYCount = size(facesY, 1);
-
-                if mod(facesYCount, gap) == 0
-                    groupCount = facesYCount / gap;
-                    idx = reshape(1:facesYCount, gap, groupCount).';
-                    newOrder = idx(:);
-                else
-                    newOrder = cell2mat(arrayfun(@(r) r:gap:facesYCount, 'UniformOutput', false));
-                end
-                facesY = facesY(newOrder, :);
-                %}
             end
 
             [facesX, facesY] = getDoubleFaces(generateEdges(mesh.getFaces()));

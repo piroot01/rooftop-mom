@@ -12,8 +12,8 @@ origin = [0, 0, 0];
 order = 5;
 
 gridSizes{1} = [countX, countY];
-%gridSizes{2} = [countX - 1, countY];
-%gridSizes{3} = [countX - 2, countY];
+gridSizes{2} = [countX, countY - 1];
+%gridSizes{3} = [countX, countY - 2];
 
 lambda = 5;
 k = 2 * pi / lambda;
@@ -23,14 +23,17 @@ memory_MB = memoryElementwise * 8 / 1e6;
 
 % 1. step: generate a mesh
 myRectMeshPrimitive1 = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
-myRectMeshPrimitive2 = mom.MeshRectPrimitive(countX - 1, countY, sizeX * 2, sizeY / 3, []);
-myRectMeshPrimitive3 = mom.MeshRectPrimitive(countX - 2, countY, sizeX * 3, sizeY * 1.2, []);
+myRectMeshPrimitive2 = mom.MeshRectPrimitive(countX, countY - 1, sizeX * 2, sizeY / 3, []);
+myRectMeshPrimitive3 = mom.MeshRectPrimitive(countX, countY - 2, sizeX * 3, sizeY * 1.2, []);
 myRectMesh1 = mom.MeshRect(myRectMeshPrimitive1, origin, 0, 0, 0);
 myRectMesh2 = mom.MeshRect(myRectMeshPrimitive2, origin + [0, 0, 1], 0, 0, 0);
+
+mesh = myRectMesh2.getAsMesh();
+
 myRectMesh3 = mom.MeshRect(myRectMeshPrimitive2, origin + [0, 0, -2], 0, 0, 0);
 myMeshCluster = mom.Mesh2DCluster();
 myMeshCluster.loadMesh(myRectMesh1.getAsMesh());
-%myMeshCluster.loadMesh(myRectMesh2.getAsMesh());
+myMeshCluster.loadMesh(myRectMesh2.getAsMesh());
 %myMeshCluster.loadMesh(myRectMesh3.getAsMesh());
 
 % 2. step: create Quadrature
@@ -53,11 +56,11 @@ magStratContext = mom.ImpedanceMatrix.ComputeChunkedContext(memory_MB);
 magStrat = mom.ImpedanceMatrix.ComputeChunked(magStratContext);
 chunkedOptimiser = mom.ImpedanceMatrix.ComputeChunkedOptimiser(magStrat, magStratContext);
 
-%tic;
+tic;
 
-%Zm = magStrat.compute(stratCtx);
+Zm = magStrat.compute(stratCtx);
 
-%toc;
+toc;
 
 tic;
 

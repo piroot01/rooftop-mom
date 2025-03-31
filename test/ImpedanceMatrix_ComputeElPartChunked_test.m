@@ -4,17 +4,17 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 1;
-countY = 10;
-sizeX = 1.5;
-sizeY = 0.5;
+countX = 3;
+countY = 3;
+sizeX = 1;
+sizeY = 1;
 origin = [0, 0, 0];
 order = 2;
 
 lambda = 5;
 k = 2 * pi / lambda;
 
-memoryElementwise = 16;
+memoryElementwise = 1000000;
 memory_MB = memoryElementwise * 8 / 1e6;
 
 % 1. step: generate a mesh
@@ -49,6 +49,9 @@ Ze = elStrat.compute(stratCtx);
 
 toc;
 
-disp(Ze);
+%disp(Ze);
 
 %disp(size(Ze));
+
+[~, ~, idx] = unique(round(Ze(7:end, 1:6), 5), 'stable');
+reshape(idx, [6, 6])
