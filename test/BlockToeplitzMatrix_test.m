@@ -82,7 +82,7 @@ end
 
 function h1 = compute_h1(k, m, n, alpha, beta, quadrature, rooftops, weights, gridSize)
     if (beta == 'x' && m(1) == gridSize(1)) || (beta == 'y' && m(2) == gridSize(2))
-        h1 = 0;
+        h1 = nan;
     else
         quadraturePointsAlphaPlus = getQuadraturePoints(quadrature, n);
         quadraturePoints0 = getQuadraturePoints(quadrature, [1, 1]);
@@ -113,7 +113,7 @@ end
 
 function h2 = compute_h2(k, m, n, alpha, beta, quadrature, rooftops, weights)
     if (beta == 'x' && m(1) == 1) || (beta == 'y' && m(2) == 1)
-        h2 = 0;
+        h2 = nan;
     else
         %fprintf("[m, n, alpha, beta] = [%s, %s, %s, %s]\n", mat2str(m), mat2str(n), alpha, beta);
         quadraturePointsAlphaPlus = getQuadraturePoints(quadrature, n);
@@ -171,13 +171,18 @@ for my = 1:3
     end
 end
 
+G1
+G2
+
 %Z0 = 4 * pi * 29.9792458;
 
 %G1 = (1 / (4 * pi)) * 1i * k * Z0 * G1
 %G2 = (1 / (4 * pi)) * 1i * k * Z0 * G2
 
 %G1(1, 2, :, :)
-G2(2, 2, :, :)
+x = G2(1, 2, :, :)
+
+isnan(x(1, 1))
 
 n = [2, 1];
 H1 = zeros(2);
@@ -185,8 +190,8 @@ for a = 1:2
     for b = 1:2
         alpha = directions(a);
         beta = directions(b);
-        H1(a, b) = compute_h1(k, [3, 2], n, alpha, beta, quadrature, rooftops, quadratureWeights, gridSize);
-        H2(a, b) = compute_h2(k, [3, 2], n, alpha, beta, quadrature, rooftops, quadratureWeights);
+        H1(a, b) = compute_h1(k, [2, 2], n, alpha, beta, quadrature, rooftops, quadratureWeights, gridSize);
+        H2(a, b) = compute_h2(k, [2, 2], n, alpha, beta, quadrature, rooftops, quadratureWeights);
     end
 end
 
