@@ -4,8 +4,8 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 2;
-countY = 2;
+countX = 3;
+countY = 3;
 sizeX = 1;
 sizeY = 1;
 origin = [0, 0, 0];
@@ -61,35 +61,12 @@ function points = getQuadraturePoints(quadrature, m)
     points = points + [(m - [1, 1]).'; 0];
 end
 
-function points = getQuadraturePointsShifted(quadrature, m, alpha, polarity)
-    if alpha == 'x'
-        if polarity == 'p'
-            points = getQuadraturePoints(quadrature, m);
-        else
-            m = m + [1, 0];
-            points = getQuadraturePoints(quadrature, m);
-        end
-    else
-        if polarity == 'p'
-            points = getQuadraturePoints(quadrature, m);
-        else
-            m = m + [0, 1];
-            points = getQuadraturePoints(quadrature, m);
-        end
-    end
-end
-
 % obtain the index of the first basisFunction in the y direction
 facesX = basisFuncs.getFacesXAsCell();
 basisFuncsXCount = numel(facesX{:}) / 2;
 basisFunctionsYStartingIndex = basisFuncsXCount;
 
-% get us the relative shift vector between two indices m = [mx, my]
-function rShift = indexToShift(origin, index)
-    rShift = [index - origin, 0];
-end
-
-function greensFunction = computeGreensFunction(k, m, n, quadraturePoints0, quadraturePointsShifted)
+function greensFunction = computeGreensFunction(k, quadraturePoints0, quadraturePointsShifted)
     distanceMatrix = mom.DistanceMatrix.getChunk(quadraturePoints0, quadraturePointsShifted);
     distanceMatrixZero = (distanceMatrix < eps);
     greensFunction = exp(-1i * k * distanceMatrix) ./ distanceMatrix;
@@ -103,18 +80,20 @@ function result = compute_hSemi(greensFunction, rooftopPointsAlpha, rooftopPoint
     result = sum(integral, 'all');
 end
 
-function h1 = compute_h1(k, m, alpha, beta, quadrature, rooftops, weights, gridSize)
+function h1 = compute_h1(k, m, n, alpha, beta, quadrature, rooftops, weights, gridSize)
     if (beta == 'x' && m(1) == gridSize(1)) || (beta == 'y' && m(2) == gridSize(2))
         h1 = 0;
     else
-        quadraturePointsAlphaPlus = getQuadraturePoints(quadrature, [1, 1]);
-        rooftopPointsAlphaPlus = rooftops.getWedgePoints(quadraturePointsAlphaPlus, alpha, 'p');
-        rooftopPointsAlphaMinus = rooftops.getWedgePoints(quadraturePointsAlphaPlus, alpha, 'm');
+        quadraturePointsAlphaPlus = getQuadraturePoints(quadrature, n);
+        quadraturePoints0 = getQuadraturePoints(quadrature, [1, 1]);
+        rooftopPointsAlphaPlus = rooftops.getWedgePoints(quadraturePoints0, alpha, 'p');
+        rooftopPointsAlphaMinus = rooftops.getWedgePoints(quadraturePoints0, alpha, 'm');
 
+        %fprintf("[m, n, alpha, beta] = [%s, %s, %s, %s]\n", mat2str(m), mat2str(n), alpha, beta);
         quadraturePointsBetaPlus = getQuadraturePoints(quadrature, m);
-        rooftopPointsBetaPlus = rooftops.getWedgePoints(quadraturePointsAlphaPlus, beta, 'p');
+        rooftopPointsBetaPlus = rooftops.getWedgePoints(quadraturePoints0, beta, 'p');
 
-        greensFunctionPlus = computeGreensFunction(k, m, [1, 1], quadraturePointsAlphaPlus, quadraturePointsBetaPlus);
+        greensFunctionPlus = computeGreensFunction(k, quadraturePointsAlphaPlus, quadraturePointsBetaPlus);
 
         if alpha == 'x'
             quadraturePointsAlphaPlus = quadraturePointsAlphaPlus + [1, 0, 0].';
@@ -122,7 +101,8 @@ function h1 = compute_h1(k, m, alpha, beta, quadrature, rooftops, weights, gridS
             quadraturePointsAlphaPlus = quadraturePointsAlphaPlus + [0, 1, 0].';
         end
 
-        greensFunctionMinus = computeGreensFunction(k, m, [1, 1], quadraturePointsAlphaPlus, quadraturePointsBetaPlus);
+        greensFunctionMinus = computeGreensFunction(k, quadraturePointsAlphaPlus, quadraturePointsBetaPlus);
+
 
         h1Plus = compute_hSemi(greensFunctionPlus, rooftopPointsAlphaPlus, rooftopPointsBetaPlus, weights);
         h1Minus = compute_hSemi(greensFunctionMinus, rooftopPointsAlphaMinus, rooftopPointsBetaPlus, weights);
@@ -131,18 +111,20 @@ function h1 = compute_h1(k, m, alpha, beta, quadrature, rooftops, weights, gridS
     end
 end
 
-function h2 = compute_h2(k, m, alpha, beta, quadrature, rooftops, weights)
+function h2 = compute_h2(k, m, n, alpha, beta, quadrature, rooftops, weights)
     if (beta == 'x' && m(1) == 1) || (beta == 'y' && m(2) == 1)
         h2 = 0;
     else
-        quadraturePointsAlphaPlus = getQuadraturePoints(quadrature, [1, 1]);
-        rooftopPointsAlphaPlus = rooftops.getWedgePoints(quadraturePointsAlphaPlus, alpha, 'p');
-        rooftopPointsAlphaMinus = rooftops.getWedgePoints(quadraturePointsAlphaPlus, alpha, 'm');
+        %fprintf("[m, n, alpha, beta] = [%s, %s, %s, %s]\n", mat2str(m), mat2str(n), alpha, beta);
+        quadraturePointsAlphaPlus = getQuadraturePoints(quadrature, n);
+        quadraturePoints0 = getQuadraturePoints(quadrature, [1, 1]);
+        rooftopPointsAlphaPlus = rooftops.getWedgePoints(quadraturePoints0, alpha, 'p');
+        rooftopPointsAlphaMinus = rooftops.getWedgePoints(quadraturePoints0, alpha, 'm');
 
         quadraturePointsBetaMinus = getQuadraturePoints(quadrature, m);
-        rooftopPointsBetaMinus = rooftops.getWedgePoints(quadraturePointsAlphaPlus, beta, 'm');
+        rooftopPointsBetaMinus = rooftops.getWedgePoints(quadraturePoints0, beta, 'm');
 
-        greensFunctionPlus = computeGreensFunction(k, m, [1, 1], quadraturePointsAlphaPlus, quadraturePointsBetaMinus);
+        greensFunctionPlus = computeGreensFunction(k, quadraturePointsAlphaPlus, quadraturePointsBetaMinus);
 
         if alpha == 'x'
             quadraturePointsAlphaPlus = quadraturePointsAlphaPlus + [1, 0, 0].';
@@ -150,7 +132,7 @@ function h2 = compute_h2(k, m, alpha, beta, quadrature, rooftops, weights)
             quadraturePointsAlphaPlus = quadraturePointsAlphaPlus + [0, 1, 0].';
         end
 
-        greensFunctionMinus = computeGreensFunction(k, m, [1, 1], quadraturePointsAlphaPlus, quadraturePointsBetaMinus);
+        greensFunctionMinus = computeGreensFunction(k, quadraturePointsAlphaPlus, quadraturePointsBetaMinus);
 
         h2Plus = compute_hSemi(greensFunctionPlus, rooftopPointsAlphaPlus, rooftopPointsBetaMinus, weights);
         h2Minus = compute_hSemi(greensFunctionMinus, rooftopPointsAlphaMinus, rooftopPointsBetaMinus, weights);
@@ -162,15 +144,16 @@ end
 %h1 = compute_h1(k, [1, 2], 'x', 'x', quadrature, rooftops, quadratureWeights, [2, 2]);
 %h2 = compute_h2(k, [2, 2], 'x', 'x', quadrature, rooftops, quadratureWeights);
 
-gridSize = [2, 2];
+gridSize = [3, 3];
 
 directions = ['x', 'y'];
 
-G1 = zeros(2, 2, 2, 2);
-G2 = zeros(2, 2, 2, 2);
+G1 = zeros(3, 3, 2, 2);
+G2 = zeros(3, 3, 2, 2);
 
-for my = 1:2
-    for mx = 1:2
+n = [1, 1];
+for my = 1:3
+    for mx = 1:3
         m = [mx, my];
         H1 = zeros(2);
         H2 = zeros(2);
@@ -178,8 +161,8 @@ for my = 1:2
             for b = 1:2
                 alpha = directions(a);
                 beta = directions(b);
-                H1(a, b) = compute_h1(k, m, alpha, beta, quadrature, rooftops, quadratureWeights, gridSize);
-                H2(a, b) = compute_h2(k, m, alpha, beta, quadrature, rooftops, quadratureWeights);
+                H1(a, b) = compute_h1(k, m, n, alpha, beta, quadrature, rooftops, quadratureWeights, gridSize);
+                H2(a, b) = compute_h2(k, m, n, alpha, beta, quadrature, rooftops, quadratureWeights);
             end
         end
 
@@ -188,14 +171,31 @@ for my = 1:2
     end
 end
 
-Z0 = 4 * pi * 29.9792458;
+%Z0 = 4 * pi * 29.9792458;
 
-G1 = (1 / (4 * pi)) * 1i * k * Z0 * G1;
-G2 = (1 / (4 * pi)) * 1i * k * Z0 * G2;
+%G1 = (1 / (4 * pi)) * 1i * k * Z0 * G1
+%G2 = (1 / (4 * pi)) * 1i * k * Z0 * G2
 
-G1(1, 1, :, 1) + G2(2, 1, :, 1)
-G1(1, 1, :, 2) + G2(1, 2, :, 2)
-G1(1, 2, :, 1) + G2(2, 2, :, 1)
-G1(2, 1, :, 2) + G2(2, 2, :, 2)
+%G1(1, 2, :, :)
+G2(2, 2, :, :)
+
+n = [2, 1];
+H1 = zeros(2);
+for a = 1:2
+    for b = 1:2
+        alpha = directions(a);
+        beta = directions(b);
+        H1(a, b) = compute_h1(k, [3, 2], n, alpha, beta, quadrature, rooftops, quadratureWeights, gridSize);
+        H2(a, b) = compute_h2(k, [3, 2], n, alpha, beta, quadrature, rooftops, quadratureWeights);
+    end
+end
+
+%H1
+H2
+
+%G1(1, 1, :, 1) + G2(2, 1, :, 1)
+%G1(1, 1, :, 2) + G2(1, 2, :, 2)
+%G1(1, 2, :, 1) + G2(2, 2, :, 1)
+%G1(2, 1, :, 2) + G2(2, 2, :, 2)
 
 %disp((1 / (4 * pi)) * 1i * k * Z0 * (h1 + h2));
