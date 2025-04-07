@@ -4,10 +4,10 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 1;
-countY = 100;
-sizeX = 1;
-sizeY = 1;
+countX = 3;
+countY = 3;
+sizeX = 1.5;
+sizeY = 0.4;
 origin = [0, 0, 0];
 order = 5;
 
@@ -50,9 +50,13 @@ Ze = elStrat.compute(stratCtx);
 
 toc;
 
+disp(Zm - Ze);
+
 tic;
 
 combStrat = mom.ImpedanceMatrix.ComputeChunked(compStratCtx);
 Z = combStrat.compute(stratCtx);
 
 toc;
+
+disp(Z);

@@ -36,11 +36,10 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
             slices = obj.computeContext_.generateSlicesFromChunks(chunks, blockSize);
 
             singularityMask = obj.getSingularityMask(strategyContext);
-            singularityMaskNonZeroDot = false(size(singularityMask));
             IDMask = obj.getIDMask(strategyContext);
             jacobians = obj.getJacobians(strategyContext);
 
-            Z = zeros(basisFunctionCount, basisFunctionCount, polaritiesCount);
+            Z = zeros(basisFunctionCount, basisFunctionCount);
             for n = 1:chunkCount
                 % for debugging
                 fprintf("Chunk ID=%d\n", n);
@@ -62,15 +61,11 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
                 chunkContext.integralKernel = mom.ImpedanceMatrix.IntegralKernel.compute(strategyContext, rowQuadraturePointsPolarity, columnQuadraturePointsPolarity);
 
                 [ZBlock, singularityMaskChunkNonZeroDot] = mom.ImpedanceMatrix.ComputeMagPartChunked.computeZBlock(strategyContext, chunkContext, quadratureWeights, blockSize);
-                Z(chunk.rowIndices, chunk.columnIndices, 1:polaritiesCount) = ZBlock;
-                singularityMaskNonZeroDot(chunk.rowIndices, chunk.columnIndices, :) = singularityMaskChunkNonZeroDot;
+
+                Z(chunk.rowIndices, chunk.columnIndices) = ZBlock + mom.ImpedanceMatrix.ComputeMagPartChunked.computeMagSingularities(strategyContext, singularityMaskChunkNonZeroDot, IDMask);
             end
 
-            Z = Z + mom.ImpedanceMatrix.ComputeMagPartChunked.computeMagSingularities(strategyContext, singularityMaskNonZeroDot, IDMask);
-
             Z = 1i * k * Z0 / (4 * pi) .* Z .* jacobians;
-
-            Z = sum(Z, 3);
         end
     end
 
@@ -106,6 +101,8 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
             integralsReshaped = reshape(integrals, blockSize, chunkContext.chunkSize(1), blockSize, chunkContext.chunkSize(2), strategyContext.constants.polaritiesCount);
             integralsSummed = sum(sum(integralsReshaped, 1), 3);
             ZBlock = reshape(integralsSummed, [chunkContext.chunkSize, strategyContext.constants.polaritiesCount]);
+
+            ZBlock = sum(ZBlock, 3);
         end
 
         function singularities = computeMagSingularities(strategyContext, singularityMask, IDMask)
@@ -128,6 +125,8 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
 
             singularities(:, :, samePolarities) = combinedMask(:, :, samePolarities) .* repmat(singularityValuesType1Matrix, [1, 1, 2]);
             singularities(:, :, differentPolarities) = combinedMask(:, :, differentPolarities) .* repmat(singularityValuesType2Matrix, [1, 1, 2]);
+
+            singularities = sum(singularities, 3);
         end
     end
 end

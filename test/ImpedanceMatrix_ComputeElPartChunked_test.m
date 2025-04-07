@@ -49,9 +49,9 @@ Ze = elStrat.compute(stratCtx);
 
 toc;
 
-%disp(Ze);
+disp(Ze);
 
 %disp(size(Ze));
 
-[~, ~, idx] = unique(round(Ze(7:end, 1:6), 5), 'stable');
-reshape(idx, [6, 6])
+%[~, ~, idx] = unique(round(Ze(7:end, 1:6), 5), 'stable');
+%reshape(idx, [6, 6])

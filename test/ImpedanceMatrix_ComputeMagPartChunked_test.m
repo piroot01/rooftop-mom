@@ -51,5 +51,7 @@ Zm = magStrat.compute(stratCtx);
 
 toc;
 
+disp(Zm)
+
 %[~, ~, idx] = unique(round(Zm(1:6, 1:6), 5), 'stable');
 %reshape(idx, [6,6])
