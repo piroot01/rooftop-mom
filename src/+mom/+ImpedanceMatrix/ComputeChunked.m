@@ -13,7 +13,6 @@ classdef ComputeChunked < mom.ImpedanceMatrix.ComputeStrategy
         function Z = compute(obj, strategyContext, varargin)
             k = strategyContext.constants.k;
             Z0 = strategyContext.constants.Z0;
-            polaritiesCount = strategyContext.constants.polaritiesCount;
             p1 = strategyContext.constants.polarities(:, 1);
             p2 = strategyContext.constants.polarities(:, 2);
 
@@ -37,6 +36,7 @@ classdef ComputeChunked < mom.ImpedanceMatrix.ComputeStrategy
             slices = obj.computeContext_.generateSlicesFromChunks(chunks, blockSize);
 
             singularityMask = obj.getSingularityMask(strategyContext);
+            singularityContext = mom.ImpedanceMatrix.ComputeMagPartChunked.prepareSingularityContext(strategyContext, basisFunctionCount);
             IDMask = obj.getIDMask(strategyContext);
             jacobians = obj.getJacobians(strategyContext);
 
@@ -67,7 +67,7 @@ classdef ComputeChunked < mom.ImpedanceMatrix.ComputeStrategy
                 [ZmBlock, singularityMaskChunkNonZeroDot] = mom.ImpedanceMatrix.ComputeMagPartChunked.computeZBlock(strategyContext, chunkContext, quadratureWeights, blockSize);
                 ZeBlock = mom.ImpedanceMatrix.ComputeElPartChunked.computeZBlock(strategyContext, chunkContext, quadratureWeights, blockSize);
 
-                Zm(chunk.rowIndices, chunk.columnIndices) = ZmBlock + mom.ImpedanceMatrix.ComputeMagPartChunked.computeMagSingularities(strategyContext, singularityMaskChunkNonZeroDot, IDMask);
+                Zm(chunk.rowIndices, chunk.columnIndices) = ZmBlock + mom.ImpedanceMatrix.ComputeMagPartChunked.computeMagSingularities(strategyContext, singularityContext, chunk, singularityMaskChunkNonZeroDot, IDMask);
                 Ze(chunk.rowIndices, chunk.columnIndices) = ZeBlock;
             end
 

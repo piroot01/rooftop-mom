@@ -4,17 +4,17 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 3;
-countY = 3;
-sizeX = 1;
-sizeY = 1;
+countX = 10;
+countY = 10;
+sizeX = 1.5;
+sizeY = 0.5;
 origin = [0, 0, 0];
-order = 5;
+order = 2;
 
 lambda = 5;
 k = 2 * pi / lambda;
 
-memoryElementwise = 10000000;
+memoryElementwise = 10e6;
 memory_MB = memoryElementwise * 8 / 1e6;
 
 % 1. step: generate a mesh
@@ -32,7 +32,7 @@ quadrature = mom.Quadrature(order);
 % 3. step: create BasisFunctions
 basisFuncs = mom.BasisFunctions(myMeshCluster);
 
-basisFuncs.getFaces()
+%basisFuncs.getFaces()
 
 % 4. step: create RooftopBasisFunctions
 rooftops = mom.RooftopBasisFunctions(myMeshCluster, basisFuncs.getFaces());
@@ -51,7 +51,7 @@ Zm = magStrat.compute(stratCtx);
 
 toc;
 
-disp(Zm)
+%disp(Zm)
 
 %[~, ~, idx] = unique(round(Zm(1:6, 1:6), 5), 'stable');
 %reshape(idx, [6,6])

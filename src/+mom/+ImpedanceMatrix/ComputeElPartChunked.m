@@ -13,7 +13,6 @@ classdef ComputeElPartChunked < mom.ImpedanceMatrix.ComputeStrategy
         function Z = compute(obj, strategyContext, varargin)
             k = strategyContext.constants.k;
             Z0 = strategyContext.constants.Z0;
-            polaritiesCount = strategyContext.constants.polaritiesCount;
             p1 = strategyContext.constants.polarities(:, 1);
             p2 = strategyContext.constants.polarities(:, 2);
 
@@ -61,6 +60,7 @@ classdef ComputeElPartChunked < mom.ImpedanceMatrix.ComputeStrategy
                 chunkContext.integralKernel = mom.ImpedanceMatrix.IntegralKernel.compute(strategyContext, rowQuadraturePointsPolarity, columnQuadraturePointsPolarity);
 
                 ZBlock = mom.ImpedanceMatrix.ComputeElPartChunked.computeZBlock(strategyContext, chunkContext, quadratureWeights, blockSize);
+
                 Z(chunk.rowIndices, chunk.columnIndices) = ZBlock;
             end
 

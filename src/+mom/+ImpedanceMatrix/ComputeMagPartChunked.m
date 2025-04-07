@@ -13,7 +13,6 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
         function Z = compute(obj, strategyContext, varargin)
             k = strategyContext.constants.k;
             Z0 = strategyContext.constants.Z0;
-            polaritiesCount = strategyContext.constants.polaritiesCount;
             p1 = strategyContext.constants.polarities(:, 1);
             p2 = strategyContext.constants.polarities(:, 2);
 
@@ -36,6 +35,7 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
             slices = obj.computeContext_.generateSlicesFromChunks(chunks, blockSize);
 
             singularityMask = obj.getSingularityMask(strategyContext);
+            singularityContext = mom.ImpedanceMatrix.ComputeMagPartChunked.prepareSingularityContext(strategyContext, basisFunctionCount);
             IDMask = obj.getIDMask(strategyContext);
             jacobians = obj.getJacobians(strategyContext);
 
@@ -62,7 +62,7 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
 
                 [ZBlock, singularityMaskChunkNonZeroDot] = mom.ImpedanceMatrix.ComputeMagPartChunked.computeZBlock(strategyContext, chunkContext, quadratureWeights, blockSize);
 
-                Z(chunk.rowIndices, chunk.columnIndices) = ZBlock + mom.ImpedanceMatrix.ComputeMagPartChunked.computeMagSingularities(strategyContext, singularityMaskChunkNonZeroDot, IDMask);
+                Z(chunk.rowIndices, chunk.columnIndices) = ZBlock + mom.ImpedanceMatrix.ComputeMagPartChunked.computeMagSingularities(strategyContext, singularityContext, chunk, singularityMaskChunkNonZeroDot, IDMask);
             end
 
             Z = 1i * k * Z0 / (4 * pi) .* Z .* jacobians;
@@ -105,20 +105,23 @@ classdef ComputeMagPartChunked < mom.ImpedanceMatrix.ComputeStrategy
             ZBlock = sum(ZBlock, 3);
         end
 
-        function singularities = computeMagSingularities(strategyContext, singularityMask, IDMask)
+        function singularityContext = prepareSingularityContext(strategyContext, basisFunctionCount)
             [rooftopSizes, rooftopSizeIndices] = strategyContext.rooftopBasisFunctions.getUniqueRooftopSizes();
-            [rowCount, colCount, ~] = size(singularityMask);
-            rooftopSizeIndicesMatrix = repmat(rooftopSizeIndices, 1, colCount);
 
-            singularityValuesType1 = mom.ImpedanceMatrix.singularity.type1(rooftopSizes(:,1), rooftopSizes(:,2));
-            singularityValuesType2 = mom.ImpedanceMatrix.singularity.type2(rooftopSizes(:,1), rooftopSizes(:,2));
+            singularityContext.rooftopSizeIndicesMatrix = repmat(rooftopSizeIndices, 1, basisFunctionCount);
+            singularityContext.singularityValuesType1 = mom.ImpedanceMatrix.singularity.type1(rooftopSizes(:, 1), rooftopSizes(:, 2));
+            singularityContext.singularityValuesType2 = mom.ImpedanceMatrix.singularity.type2(rooftopSizes(:, 1), rooftopSizes(:, 2));
+        end
 
-            singularityValuesType1Matrix = singularityValuesType1(rooftopSizeIndicesMatrix);
-            singularityValuesType2Matrix = singularityValuesType2(rooftopSizeIndicesMatrix);
+        function singularities = computeMagSingularities(strategyContext, singularityContext, chunk, singularityMask, IDMask)
+            rooftopSizeIndicesMatrixChunk = singularityContext.rooftopSizeIndicesMatrix(chunk.rowIndices, chunk.columnIndices);
 
-            validIndices = (IDMask > 0);
+            singularityValuesType1Matrix = singularityContext.singularityValuesType1(rooftopSizeIndicesMatrixChunk);
+            singularityValuesType2Matrix = singularityContext.singularityValuesType2(rooftopSizeIndicesMatrixChunk);
+
+            validIndices = (IDMask(chunk.rowIndices, chunk.columnIndices) > 0);
             combinedMask = bsxfun(@and, singularityMask, validIndices);
-            singularities = zeros(rowCount, colCount, strategyContext.constants.polaritiesCount);
+            singularities = zeros(numel(chunk.rowIndices), numel(chunk.columnIndices), strategyContext.constants.polaritiesCount);
 
             samePolarities = [1, 4];
             differentPolarities = [2, 3];

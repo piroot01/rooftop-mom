@@ -14,7 +14,7 @@ order = 2;
 lambda = 5;
 k = 2 * pi / lambda;
 
-memoryElementwise = 1000000;
+memoryElementwise = 1e6;
 memory_MB = memoryElementwise * 8 / 1e6;
 
 % 1. step: generate a mesh
