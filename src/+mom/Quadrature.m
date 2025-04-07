@@ -5,11 +5,12 @@ classdef Quadrature
         points2Du_ double;
         points2Dv_ double;
         weights4D_ double;
+        weights2D_ double;
     end
 
     methods
         function obj = Quadrature(order)
-            function [points2Du, points2Dv, weights4D] = generate4D(order)
+            function [points2Du, points2Dv, weights2D, weights4D] = generate4D(order)
                 function [points, weights] = generate1D(order)
                     [points, weights] = mom.lgwt(double(order), 0, 1);
                 end
@@ -25,7 +26,7 @@ classdef Quadrature
                 weights4D = weights2D * weights2D.';
             end
 
-            [obj.points2Du_, obj.points2Dv_, obj.weights4D_] = generate4D(order);
+            [obj.points2Du_, obj.points2Dv_, obj.weights2D_, obj.weights4D_] = generate4D(order);
             obj.order_ = order;
         end
     end
@@ -58,6 +59,10 @@ classdef Quadrature
 
         function weights = getWeights(obj)
             weights = obj.weights4D_;
+        end
+
+        function weights = getWeights2D(obj)
+            weights = obj.weights2D_;
         end
 
         function points = getQuadraturePoints(obj)
