@@ -85,15 +85,25 @@ classdef RooftopBasisFunctions < handle
             indices = [1, find(diff(IDs)) + 1];
             sizes = obj.uniqueRooftopSizes_(obj.uniqueRooftopSizeIndices_(indices), :);
         end
+
+        % temporary - just for testing
+        function points = getWedgePoints(~, quadraturePoints, alpha, polarity)
+            if alpha == 'x'
+                e = [1; 0; 0];
+            else
+                e = [0; 1; 0];
+            end
+
+            if polarity == 'p'
+                points = e * (e.' * quadraturePoints);
+            else
+                points = -1 * e * (e.' * (quadraturePoints - e));
+            end
+        end
     end
 
     methods (Access = private)
         function [rooftopP, rooftopN, l1, l2] = computeRooftopValues(~, basisFunctionMesh, quadraturePoints, blockSize)
-            % input:
-            %   basisFunctionMesh: 3x8 matrix (8 vertices - technically 6 is enough)
-            %   polarity: 0 = positive, 1 = negative
-            %   quadraturePoints: 3xN matrix (N is the order of the qudrature squared)
-
             v1p = basisFunctionMesh(:, 1);
             v3p = basisFunctionMesh(:, 3);
             v1n = basisFunctionMesh(:, 5);
@@ -101,11 +111,6 @@ classdef RooftopBasisFunctions < handle
 
             d1 = v1n - v1p;
             l1 = sqrt(sum(d1 .^ 2));
-
-            if l1 > 100
-                fprintf("weird mesh dimensions:");
-                disp(basisFunctionMesh);
-            end
 
             e = d1 / l1;
             g = v3p - v1p;
