@@ -65,11 +65,8 @@ classdef Quadrature
             weights = obj.weights2D_;
         end
 
-        function points = getQuadraturePoints(obj)
-            % for testing purposes we choose hat{x} and hat{y} as the basis
-            uSide = [1; 0; 0];
-            vSide = [0; 1; 0];
-            points = uSide .* obj.points2Du_ + vSide .* obj.points2Dv_;
+        function points = getQuadraturePointsRectangle(obj, u, v)
+            points = u .* obj.points2Du_ + v .* obj.points2Dv_;
         end
     end
 end

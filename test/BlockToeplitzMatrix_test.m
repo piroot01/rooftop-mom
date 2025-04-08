@@ -47,18 +47,27 @@ compStrat = mom.ImpedanceMatrix.ComputeMagPartChunked(compStratCtx);
 
 Z = compStrat.compute(stratCtx);
 
-disp(Z);
+%disp(Z);
+
+
+
+
 
 % magnetical part of the impedance matrix
 % we will compute the interaction between first and third basis function
 %allQuadraturePoints = rooftops.getQuadraturePoints()
 
+% obtain quadrature weights for 4D integration
 quadratureWeights = quadrature.getWeights();    
 
+% obtain shifted quadrature points
 function points = getQuadraturePoints(quadrature, m)
     points = quadrature.getQuadraturePoints();
     points = points + [(m - [1, 1]).'; 0];
 end
+
+
+
 
 % obtain the index of the first basisFunction in the y direction
 facesX = basisFuncs.getFacesXAsCell();
