@@ -40,6 +40,8 @@ classdef ComputeChunked < mom.ImpedanceMatrix.ComputeStrategy
             IDMask = obj.getIDMask(strategyContext);
             jacobians = obj.getJacobians(strategyContext);
 
+            singularities = mom.ImpedanceMatrix.ComputeElPartChunked.computeElSingularities(strategyContext, singularityMask, IDMask);
+
             Zm = zeros(basisFunctionCount, basisFunctionCount);
             Ze = zeros(basisFunctionCount, basisFunctionCount);
             for n = 1:chunkCount
@@ -56,8 +58,11 @@ classdef ComputeChunked < mom.ImpedanceMatrix.ComputeStrategy
                 chunkContext.rowRooftopPoints = rooftopPoints(:, rowSlice, :);
                 chunkContext.columnRooftopPoints = rooftopPoints(:, colSlice, :);
                 chunkContext.singularityMaskChunk = singularityMask(chunk.rowIndices, chunk.columnIndices, :);
+
                 chunkContext.rowRooftopDivPointsPolarity = rooftopDivPoints(:, chunk.rowIndices, p1);
                 chunkContext.columnRooftopDivPointsPolarity = rooftopDivPoints(:, chunk.columnIndices, p2);
+
+                chunkContext.singularities = singularities(chunk.rowIndices, chunk.columnIndices, :);
 
                 rowQuadraturePointsPolarity = quadraturePoints(:, rowSlice, p1);
                 columnQuadraturePointsPolarity = quadraturePoints(:, colSlice, p2);
@@ -70,8 +75,6 @@ classdef ComputeChunked < mom.ImpedanceMatrix.ComputeStrategy
                 Zm(chunk.rowIndices, chunk.columnIndices) = ZmBlock + mom.ImpedanceMatrix.ComputeMagPartChunked.computeMagSingularities(strategyContext, singularityContext, chunk, singularityMaskChunkNonZeroDot, IDMask);
                 Ze(chunk.rowIndices, chunk.columnIndices) = ZeBlock;
             end
-
-            Ze = Ze + mom.ImpedanceMatrix.ComputeElPartChunked.computeElSingularities(strategyContext, singularityMask, IDMask);
 
             Z = 1i * k * Z0 / (4 * pi) .* (Zm - (1 / k^2) .* Ze) .* jacobians;
         end

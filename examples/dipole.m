@@ -7,7 +7,7 @@ addpath(srcDir);
 
 % dipole dimensions
 countX = 1;
-countY = 100;
+countY = 10;
 sizeX = 1;
 sizeY = 1;
 
@@ -18,7 +18,8 @@ origin = [0, 0, 0];
 order = 5;
 
 % wavelength and wavenumber - here we choose a lambda = dipole length * 2
-lambda = 2 * countY * sizeY;
+%lambda = 2 * countY * sizeY;
+lambda = 5;
 k = 2 * pi / lambda;
 
 % memory given to the mom
@@ -53,7 +54,7 @@ gridSize{1} = [countX, countY];
 
 tic;
 
-Z = chunkedOptimiser.compute(strategyContext, gridSize);
+Z = chunkedOptimiser.compute(strategyContext, gridSize)
 
 toc;
 

@@ -38,6 +38,8 @@ classdef ComputeElPartChunked < mom.ImpedanceMatrix.ComputeStrategy
             IDMask = obj.getIDMask(strategyContext);
             jacobians = obj.getJacobians(strategyContext);
 
+            singularities = mom.ImpedanceMatrix.ComputeElPartChunked.computeElSingularities(strategyContext, singularityMask, IDMask);
+
             Z = zeros(basisFunctionCount, basisFunctionCount);
             for n = 1:chunkCount
                 % for debugging
@@ -51,8 +53,11 @@ classdef ComputeElPartChunked < mom.ImpedanceMatrix.ComputeStrategy
 
                 chunkContext.chunkSize = [numel(chunk.rowIndices), numel(chunk.columnIndices)];
                 chunkContext.singularityMaskChunk = singularityMask(chunk.rowIndices, chunk.columnIndices, :);
+
                 chunkContext.rowRooftopDivPointsPolarity = rooftopDivPoints(:, chunk.rowIndices, p1);
                 chunkContext.columnRooftopDivPointsPolarity = rooftopDivPoints(:, chunk.columnIndices, p2);
+
+                chunkContext.singularities = singularities(chunk.rowIndices, chunk.columnIndices, :);
 
                 rowQuadraturePointsPolarity = quadraturePoints(:, rowSlice, p1);
                 columnQuadraturePointsPolarity = quadraturePoints(:, colSlice, p2);
@@ -63,8 +68,6 @@ classdef ComputeElPartChunked < mom.ImpedanceMatrix.ComputeStrategy
 
                 Z(chunk.rowIndices, chunk.columnIndices) = ZBlock;
             end
-
-            Z = Z + mom.ImpedanceMatrix.ComputeElPartChunked.computeElSingularities(strategyContext, singularityMask, IDMask);
 
             Z = 1i * Z0 / (4 * pi * k) .* Z .* jacobians;
         end
@@ -91,7 +94,7 @@ classdef ComputeElPartChunked < mom.ImpedanceMatrix.ComputeStrategy
             integrals = integrands .* weights;
             integralsReshaped = reshape(integrals, blockSize, chunkContext.chunkSize(1), blockSize, chunkContext.chunkSize(2), strategyContext.constants.polaritiesCount);
             integralsSummed = sum(sum(integralsReshaped, 1), 3);
-            ZBlock = reshape(integralsSummed, [chunkContext.chunkSize, strategyContext.constants.polaritiesCount]) .* rooftopDivDot;
+            ZBlock = (reshape(integralsSummed, [chunkContext.chunkSize, strategyContext.constants.polaritiesCount]) + chunkContext.singularities) .* rooftopDivDot;
 
             ZBlock = sum(ZBlock, 3);
         end
@@ -109,8 +112,6 @@ classdef ComputeElPartChunked < mom.ImpedanceMatrix.ComputeStrategy
             combinedMask = bsxfun(@and, singularityMask, validIndices);
 
             singularities = combinedMask .* repmat(singularityValuesType3Matrix, [1, 1, strategyContext.constants.polaritiesCount]);
-
-            singularities = sum(singularities, 3);
         end
     end
 end

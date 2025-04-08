@@ -4,10 +4,10 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 3;
-countY = 3;
-sizeX = 1.5;
-sizeY = 0.4;
+countX = 1;
+countY = 10;
+sizeX = 1;
+sizeY = 1;
 origin = [0, 0, 0];
 order = 5;
 
@@ -50,7 +50,7 @@ Ze = elStrat.compute(stratCtx);
 
 toc;
 
-disp(Zm - Ze);
+%disp(Zm - Ze);
 
 tic;
 
@@ -59,4 +59,4 @@ Z = combStrat.compute(stratCtx);
 
 toc;
 
-disp(Z);
+disp(Z - Zm + Ze);

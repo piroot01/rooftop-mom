@@ -7,7 +7,7 @@ addpath(srcDir);
 
 % dipole dimensions
 countX = 1;
-countY = 100;
+countY = 5000;
 sizeX = 1;
 sizeY = 1;
 
@@ -22,7 +22,7 @@ lambda = 2 * countY * sizeY;
 k = 2 * pi / lambda;
 
 % memory given to the mom
-memoryElementwise = 10e6;
+memoryElementwise = 1e5;
 memory_MB = memoryElementwise * 8 / 1e6;
 
 % 1. step: generate a mesh
