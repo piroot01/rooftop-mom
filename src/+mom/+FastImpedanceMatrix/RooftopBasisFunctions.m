@@ -8,6 +8,8 @@ classdef RooftopBasisFunctions < handle
         quadrature_ mom.Quadrature;
         gridSize_ uint32;
 
+        quadraturePoints_ double;
+
         rooftopPointsXDir_ double;
         rooftopPointsYDir_ double;
     end
@@ -24,6 +26,19 @@ classdef RooftopBasisFunctions < handle
             basisFunctionCount = prod(obj.gridSize_);
             quadraturePoints = obj.quadrature_.getQuadraturePointsRectangle(obj.ex_, obj.ey_);
 
+            % generate quadrature points
+            orderSquared = obj.quadrature_.getOrder()^2;
+            allQuadraturePoints = zeros(3, orderSquared, obj.gridSize_(1) + 1, obj.gridSize_(2));
+            for m = 1:(obj.gridSize_(1) + 1)
+                for n = 1:(obj.gridSize_(2) + 1)
+                    quadraturePointsShifted = quadraturePoints + double([m; n; 0]) - [1; 1; 0];
+                    allQuadraturePoints(:, :, m, n) = quadraturePointsShifted;
+                end
+            end
+
+            obj.quadraturePoints_ = allQuadraturePoints;
+
+            % generate rooftop points
             [rooftopPointsPlusXDir, rooftopPointsMinusXDir] = obj.computeRooftopPoints(quadraturePoints, 'x');
             [rooftopPointsPlusYDir, rooftopPointsMinusYDir] = obj.computeRooftopPoints(quadraturePoints, 'y');
 
@@ -39,6 +54,10 @@ classdef RooftopBasisFunctions < handle
             else
                 error("Unknown direction: %s\n", direction);
             end
+        end
+
+        function points = getQuadraturePoints(obj)
+            points = obj.quadraturePoints_;
         end
     end
 
