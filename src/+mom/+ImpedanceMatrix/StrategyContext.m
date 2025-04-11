@@ -2,7 +2,7 @@ classdef StrategyContext < handle
     properties (Access = public)
         quadrature mom.Quadrature;
         basisFunctions mom.BasisFunctions;
-        rooftopBasisFunctions mom.RooftopBasisFunctions;
+        rooftopBasisFunctions;
 
         constants mom.ImpedanceMatrix.Constants;
     end

@@ -28,15 +28,17 @@ classdef RooftopBasisFunctions < handle
 
             % generate quadrature points
             orderSquared = obj.quadrature_.getOrder()^2;
-            allQuadraturePoints = zeros(3, orderSquared, obj.gridSize_(1) + 1, obj.gridSize_(2));
-            for m = 1:(obj.gridSize_(1) + 1)
-                for n = 1:(obj.gridSize_(2) + 1)
-                    quadraturePointsShifted = quadraturePoints + double([m; n; 0]) - [1; 1; 0];
-                    allQuadraturePoints(:, :, m, n) = quadraturePointsShifted;
-                end
-            end
 
-            obj.quadraturePoints_ = allQuadraturePoints;
+            countX = obj.gridSize_(1) + 1;
+            countY = obj.gridSize_(2) + 1;
+
+            [mGrid, nGrid] = ndgrid(1:countX, 1:countY);
+
+            shift = cat(2, mGrid(:) - 1, nGrid(:) - 1, zeros(countX *countX, 1));
+            quadraturePointsReshaped = reshape(quadraturePoints, 3, orderSquared, 1, 1);
+            shiftReshaped = reshape(shift.', 3, 1, countX, countY);
+
+            obj.quadraturePoints_ = double(shiftReshaped) + quadraturePointsReshaped;
 
             % generate rooftop points
             [rooftopPointsPlusXDir, rooftopPointsMinusXDir] = obj.computeRooftopPoints(quadraturePoints, 'x');
@@ -56,8 +58,28 @@ classdef RooftopBasisFunctions < handle
             end
         end
 
-        function points = getQuadraturePoints(obj)
-            points = obj.quadraturePoints_;
+        function points = getQuadraturePointsInDirection(obj, direction)
+            if direction == 'x'
+                indicesXPlus = 1:(obj.gridSize_(1));
+                indicesYPlus = 1:(obj.gridSize_(2));
+                indicesXMinus = 2:(obj.gridSize_(1) + 1);
+                indicesYMinus = 1:(obj.gridSize_(2));
+
+                points = cat(3, ...
+                    reshape(obj.quadraturePoints_(:, :, indicesXPlus, indicesYPlus), 3, []), ...
+                    reshape(obj.quadraturePoints_(:, :, indicesXMinus, indicesYMinus), 3, []));
+            elseif direction == 'y'
+                indicesXPlus = 1:(obj.gridSize_(1));
+                indicesYPlus = 1:(obj.gridSize_(2));
+                indicesXMinus = 1:(obj.gridSize_(1));
+                indicesYMinus = 2:(obj.gridSize_(2) + 1);
+
+                points = cat(3, ...
+                    reshape(obj.quadraturePoints_(:, :, indicesXPlus, indicesYPlus), 3, []), ...
+                    reshape(obj.quadraturePoints_(:, :, indicesXMinus, indicesYMinus), 3, []));
+            else
+                error("Unknown direction: %s\n", direction);
+            end
         end
     end
 

@@ -17,6 +17,5 @@ rooftopBasisFunctions.generatePoints();
 
 rooftopBasisFunctions.getRooftopPointsInDirection('x');
 
-points = rooftopBasisFunctions.getQuadraturePoints()
-reshape(points(:, :, 2:(countX + 1), 1:countY), 3, [])
+points = rooftopBasisFunctions.getQuadraturePoints('x')
 

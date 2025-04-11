@@ -84,6 +84,16 @@ classdef BasisFunctions < handle
             end
         end
 
+        function faces = getFacesInDirection(obj, direction)
+            if direction == 'x'
+                faces = obj.getFacesXAsCell();
+            elseif direction == 'y'
+                faces = obj.getFacesYAsCell();
+            else
+                error("Unknown direction: %s\n", direction);
+            end
+        end
+
         function IDs = getIDs(obj)
             faces = obj.getFacesAsCell();
             meshCount = numel(faces);
