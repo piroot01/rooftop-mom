@@ -48,6 +48,14 @@ classdef RooftopBasisFunctions < handle
             obj.rooftopPointsYDir_ = cat(3, repmat(rooftopPointsPlusYDir, 1, basisFunctionCount), repmat(rooftopPointsMinusYDir, 1, basisFunctionCount));
         end
 
+        function gridSize = getGridSize(obj)
+            gridSize = obj.gridSize_;
+        end
+
+        function count = getCount(obj)
+            count = prod(obj.gridSize_);
+        end
+
         function points = getRooftopPointsInDirection(obj, direction)
             if direction == 'x'
                 points = obj.rooftopPointsXDir_;
