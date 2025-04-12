@@ -35,14 +35,16 @@ strategyEl = mom.FastImpedanceMatrix.ComputeElPart();
 
 tic;
 
-[GT0x, ~] = strategyMag.compute(strategyCtx);
+[GT0x, GT0y] = strategyMag.compute(strategyCtx);
 GP0 = strategyEl.compute(strategyCtx);
 
 toc;
 
 tic;
 
-GT0xP = mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(GT0x, gridSize)
-GP0P = mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(GP0, gridSize)
+GT0xP = mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(GT0x, gridSize);
+GT0yP = mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(GT0y, gridSize);
+
+GP0P = mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(GP0, gridSize);
 
 toc;
