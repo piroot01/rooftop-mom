@@ -1,5 +1,10 @@
 classdef ComputeMagPart < mom.FastImpedanceMatrix.ComputeStrategy
     methods
+        function [resultXDirection, resultYDirection] = compute(obj, strategyContext)
+            resultXDirection = obj.computeXDirection(strategyContext);
+            resultYDirection = obj.computeYDirection(strategyContext);
+        end
+
         function result = computeXDirection(obj, strategyContext)
             % for x direction, singularity corrections are applied at
             % indices (1,1) for type1 and (2,1) for type2.

@@ -29,16 +29,20 @@ rooftopBasisFunctions = mom.FastImpedanceMatrix.RooftopBasisFunctions(quadrature
 rooftopBasisFunctions.generatePoints();
 
 strategyCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFunctions, rooftopBasisFunctions, k);
-strategy = mom.FastImpedanceMatrix.ComputeElPart();
+strategyMag = mom.FastImpedanceMatrix.ComputeMagPart();
+strategyEl = mom.FastImpedanceMatrix.ComputeElPart();
+
 
 tic;
 
-GP0 = strategy.compute(strategyCtx);
+[GT0x, ~] = strategyMag.compute(strategyCtx);
+GP0 = strategyEl.compute(strategyCtx);
 
 toc;
 
 tic;
 
-GP0P = mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(GP0);
+GT0xP = mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(GT0x, gridSize)
+GP0P = mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(GP0, gridSize)
 
 toc;
