@@ -89,6 +89,10 @@ classdef RooftopBasisFunctions < handle
                 error("Unknown direction: %s\n", direction);
             end
         end
+
+        function points = getQuadraturePoints(obj)
+            points = reshape(obj.quadraturePoints_, 3, []);
+        end
     end
 
     methods (Access = private)
