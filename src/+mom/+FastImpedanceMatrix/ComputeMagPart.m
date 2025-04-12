@@ -1,30 +1,53 @@
 classdef ComputeMagPart < mom.FastImpedanceMatrix.ComputeStrategy
     methods
         function result = computeXDirection(obj, strategyContext)
+            % for x direction, singularity corrections are applied at
+            % indices (1,1) for type1 and (2,1) for type2.
+            result = obj.computeInDirectionInternal(strategyContext, 'x', [1, 1], [2, 1]);
+        end
+        
+        function result = computeYDirection(obj, strategyContext)
+            % for y direction, singularity corrections are applied at
+            % indices (1,1) for type1 and (1,2) for type2.
+            result = obj.computeInDirectionInternal(strategyContext, 'y', [1, 1], [1, 2]);
+        end
+    end
+
+    methods (Access = private)
+        function result = computeInDirectionInternal(obj, strategyContext, direction, singularityIndex1, singularityIndex2)
+            % check if the given direction has any rooftop in the given direction
+            gridSize = strategyContext.rooftopBasisFunctions.getGridSize();
+
+            if direction == 'x' && gridSize(1) < 2
+                result = nan;
+                return;
+            elseif direction == 'y' && gridSize(2) < 2
+                result = nan;
+                return;
+            end
+
+            % extract constants
             k = strategyContext.constants.k;
             Z0 = strategyContext.constants.Z0;
-
             p1 = strategyContext.constants.polarities(:, 1);
             p2 = strategyContext.constants.polarities(:, 2);
-
             basisFunctionCount = strategyContext.rooftopBasisFunctions.getCount();
             orderSquared = strategyContext.quadrature.getOrder()^2;
 
-            singularityMask = obj.getSingularityMask(strategyContext, 'x', 'x');
+            singularityMask = obj.getSingularityMask(strategyContext, direction, direction);
 
-            rowQuadraturePoints = strategyContext.rooftopBasisFunctions.getQuadraturePointsInDirection('x');
+            rowQuadraturePoints = strategyContext.rooftopBasisFunctions.getQuadraturePointsInDirection(direction);
             columnQuadraturePoints = rowQuadraturePoints(:, 1:orderSquared, :);
-
-            rowRooftopPoints = strategyContext.rooftopBasisFunctions.getRooftopPointsInDirection('x');
+            rowRooftopPoints = strategyContext.rooftopBasisFunctions.getRooftopPointsInDirection(direction);
             columnRooftopPoints = rowRooftopPoints(:, 1:orderSquared, :);
 
             columnQuadraturePointsPolarity = columnQuadraturePoints(:, :, p1);
             rowQuadraturePointsPolarity = rowQuadraturePoints(:, :, p2);
-
             columnRooftopPointsPolarity = columnRooftopPoints(:, :, p1);
             rowRooftopPointsPolarity = rowRooftopPoints(:, :, p2);
 
-            integralKernel = mom.ImpedanceMatrix.IntegralKernel.compute(strategyContext, rowQuadraturePointsPolarity, columnQuadraturePointsPolarity);
+            integralKernel = mom.ImpedanceMatrix.IntegralKernel.compute(strategyContext, ...
+                rowQuadraturePointsPolarity, columnQuadraturePointsPolarity);
 
             distanceMatrix = integralKernel.distanceMatrix;
             distanceMatrixZero = (distanceMatrix < eps);
@@ -40,20 +63,18 @@ classdef ComputeMagPart < mom.FastImpedanceMatrix.ComputeStrategy
             integrands(distanceMatrixZero) = rooftopPointsDot(distanceMatrixZero) * (-1i) * k;
 
             weights = repmat(strategyContext.quadrature.getWeights(), basisFunctionCount, 1);
-
             integrals = integrands .* weights;
+
             integralsReshaped = reshape(integrals, orderSquared, basisFunctionCount, orderSquared, 1, strategyContext.constants.polaritiesCount);
             integralsSummed = sum(sum(integralsReshaped, 1), 3);
-            results = reshape(integralsSummed, [strategyContext.rooftopBasisFunctions.getGridSize(), strategyContext.constants.polaritiesCount]);
-
+            results = reshape(integralsSummed, [gridSize, strategyContext.constants.polaritiesCount]);
             result = sum(results, 3);
 
-            % apply singularities
+            % apply singularity corrections
             singularityValuesType1 = mom.ImpedanceMatrix.singularity.type1(1, 1);
             singularityValuesType2 = mom.ImpedanceMatrix.singularity.type2(1, 1);
-
-            result(1, 1) = result(1,1) + 2 * singularityValuesType1;
-            result(2, 1) = result(2, 1) + singularityValuesType2;
+            result(singularityIndex1(1), singularityIndex1(2)) = result(singularityIndex1(1), singularityIndex1(2)) + 2 * singularityValuesType1;
+            result(singularityIndex2(1), singularityIndex2(2)) = result(singularityIndex2(1), singularityIndex2(2)) + singularityValuesType2;
 
             % apply constants
             result = (1i * k * Z0) / (4 * pi) * result;

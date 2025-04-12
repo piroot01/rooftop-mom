@@ -26,15 +26,25 @@ classdef (Abstract) ComputeStrategy < handle
         end
 
         function mask = getSingularityMask(~, strategyContext, direction1, direction2)
-            if direction1 == 'x' && direction2 == 'x'
-                basisFunctionCount = strategyContext.rooftopBasisFunctions.getCount();
-                mask = false(basisFunctionCount, 1, 4);
+            basisFunctionCount = strategyContext.rooftopBasisFunctions.getCount();
+            mask = false(basisFunctionCount, 1, 4);
 
+            if direction1 == 'x' && direction2 == 'x'
                 % first plus rooftop x first plus rooftop
                 mask(1, 1, 1) = true;
 
                 % first minus rooftop x first plus rooftop
                 mask(2, 1, 3) = true;
+
+                % first minus rooftop x first minus rooftop
+                mask(1, 1, 4) = true;
+            elseif direction1 == 'y' && direction2 == 'y'
+                gridSize = strategyContext.rooftopBasisFunctions.getGridSize();
+                % first plus rooftop x first plus rooftop
+                mask(1, 1, 1) = true;
+
+                % first minus rooftop x first plus rooftop
+                mask(gridSize(1) + 1, 1, 3) = true;
 
                 % first minus rooftop x first minus rooftop
                 mask(1, 1, 4) = true;

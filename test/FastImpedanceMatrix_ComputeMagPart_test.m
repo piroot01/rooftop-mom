@@ -4,8 +4,8 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 2;
-countY = 2;
+countX = 100;
+countY = 1;
 sizeX = 1;
 sizeY = 1;
 gridSize = [countX, countY];
@@ -31,4 +31,10 @@ rooftopBasisFunctions.generatePoints();
 strategyCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFunctions, rooftopBasisFunctions, k);
 strategy = mom.FastImpedanceMatrix.ComputeMagPart();
 
-strategy.computeXDirection(strategyCtx)
+tic;
+
+mx = strategy.computeXDirection(strategyCtx);
+my = strategy.computeYDirection(strategyCtx);
+
+toc;
+

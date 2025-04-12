@@ -34,7 +34,7 @@ classdef RooftopBasisFunctions < handle
 
             [mGrid, nGrid] = ndgrid(1:countX, 1:countY);
 
-            shift = cat(2, mGrid(:) - 1, nGrid(:) - 1, zeros(countX *countX, 1));
+            shift = cat(2, mGrid(:) - 1, nGrid(:) - 1, zeros(countX * countY, 1));
             quadraturePointsReshaped = reshape(quadraturePoints, 3, orderSquared, 1, 1);
             shiftReshaped = reshape(shift.', 3, 1, countX, countY);
 
