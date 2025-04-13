@@ -45,7 +45,7 @@ classdef ComputeElPart < mom.FastImpedanceMatrix.ComputeStrategy
             result(1, 1) = result(1, 1) + singularityValuesType3;
 
             % apply constants
-            result = (1i * Z0) / (4 * pi * k) * result;
+            result = (Z0) / (1i * 4 * pi * k) * result;
         end
     end
 end
