@@ -7,7 +7,7 @@ addpath(srcDir);
 
 % dipole dimensions
 countX = 1;
-countY = 10;
+countY = 500;
 sizeX = 1;
 sizeY = 1;
 
@@ -54,16 +54,22 @@ gridSize{1} = [countX, countY];
 
 tic;
 
-Z = chunkedOptimiser.compute(strategyContext, gridSize)
+Z = chunkedOptimiser.compute(strategyContext, gridSize);
 
 toc;
 
 % now let's compute input impedance for a feeder placed in the middle of the dipole
-feederPosition = floor(basisFunctions.getCount() / 2);
+feederPosition = ceil(basisFunctions.getCount() / 2);
 V = zeros(basisFunctions.getCount(), 1);
 V(feederPosition) = 1;
 
+tic;
+
 I = Z \ V;
+
+toc;
+
+norm(I)
 
 Zin = (I' * Z * I) / (abs(I(feederPosition))^2);
 

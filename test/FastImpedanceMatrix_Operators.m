@@ -5,7 +5,7 @@ srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
 countX = 1;
-countY = 10;
+countY = 500;
 sizeX = 1;
 sizeY = 1;
 gridSize = [countX, countY];
@@ -51,9 +51,6 @@ toc;
 
 JxSize = gridSize - [1, 0];
 JySize = gridSize - [0, 1];
-
-Jx = randn(JxSize);
-Jy = randn(JySize);
 
 function result = expandJ(J, direction, gridSize)
     if direction == 'x'
@@ -120,8 +117,55 @@ elTerm = ifft2(elTermF);
 GyyJy = magTerm + elTerm;
 
 %}
+%{
+function [Jx, Jy, iter, res_norm, flag] = solve_CG(GT0xP, GT0yP, GP0P, ...
+    Fx, FxStar, Fy, FyStar, B, gridSize, tol, maxIter)
+    % solve_CG solves G*J = B using a preconditioned CGS iterative method.
+    %
+    % Preconditioning is applied via the left preconditioner M_inv,
+    % approximated here as a Jacobi (diagonal) preconditioner.
+    
+    %--- Sizes for Jx and Jy:
+    nx = gridSize(1) - 1; ny = gridSize(2);
+    mx = gridSize(1);   my = gridSize(2) - 1;
+    
+    %--- Vectorize the RHS:
+    B_vec = [B.x(:); B.y(:)];
+    
+    %--- Define the operator application function:
+    applyG = @(X) applyG_operator(X, GT0xP, GT0yP, GP0P, ...
+        Fx, FxStar, Fy, FyStar, gridSize);
+    
+    %--- Compute an approximate diagonal of the operator G.
+    % As a simple approximation, we use the zero-frequency (DC) term in the FFT.
+    %
+    % For the circulant embedding, note that the Fourier mode corresponding to u=v=0
+    % typically gives a good representation of the average diagonal value.
+    %
+    % Preconditioning for x–component:
+    Mx_approx = GT0xP(1,1) + (1 - Fx(1,1)) * GP0P(1,1) * (1 - FxStar(1,1));
+    % Preconditioning for y–component:
+    My_approx = GT0yP(1,1) + (1 - Fy(1,1)) * GP0P(1,1) * (1 - FyStar(1,1));
+    
+    % Build a preconditioner vector for the full current [Jx; Jy]:
+    % For each degree of freedom in Jx and Jy, we assign the same diagonal value.
+    M_inv_diag = [ repmat(1/Mx_approx, nx*ny, 1); 
+                   repmat(1/My_approx, mx*my, 1) ];
+               
+    % Define the left preconditioner operator:
+    precond = @(x) M_inv_diag .* x;
+    
+    %--- Use MATLAB's preconditioned CGS method:
+    % Here, we pass the preconditioner as the first left preconditioner argument.
+    [J_vec, flag, res_norm, iter] = cgs(applyG, B_vec, tol, maxIter, precond);
+    
+    %--- Unvectorize the solution back to Jx and Jy:
+    Jx = reshape(J_vec(1:nx*ny), nx, ny);
+    Jy = reshape(J_vec(nx*ny+1:end), mx, my);
+end
+%}
 
-function [Jx, Jy, iter, res_norm] = solve_CG(GT0xP, GT0yP, GP0P, ...
+function [Jx, Jy, iter, res_norm, flag] = solve_CG(GT0xP, GT0yP, GP0P, ...
     Fx, FxStar, Fy, FyStar, B, gridSize, tol, maxIter)
     % solve_CG solves G*J = B for the unknown surface current J,
     % where J = [Jx; Jy] is composed of the x– and y–components of the rooftop
@@ -148,27 +192,8 @@ function [Jx, Jy, iter, res_norm] = solve_CG(GT0xP, GT0yP, GP0P, ...
     mx = gridSize(1);
     my = gridSize(2) - 1; % Jy size: gridSize(1) x (gridSize(2)-1)
 
-    %--- Initial guess: choose random initial currents (or zeros)
-    if nx == 0
-        Jx0 = nan(nx, ny);
-    else
-        Jx0 = randn(nx, ny);
-    end
-
-    if my == 0
-        Jy0 = nan(mx, my);
-    else
-        Jy0 = randn(mx, my);
-    end
-
-    Jx0
-    Jy0
-
-    %--- Vectorize the unknowns into one column vector:
-    J_vec = [Jx0(:); Jy0(:)];
-
     %--- Vectorize B similarly:
-    B_vec = [B.x(:); B.y(:)]
+    B_vec = [B.x(:); B.y(:)];
 
     %--- Define the operator application as an anonymous function.
     % This helper function receives a vector "X" that represents [Jx; Jy]
@@ -176,31 +201,35 @@ function [Jx, Jy, iter, res_norm] = solve_CG(GT0xP, GT0yP, GP0P, ...
     applyG = @(X) applyG_operator(X, GT0xP, GT0yP, GP0P, ...
         Fx, FxStar, Fy, FyStar, gridSize);
 
-    %--- Compute initial residual:
-    r = B_vec - applyG(J_vec)
-    p = r;
-    res_norm = norm(r) / norm(B_vec)
-    iter = 0;
-    fprintf('Iteration %d: relative residual = %e\n', iter, res_norm);
-
-    %--- Main CG loop:
-    while (res_norm > tol) && (iter < maxIter)
-        Ap = applyG(p);
-        alpha = (r' * r) / (p' * Ap);
-        J_vec = J_vec + alpha * p;
-        r_new = r - alpha * Ap;
-        beta = (r_new' * r_new) / (r' * r);
-        p = r_new + beta * p;
-        r = r_new;
-        iter = iter + 1;
-        res_norm = norm(r) / norm(B_vec);
-        fprintf('Iteration %d: relative residual = %e\n', iter, res_norm);
-    end
+    [J_vec, flag, res_norm, iter] = cgs(applyG, B_vec, tol, maxIter);
 
     %--- Unvectorize the solution back to Jx and Jy:
     Jx = reshape(J_vec(1:nx*ny), nx, ny);
     Jy = reshape(J_vec(nx*ny+1:end), mx, my);
 end
+
+%{
+%%%%%%%%%%%%%% GMRES
+
+function [Jx, Jy, iter, res_norm, flag] = solve_GMRES(GT0xP, GT0yP, GP0P, Fx, FxStar, Fy, FyStar, B, gridSize, tol, maxIter)
+    % Sizes
+    nx = gridSize(1) - 1; ny = gridSize(2);
+    mx = gridSize(1);   my = gridSize(2) - 1;
+    B_vec = [B.x(:); B.y(:)];
+
+    % Define operator and preconditioner
+    applyG = @(X) applyG_operator(X, GT0xP, GT0yP, GP0P, Fx, FxStar, Fy, FyStar, gridSize);
+
+    % Solve with restarted GMRES
+    restart = 30; % Adjust based on memory
+    [J_vec, flag, res_norm, iter] = gmres(applyG, B_vec, restart, tol, maxIter);
+
+    % Extract Jx, Jy
+    Jx = reshape(J_vec(1:nx*ny), nx, ny);
+    Jy = reshape(J_vec(nx*ny+1:end), mx, my);
+end
+
+%}
 
 GT0xPF = fft2(GT0xP);
 GT0yPF = fft2(GT0yP);
@@ -217,13 +246,26 @@ FyStar = conj(Fy);
 
 % excitation vector
 B.x = [];
-B.y = [0, 0, 0, 0, 1, 0, 0, 0, 0];
 
-tolerance = 1e-3
-maxIterCount = 3;
+feederPosition = ceil(countY / 2);
+V = zeros(basisFunctions.getCount(), 1);
+V(feederPosition) = 1;
 
-solve_CG(GT0xPF, GT0yPF, GP0PF, Fx, FxStar, Fy, FyStar, B, gridSize, tolerance, maxIterCount)
+B.x = [];
+B.y = V;
 
+tolerance = 1e-5;
+maxIterCount = 100000;
+
+tic;
+
+[Jx, Jy, iter, res_norm, flag] = solve_CG(GT0xPF, GT0yPF, GP0PF, Fx, FxStar, Fy, FyStar, B, gridSize, tolerance, maxIterCount);
+
+toc;
+
+iter
+
+norm(Jy)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function GJ_vec = applyG_operator(J_vec, GT0xP, GT0yP, GP0P, ...
