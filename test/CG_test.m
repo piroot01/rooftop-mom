@@ -1,88 +1,67 @@
 clc; clear; format long;
 
-%--- Problem Setup ---
-n = 100;
-A = rand(n);
-B_vec = rand(n, 1);
-x = zeros(n, 1);
+%--- Problem Setup: Construct an SPD matrix A ---
+n = 100;                        % You can choose an appropriate size n
+R = rand(n);                  % Generate a random matrix R
+A = R' * R;                   % A is now symmetric positive definite
+B_vec = rand(n,1);            % Right-hand side vector
 
-maxIter = 100000;
-tol = 1e-5;
+%--- Define operator and initial guess ---
+applyOperator = @(x) A * x;
+J_vec = zeros(n,1);           % Initial guess (can be zeros or any other guess)
 
-%--- Precompute Transpose ---
-A_trans = A.';
-
-%--- Initial Residuals ---
-r = B_vec - A * x;
-res_sq = r' * r;  % Squared residual norm
-tol_sq = tol^2;
-
-r_tld = r;  % Shadow residual
-p = r;
-p_tld = r_tld;
-
-rho = r_tld' * r;
-
-%fprintf('Iteration %d: residual norm = %e\n', 0, sqrt(res_sq));
-
-%--- Main BiCG Loop ---
-iter = 0;
-while (res_sq > tol_sq) && (iter < maxIter)
-    Ap = A * p;
-    Atp_tld = A_trans * p_tld;  % Use precomputed transpose
-    
-    denom = p_tld' * Ap;
-    if abs(denom) < eps
-        error('Breakdown: denominator too small.');
-    end
-    
-    alpha = rho / denom;
-    
-    % Update solution and residuals
-    x = x + alpha * p;
-    r = r - alpha * Ap;
-    r_tld = r_tld - alpha * Atp_tld;
-    
-    % Compute new residual and rho
-    res_sq_new = r' * r;
-    rho_new = r_tld' * r;
-    sqrt_res = sqrt(res_sq_new);
-    
-    % Check convergence
-    if res_sq_new < tol_sq
-        iter = iter + 1;
-        fprintf('Iteration %d: residual norm = %e\n', iter, sqrt_res);
-        break;
-    end
-    
-    % Update search directions
-    beta = rho_new / rho;
-    p = r + beta * p;
-    p_tld = r_tld + beta * p_tld;
-    
-    % Prepare for next iteration
-    rho = rho_new;
-    res_sq = res_sq_new;
-    iter = iter + 1;
-    %fprintf('Iteration %d: residual norm = %e\n', iter, sqrt_res);
-end
-
-
-function y = applyOperator(x, flag, A)
-    if strcmp(flag,'notransp') % Compute A*x
-        y = A * x;
-    elseif strcmp(flag,'transp') % Compute A'*x
-        y = A.' * x;
-    end
-end
+%--- CG Parameters ---
+maxIter = 1000;
+tol = 1e-3;
 
 tic;
 
-x = bicg(@(x, flag) applyOperator(x, flag, A), B_vec, tol, maxIter);
+%--- Compute initial residual ---
+r = B_vec - applyOperator(J_vec);
+p = r;
+res_norm = norm(r) / norm(B_vec);
+iter = 0;
+%fprintf('Iteration %d: relative residual = %e\n', iter, res_norm);
+
+%--- Main Conjugate Gradient loop ---
+while (res_norm > tol) && (iter < maxIter)
+    Ap = applyOperator(p);
+    alpha = (r' * r) / (p' * Ap);
+    
+    % Update solution
+    J_vec = J_vec + alpha * p;
+    
+    % Update residual
+    r_new = r - alpha * Ap;
+    
+    % Compute beta for the next direction
+    beta = (r_new' * r_new) / (r' * r);
+    
+    % Update direction vector
+    p = r_new + beta * p;
+    
+    % Update residual and iteration counter
+    r = r_new;
+    iter = iter + 1;
+    res_norm = norm(r) / norm(B_vec);
+    %fprintf('Iteration %d: relative residual = %e\n', iter, res_norm);
+end
 
 toc;
 
-%--- Validation ---
+% matlab CG
+tic;
+
+x = cgs(applyOperator, B_vec, tol, maxIter);
+
+toc;
+
+tic;
+
 x_exact = A \ B_vec;
-fprintf('Exact solution norm: %e\n', norm(x_exact));
-fprintf('BiCG solution norm: %e\n', norm(x));
+
+toc;
+
+norm(J_vec)
+norm(x)
+norm(x_exact)
