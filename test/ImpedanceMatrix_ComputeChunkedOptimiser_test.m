@@ -1,56 +1,57 @@
 clc; clearvars; format long;
 
+% load the source
 currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 3;
-countY = 2;
+countX = 30;
+countY = 30;
 sizeX = 1;
 sizeY = 1;
+
 origin = [0, 0, 0];
-order = 3;
-gridSize = [countX, countY];
+
+% quadrature order
+order = 5;
 
 lambda = 5;
 k = 2 * pi / lambda;
 
-memoryElementwise = uint32(1000000);
+% memory given to the mom
+memoryElementwise = 10e5;
 memory_MB = memoryElementwise * 8 / 1e6;
 
 % 1. step: generate a mesh
-myRectMeshPrimitive1 = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
-myRectMeshPrimitive2 = mom.MeshRectPrimitive(countX, countY, sizeX * 1.3, sizeY * 0.3, []);
-myRectMesh1 = mom.MeshRect(myRectMeshPrimitive1, origin, 0, 0, 0);
-myRectMesh2 = mom.MeshRect(myRectMeshPrimitive2, origin + [0, 0, 1], 0, 0, 0);
-myMeshCluster = mom.Mesh2DCluster();
-myMeshCluster.loadMesh(myRectMesh1.getAsMesh());
-%myMeshCluster.loadMesh(myRectMesh2.getAsMesh());
+dipolePrimitive = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
+dipolePrimitiveTransformed = mom.MeshRect(dipolePrimitive, origin, 0, 0, 0);
+dipoleMesh = dipolePrimitiveTransformed.getAsMesh();
 
 % 2. step: create Quadrature
 quadrature = mom.Quadrature(order);
 
 % 3. step: create BasisFunctions
-basisFuncs = mom.BasisFunctions(myRectMesh1.getAsMesh());
+basisFunctions = mom.BasisFunctions(dipoleMesh);
 
 % 4. step: create RooftopBasisFunctions
-rooftops = mom.RooftopBasisFunctions(myRectMesh1.getAsMesh(), basisFuncs.getFaces());
+rooftopBasisFunctions = mom.RooftopBasisFunctions(dipoleMesh, basisFunctions.getFaces());
 
 % 5. step: generate quadrature points and rooftop points
-rooftops.generatePoints(quadrature);
+rooftopBasisFunctions.generatePoints(quadrature);
 
-% 5. step: create a strategy for mag part of Z
-stratCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFuncs, rooftops, k);
-magStratContext = mom.ImpedanceMatrix.ComputeChunkedContext(memory_MB);
-magStrat = mom.ImpedanceMatrix.ComputeMagPartChunked(magStratContext);
-chunkedOptimiser = mom.ImpedanceMatrix.ComputeChunkedOptimiser(magStrat, magStratContext);
+% 6. step: crate a supporting objects for the Z computation
+strategyContext = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFunctions, rooftopBasisFunctions, k);
+computeChunkedContext = mom.ImpedanceMatrix.ComputeChunkedContext(memory_MB);
+strategy = mom.ImpedanceMatrix.ComputeChunked(computeChunkedContext);
+
+% 7. step: initialize the optimiser
+chunkedOptimiser = mom.ImpedanceMatrix.ComputeChunkedOptimiser(strategy, computeChunkedContext);
+gridSize{1} = [countX, countY];
 
 tic;
 
-Zm = chunkedOptimiser.compute(stratCtx, gridSize);
+Z = chunkedOptimiser.compute(strategyContext, gridSize);
 
 toc;
 
-disp(Zm);
-
-disp(size(Zm));
+disp(size(Z));

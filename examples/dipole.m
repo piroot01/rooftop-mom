@@ -7,7 +7,7 @@ addpath(srcDir);
 
 % dipole dimensions
 countX = 1;
-countY = 500;
+countY = 10;
 sizeX = 1;
 sizeY = 1;
 
@@ -65,7 +65,7 @@ V(feederPosition) = 1;
 
 tic;
 
-I = Z \ V;
+I = Z \ V
 
 toc;
 

@@ -68,102 +68,6 @@ function result = expandJ(J, direction, gridSize)
     end
 end
 
-%{
-JxP = expandJ(Jx, 'x', gridSize);
-JyP = expandJ(Jy, 'y', gridSize);
-
-[M, N] = size(GT0xP);
-[u, v] = ndgrid(0:(M - 1), 0:(N - 1));
-
-Fx = exp((1i * pi * u) / gridSize(1));
-FxStar = conj(Fx);
-
-Fy = exp((1i * pi * v) / gridSize(2));
-FyStar = conj(Fy);
-
-GT0xPF = fft2(GT0xP);
-GT0yPF = fft2(GT0yP);
-GP0PF = fft2(GP0P);
-JxPF = fft2(JxP);
-JyPF = fft2(JyP);
-
-% compute GxxJx
-magTermF = GT0xPF .* JxPF;
-elTermF = (1 - Fx) .* GP0PF .* (1 - FxStar) .* JxPF;
-
-magTerm = ifft2(magTermF);
-elTerm = ifft2(elTermF);
-
-GxxJx = magTerm + elTerm;
-
-% compute GxyJy
-elTermF = (1 - Fx) .* GP0PF .* (1 - FyStar) .* JyPF;
-
-GxyJy = ifft2(elTermF);
-
-% compute GyxJx
-elTermF = (1 - Fy) .* GP0PF .* (1 - FxStar) .* JxPF;
-
-GyxJx = ifft2(elTermF);
-
-% compute GyyJy
-
-magTermF = GT0yPF .* JyPF;
-elTermF = (1 - Fy) .* GP0PF .* (1 - FyStar) .* JyPF;
-
-magTerm = ifft2(magTermF);
-elTerm = ifft2(elTermF);
-
-GyyJy = magTerm + elTerm;
-
-%}
-%{
-function [Jx, Jy, iter, res_norm, flag] = solve_CG(GT0xP, GT0yP, GP0P, ...
-    Fx, FxStar, Fy, FyStar, B, gridSize, tol, maxIter)
-    % solve_CG solves G*J = B using a preconditioned CGS iterative method.
-    %
-    % Preconditioning is applied via the left preconditioner M_inv,
-    % approximated here as a Jacobi (diagonal) preconditioner.
-    
-    %--- Sizes for Jx and Jy:
-    nx = gridSize(1) - 1; ny = gridSize(2);
-    mx = gridSize(1);   my = gridSize(2) - 1;
-    
-    %--- Vectorize the RHS:
-    B_vec = [B.x(:); B.y(:)];
-    
-    %--- Define the operator application function:
-    applyG = @(X) applyG_operator(X, GT0xP, GT0yP, GP0P, ...
-        Fx, FxStar, Fy, FyStar, gridSize);
-    
-    %--- Compute an approximate diagonal of the operator G.
-    % As a simple approximation, we use the zero-frequency (DC) term in the FFT.
-    %
-    % For the circulant embedding, note that the Fourier mode corresponding to u=v=0
-    % typically gives a good representation of the average diagonal value.
-    %
-    % Preconditioning for x–component:
-    Mx_approx = GT0xP(1,1) + (1 - Fx(1,1)) * GP0P(1,1) * (1 - FxStar(1,1));
-    % Preconditioning for y–component:
-    My_approx = GT0yP(1,1) + (1 - Fy(1,1)) * GP0P(1,1) * (1 - FyStar(1,1));
-    
-    % Build a preconditioner vector for the full current [Jx; Jy]:
-    % For each degree of freedom in Jx and Jy, we assign the same diagonal value.
-    M_inv_diag = [ repmat(1/Mx_approx, nx*ny, 1); 
-                   repmat(1/My_approx, mx*my, 1) ];
-               
-    % Define the left preconditioner operator:
-    precond = @(x) M_inv_diag .* x;
-    
-    %--- Use MATLAB's preconditioned CGS method:
-    % Here, we pass the preconditioner as the first left preconditioner argument.
-    [J_vec, flag, res_norm, iter] = cgs(applyG, B_vec, tol, maxIter, precond);
-    
-    %--- Unvectorize the solution back to Jx and Jy:
-    Jx = reshape(J_vec(1:nx*ny), nx, ny);
-    Jy = reshape(J_vec(nx*ny+1:end), mx, my);
-end
-%}
 
 function [Jx, Jy, iter, res_norm, flag] = solve_CG(GT0xP, GT0yP, GP0P, ...
     Fx, FxStar, Fy, FyStar, B, gridSize, tol, maxIter)
@@ -201,7 +105,7 @@ function [Jx, Jy, iter, res_norm, flag] = solve_CG(GT0xP, GT0yP, GP0P, ...
     applyG = @(X) applyG_operator(X, GT0xP, GT0yP, GP0P, ...
         Fx, FxStar, Fy, FyStar, gridSize);
 
-    [J_vec, flag, res_norm, iter] = cgs(applyG, B_vec, tol, maxIter);
+    [J_vec, flag, res_norm, iter] = bicgstab(applyG, B_vec, tol, maxIter);
 
     %--- Unvectorize the solution back to Jx and Jy:
     Jx = reshape(J_vec(1:nx*ny), nx, ny);
@@ -254,8 +158,10 @@ V(feederPosition) = 1;
 B.x = [];
 B.y = V;
 
-tolerance = 1e-5;
+tolerance = 1e-6;
 maxIterCount = 100000;
+
+% CG
 
 tic;
 
@@ -263,9 +169,47 @@ tic;
 
 toc;
 
-iter
+fprintf("CG norm = %d, iter count = %d\n", norm(Jy), iter);
 
-norm(Jy)
+% BiCG
+
+function [Jx, Jy, iter, res_norm, flag] = solve_BiCG(GT0xP, GT0yP, GP0P, ...
+    Fx, FxStar, Fy, FyStar, B, gridSize, tol, maxIter)
+    % Determine sizes for Jx and Jy:
+    nx = gridSize(1) - 1; ny = gridSize(2);
+    mx = gridSize(1);   my = gridSize(2) - 1;
+
+    % Vectorize the right-hand side:
+    B_vec = [B.x(:); B.y(:)];
+
+    % Nested function to define the operator. Note that we now pass GT0yP correctly.
+    function y = applyG(x, flagStr, GT0xP, GT0yP, GP0P, Fx, FxStar, Fy, FyStar, gridSize)
+        if strcmp(flagStr, 'notransp')
+            y = applyG_operator(x, GT0xP, GT0yP, GP0P, Fx, FxStar, Fy, FyStar, gridSize);
+        elseif strcmp(flagStr, 'transp')
+            % Pass GT0yP as the second parameter!
+            y = applyGConjugated_operator(x, GT0xP, GT0yP, GP0P, Fx, FxStar, Fy, FyStar, gridSize);
+        end
+    end
+
+    % Create the function handle for bicg:
+    applyG_handle = @(x, flagStr) applyG(x, flagStr, GT0xP, GT0yP, GP0P, Fx, FxStar, Fy, FyStar, gridSize);
+
+    % Call bicg with the provided tolerance and maximum iterations:
+    [J_vec, flag, res_norm, iter] = bicg(applyG_handle, B_vec, tol, maxIter);
+
+    % Reshape the solution vector back into Jx and Jy:
+    Jx = reshape(J_vec(1:nx*ny), nx, ny);
+    Jy = reshape(J_vec(nx*ny+1:end), mx, my);
+end
+
+%tic;
+
+%[Jx, Jy, iter, res_norm, flag] = solve_BiCG(GT0xPF, GT0yPF, GP0PF, Fx, FxStar, Fy, FyStar, B, gridSize, tolerance, maxIterCount);
+
+%toc;
+
+%fprintf("BiCG norm = %d, iter count = %d\n", norm(Jy), iter);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function GJ_vec = applyG_operator(J_vec, GT0xP, GT0yP, GP0P, ...
@@ -336,3 +280,113 @@ function GJ_vec = applyG_operator(J_vec, GT0xP, GT0yP, GP0P, ...
     %--- Vectorize the results and concatenate:
     GJ_vec = [Gx_trim(:); Gy_trim(:)];
 end
+
+function GJ_vec = applyGConjugated_operator(J_vec, GT0xP, GT0yP, GP0P, ...
+    Fx, FxStar, Fy, FyStar, gridSize)
+    % Sizes for Jx and Jy:
+    nx = gridSize(1) - 1; 
+    ny = gridSize(2);
+    mx = gridSize(1);   
+    my = gridSize(2) - 1;
+    N_Jx = nx * ny;
+    
+    % Extract the current components:
+    Jx = reshape(J_vec(1:N_Jx), nx, ny);
+    Jy = reshape(J_vec(N_Jx+1:end), mx, my);
+    
+    % Expand (pad) the currents as done in the forward operator:
+    JxP = expandJ(Jx, 'x', gridSize);
+    JyP = expandJ(Jy, 'y', gridSize);
+    
+    % Compute FFTs of the padded currents:
+    JxPF = fft2(JxP);
+    JyPF = fft2(JyP);
+    
+    % For the x–component:
+    % Compute the “magnetic” term using the conjugated kernel:
+    magTermF_adj = ifft2(conj(GT0xP) .* JxPF);
+    % Compute the “electric” term:
+    elTermF_adj = ifft2(conj((1 - Fx) .* GP0P .* (1 - FxStar)) .* JxPF);
+    GxxJx_adj = magTermF_adj + elTermF_adj;
+    
+    % Compute the cross contribution from Jy (x–component):
+    GxyJy_adj = ifft2(conj((1 - Fx) .* GP0P .* (1 - FyStar)) .* JyPF);
+    
+    % For the y–component:
+    % Cross contribution from Jx:
+    GyxJx_adj = ifft2(conj((1 - Fy) .* GP0P .* (1 - FxStar)) .* JxPF);
+    % “Magnetic” term for y–component:
+    magTermF_y_adj = ifft2(conj(GT0yP) .* JyPF);
+    % “Electric” term for y–component:
+    elTermF_y_adj = ifft2(conj((1 - Fy) .* GP0P .* (1 - FyStar)) .* JyPF);
+    GyyJy_adj = magTermF_y_adj + elTermF_y_adj;
+    
+    % Sum the contributions to get the full adjoint applied current:
+    Gx_adj = GxxJx_adj + GxyJy_adj;
+    Gy_adj = GyxJx_adj + GyyJy_adj;
+    
+    % Since the FFTs yield values on the full padded grid,
+    % trim the result to the original grid size:
+    Gx_trim = Gx_adj(1:nx, 1:ny);
+    Gy_trim = Gy_adj(1:mx, 1:my);
+    
+    % Combine back into a vector (ordering as in your forward operator):
+    GJ_vec = [Gx_trim(:); Gy_trim(:)];
+end
+
+% GMRES precond
+
+function [Jx, Jy, iter, relres, flag] = solve_GMRES(GT0xP, GT0yP, GP0P, ...
+    Fx, FxStar, Fy, FyStar, B, gridSize, tol, maxIter, restart)
+    % solve_GMRES_precond solves G*J = B (where J = [Jx; Jy] is the rooftop current)
+    % using GMRES with a simple Jacobi preconditioner.
+    %
+    % Inputs:
+    %   GT0xP, GT0yP, GP0P : FFT–domain matrices (size [M,N])
+    %   Fx, FxStar, Fy, FyStar : FFT phase factors defined on a grid [M,N]
+    %   B : structure with fields:
+    %         B.x  -- excitation for the x–component (size: gridSize - [1,0])
+    %         B.y  -- excitation for the y–component (size: gridSize - [0,1])
+    %   gridSize : [M, N] full grid size used for padding/embedding
+    %   tol : tolerance for the GMRES relative residual (e.g., 1e-6)
+    %   maxIter : maximum number of GMRES iterations
+    %   restart : restart parameter for GMRES (typical values: 30-50)
+    %
+    % Outputs:
+    %   Jx, Jy : computed current components (shaped appropriately)
+    %   iter : number of iterations performed (GMRES inner iterations may be nested)
+    %   relres : final relative residual norm
+    %   flag : convergence flag from GMRES
+    %
+    % Determine sizes for Jx and Jy:
+    nx = gridSize(1) - 1;  % Jx has size (nx x gridSize(2))
+    ny = gridSize(2);
+    mx = gridSize(1);      % Jy has size (gridSize(1) x (gridSize(2)-1))
+    my = gridSize(2) - 1;
+
+    % Vectorize the excitation:
+    B_vec = [B.x(:); B.y(:)];
+
+    % Define the operator using your FFT-based application:
+    applyG = @(X) applyG_operator(X, GT0xP, GT0yP, GP0P, ...
+                Fx, FxStar, Fy, FyStar, gridSize);
+
+    % Solve using GMRES with restart.
+    % Note: gmres returns [solution, flag, relres, iter, residual_vector].
+    [J_vec, flag, relres, iter, ~] = gmres(applyG, B_vec, restart, tol, maxIter);
+
+    % Unvectorize the solution:
+    Jx = reshape(J_vec(1:nx*ny), nx, ny);
+    Jy = reshape(J_vec(nx*ny+1:end), mx, my);
+end
+
+%restart = 100;
+
+%tic;
+
+%[Jx, Jy, iter, res_norm, flag] = solve_GMRES(GT0xPF, GT0yPF, GP0PF, Fx, FxStar, Fy, FyStar, B, gridSize, tolerance, maxIterCount, restart);
+
+%toc;
+
+%fprintf("GMRES norm = %d, iter count = %s\n", norm(Jy), mat2str(iter));
+

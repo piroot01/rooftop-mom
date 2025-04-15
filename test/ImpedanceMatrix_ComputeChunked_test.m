@@ -4,8 +4,8 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 1;
-countY = 10;
+countX = 5;
+countY = 5;
 sizeX = 1;
 sizeY = 1;
 origin = [0, 0, 0];
@@ -14,7 +14,7 @@ order = 5;
 lambda = 5;
 k = 2 * pi / lambda;
 
-memoryElementwise = 10e6;
+memoryElementwise = 10e5;
 memory_MB = memoryElementwise * 8 / 1e6;
 
 % 1. step: generate a mesh
@@ -41,14 +41,14 @@ rooftops.generatePoints(quadrature);
 stratCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFuncs, rooftops, k);
 compStratCtx = mom.ImpedanceMatrix.ComputeChunkedContext(memory_MB);
 
-tic;
+%tic;
 
-magStrat = mom.ImpedanceMatrix.ComputeMagPartChunked(compStratCtx);
-elStrat = mom.ImpedanceMatrix.ComputeElPartChunked(compStratCtx);
-Zm = magStrat.compute(stratCtx);
-Ze = elStrat.compute(stratCtx);
+%magStrat = mom.ImpedanceMatrix.ComputeMagPartChunked(compStratCtx);
+%elStrat = mom.ImpedanceMatrix.ComputeElPartChunked(compStratCtx);
+%Zm = magStrat.compute(stratCtx);
+%Ze = elStrat.compute(stratCtx);
 
-toc;
+%toc;
 
 %disp(Zm - Ze);
 
@@ -59,4 +59,4 @@ Z = combStrat.compute(stratCtx);
 
 toc;
 
-disp(Z - Zm + Ze);
+disp(size(Z));
