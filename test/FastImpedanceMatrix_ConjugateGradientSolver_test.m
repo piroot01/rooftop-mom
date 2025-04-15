@@ -1,12 +1,11 @@
 clc; clearvars; format long;
 
-%% Setup paths and parameters
 currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
 countX = 1;
-countY = 10;
+countY = 1000;
 sizeX = 1;
 sizeY = 1;
 gridSize = [countX, countY];
@@ -16,7 +15,6 @@ order = 5;
 lambda = 5;
 k = 2 * pi / lambda;
 
-%% Create mesh and related objects
 myRectMeshPrimitive1 = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
 myRectMesh1 = mom.MeshRect(myRectMeshPrimitive1, origin, 0, 0, 0);
 myMeshCluster = mom.Mesh2DCluster();
@@ -31,7 +29,12 @@ rooftopBasisFunctions.generatePoints();
 strategyCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFunctions, rooftopBasisFunctions, k);
 
 conjugateGradientSolver = mom.FastImpedanceMatrix.ConjugateGradientSolver(strategyCtx);
+
+tic;
+
 conjugateGradientSolver.generateOperators();
+
+toc;
 
 feederPosition = ceil(countY / 2);
 V = zeros(basisFunctions.getCount(), 1);
@@ -39,7 +42,13 @@ V(feederPosition) = 1;
 excitationVectorX = [];
 excitationVectorY = V;
 
-tolerance = 1e-5;
+tolerance = 1e-6;
 maxIterationCount = 1000;
 
-[currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrent(excitationVectorX, excitationVectorY, tolerance, maxIterationCount)
+tic;
+
+[currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrent(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
+
+toc;
+
+fprintf("currentYNorm = %d, iterationCount = %d\n", norm(currentY), iterationCount);

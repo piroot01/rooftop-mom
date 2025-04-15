@@ -6,7 +6,7 @@ srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
 countX = 1;
-countY = 10;
+countY = 1000;
 sizeX = 1;
 sizeY = 1;
 gridSize = [countX, countY];
@@ -70,8 +70,8 @@ V(feederPosition) = 1;
 B.x = [];  % Not used in this particular formulation.
 B.y = V;
 
-tolerance = 1e-12;
-maxIterCount = 1000;
+tolerance = 1e-6;
+maxIterCount = 100000;
 
 %% Run Conjugate Gradient solver using our FFT-based operator
 tic;
@@ -80,7 +80,6 @@ tic;
 toc;
 
 fprintf("CG norm = %d, iter count = %d\n", norm(Jy), iter);
-Jy
 
 %% --- Function Definitions ---
 
