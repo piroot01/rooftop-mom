@@ -12,17 +12,6 @@ classdef ConjugateGradientSolver < handle
     end
 
     methods
-        function [currentVectorX, currentVectorY, converged, residueNorm, iterationCount] = solveCurrent(obj, excitationVectorX, excitationVectorY, tolerance, maxInterationCount)
-            excitationVector = [excitationVectorX(:); excitationVectorY(:)];
-
-            [currentVector, converged, residueNorm, iterationCount] = obj.conjugateGradientSolver(excitationVector, tolerance, maxInterationCount);
-            %[currentVector, converged, residueNorm, iterationCount] = bicgstab(@(excitationVector) obj.applyOperators(excitationVector), excitationVector, tolerance, maxInterationCount);
-            %[currentVector, converged, residueNorm, iterationCount] = cgs(@(excitationVector) obj.applyOperators(excitationVector), excitationVector, tolerance, maxInterationCount);
-
-            currentVectorX = reshape(currentVector(1:obj.solverContext_.offsetX), obj.solverContext_.basisCountX.x, obj.solverContext_.basisCountX.y);
-            currentVectorY = reshape(currentVector((obj.solverContext_.offsetX + 1):end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
-        end
-
         function generateOperators(obj)
             magPartStrategy = mom.FastImpedanceMatrix.ComputeMagPart();
             elPartStrategy = mom.FastImpedanceMatrix.ComputeElPart();
@@ -57,10 +46,41 @@ classdef ConjugateGradientSolver < handle
             obj.solverContext_.Gyx = (1 - forwardShiftY) .* (1 - backwardShiftX) .* elPartFFT;
             obj.solverContext_.Gyy = magPartYFFT + (1 - forwardShiftY) .* (1 - backwardShiftY) .* elPartFFT;
         end
+
+        function [currentVectorX, currentVectorY, converged, residueNorm, iterationCount] = solveCurrent(obj, excitationVectorX, excitationVectorY, tolerance, maxInterationCount)
+            excitationVector = [excitationVectorX(:); excitationVectorY(:)];
+
+            [currentVector, converged, residueNorm, iterationCount] = obj.conjugateGradientSolver(excitationVector, tolerance, maxInterationCount);
+            %[currentVector, converged, residueNorm, iterationCount] = bicgstab(@(excitationVector) obj.applyOperators(excitationVector), excitationVector, tolerance, maxInterationCount);
+            %[currentVector, converged, residueNorm, iterationCount] = cgs(@(excitationVector) obj.applyOperators(excitationVector), excitationVector, tolerance, maxInterationCount);
+
+            currentVectorX = reshape(currentVector(1:obj.solverContext_.offsetX), obj.solverContext_.basisCountX.x, obj.solverContext_.basisCountX.y);
+            currentVectorY = reshape(currentVector((obj.solverContext_.offsetX + 1):end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
+        end
+
+        function impedanceMatrix = computeImpedanceMatrix1(obj)
+            basisFunctionCount = obj.solverContext_.basisCountX.x * obj.solverContext_.basisCountX.y + obj.solverContext_.basisCountY.x * obj.solverContext_.basisCountY.y;
+            impedanceMatrix = zeros(basisFunctionCount);
+
+            for column = 1:basisFunctionCount
+                canonicalVector = zeros(basisFunctionCount, 1);
+                canonicalVector(column) = 1;
+
+                impedanceMatrix(:, column) = obj.applyOperatorsVector(canonicalVector);
+            end
+        end
+
+        function impedanceMatrix = computeImpedanceMatrix2(obj)
+            basisFunctionCount = obj.solverContext_.basisCountX.x * obj.solverContext_.basisCountX.y + obj.solverContext_.basisCountY.x * obj.solverContext_.basisCountY.y;
+
+            I = eye(basisFunctionCount);
+
+            impedanceMatrix = obj.applyOperatorsMatrix(I);
+        end
     end
 
     methods (Access = private)
-        function result = applyOperators(obj, currentVector)
+        function result = applyOperatorsVector(obj, currentVector)
             currentVectorX = reshape(currentVector(1:obj.solverContext_.offsetX), obj.solverContext_.basisCountX.x, obj.solverContext_.basisCountX.y);
             currentVectorY = reshape(currentVector((obj.solverContext_.offsetX + 1):end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
 
@@ -79,17 +99,46 @@ classdef ConjugateGradientSolver < handle
             result = [GxSection(:); GySection(:)];
         end
 
-        function [currentVector, converged, residueNorm, iterationCount] = conjugateGradientSolver(obj, excitationVector, tolerance, maxInterationCount)
-            currentVector = rand(size(excitationVector));
+        function result = applyOperatorsMatrix(obj, currentMatrix)
+            bcx = obj.solverContext_.basisCountX;
+            bcy = obj.solverContext_.basisCountY;
+            padX = obj.solverContext_.paddingX;
+            padY = obj.solverContext_.paddingY;
 
-            residue = excitationVector - obj.applyOperators(currentVector);
+            N = size(currentMatrix, 2);
+
+            currentX = reshape(currentMatrix(1:bcx.x * bcx.y, :), bcx.x, bcx.y, N);
+            currentY = reshape(currentMatrix(bcx.x * bcx.y+1:end, :), bcy.x, bcy.y, N);
+
+            currents = zeros(padX, padY, 2, N);
+            currents(1:bcx.x, 1:bcx.y, 1, :) = currentX;
+            currents(1:bcy.x, 1:bcy.y, 2, :) = currentY;
+
+            currentsFFT = fft2(currents);
+
+            GxFFT = obj.solverContext_.Gxx .* currentsFFT(:, :, 1, :) + obj.solverContext_.Gxy .* currentsFFT(:, :, 2, :);
+            GyFFT = obj.solverContext_.Gyx .* currentsFFT(:, :, 1, :) + obj.solverContext_.Gyy .* currentsFFT(:, :, 2, :);
+
+            Gx = ifft2(GxFFT);
+            Gy = ifft2(GyFFT);
+
+            GxSection = Gx(1:bcx.x, 1:bcx.y, 1, :);
+            GySection = Gy(1:bcy.x, 1:bcy.y, 1, :);
+
+            result = [reshape(GxSection, bcx.x * bcx.y, N); reshape(GySection, bcy.x * bcy.y, N)];
+        end
+
+        function [currentVector, converged, residueNorm, iterationCount] = conjugateGradientSolver(obj, excitationVector, tolerance, maxInterationCount)
+            currentVector = randn(size(excitationVector));
+
+            residue = excitationVector - obj.applyOperatorsVector(currentVector);
             direction = residue;
             rTr = residue.' * residue;
             excitationNorm = norm(excitationVector);
             converged = false;
 
             for iterationCount = 1:maxInterationCount
-                GDirection = obj.applyOperators(direction);
+                GDirection = obj.applyOperatorsVector(direction);
                 alpha = rTr / (direction.' * GDirection);
                 currentVector = currentVector + alpha * direction;
                 residue = residue - alpha * GDirection;

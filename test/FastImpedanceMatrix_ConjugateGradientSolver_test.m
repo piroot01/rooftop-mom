@@ -5,50 +5,56 @@ srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
 countX = 1;
-countY = 1000;
 sizeX = 1;
 sizeY = 1;
-gridSize = [countX, countY];
 origin = [0, 0, 0];
 
-order = 5;
+order = 3;
 lambda = 5;
 k = 2 * pi / lambda;
 
-myRectMeshPrimitive1 = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
-myRectMesh1 = mom.MeshRect(myRectMeshPrimitive1, origin, 0, 0, 0);
-myMeshCluster = mom.Mesh2DCluster();
-myMeshCluster.loadMesh(myRectMesh1.getAsMesh());
+sizes = 100:100:20000;
+times = zeros(2, numel(sizes));
 
-quadrature = mom.Quadrature(order);
-basisFunctions = mom.BasisFunctions(myMeshCluster);
+n = 1;
+for countY = sizes
+    gridSize = [countX, countY];
+    myRectMeshPrimitive1 = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
+    myRectMesh1 = mom.MeshRect(myRectMeshPrimitive1, origin, 0, 0, 0);
+    myMeshCluster = mom.Mesh2DCluster();
+    myMeshCluster.loadMesh(myRectMesh1.getAsMesh());
 
-rooftopBasisFunctions = mom.FastImpedanceMatrix.RooftopBasisFunctions(quadrature, gridSize);
-rooftopBasisFunctions.generatePoints();
+    quadrature = mom.Quadrature(order);
+    basisFunctions = mom.BasisFunctions(myMeshCluster);
 
-strategyCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFunctions, rooftopBasisFunctions, k);
+    rooftopBasisFunctions = mom.FastImpedanceMatrix.RooftopBasisFunctions(quadrature, gridSize);
+    rooftopBasisFunctions.generatePoints();
 
-conjugateGradientSolver = mom.FastImpedanceMatrix.ConjugateGradientSolver(strategyCtx);
+    strategyCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFunctions, rooftopBasisFunctions, k);
 
-tic;
+    conjugateGradientSolver = mom.FastImpedanceMatrix.ConjugateGradientSolver(strategyCtx);
 
-conjugateGradientSolver.generateOperators();
+    tic;
 
-toc;
+    conjugateGradientSolver.generateOperators();
 
-feederPosition = ceil(countY / 2);
-V = zeros(basisFunctions.getCount(), 1);
-V(feederPosition) = 1;
-excitationVectorX = [];
-excitationVectorY = V;
+    times(1, n) = toc;
 
-tolerance = 1e-6;
-maxIterationCount = 1000;
+    feederPosition = ceil(countY / 2);
+    V = zeros(basisFunctions.getCount(), 1);
+    V(feederPosition) = 1;
+    excitationVectorX = [];
+    excitationVectorY = V;
 
-tic;
+    tolerance = 1e-3;
+    maxIterationCount = 5000;
 
-[currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrent(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
+    tic;
 
-toc;
+    [currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrent(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
 
-fprintf("currentYNorm = %d, iterationCount = %d\n", norm(currentY), iterationCount);
+    times(2, n) = toc;
+
+    fprintf("[%d/%d]: currentYNorm = %d, iterationCount = %d\n", n, numel(sizes), norm(currentY), iterationCount);
+    n = n + 1;
+end

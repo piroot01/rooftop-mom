@@ -4,12 +4,12 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 5;
-countY = 5;
+countX = 3;
+countY = 3;
 sizeX = 1;
 sizeY = 1;
 origin = [0, 0, 0];
-order = 5;
+order = 3;
 
 lambda = 5;
 k = 2 * pi / lambda;
@@ -55,7 +55,7 @@ compStratCtx = mom.ImpedanceMatrix.ComputeChunkedContext(memory_MB);
 tic;
 
 combStrat = mom.ImpedanceMatrix.ComputeChunked(compStratCtx);
-Z = combStrat.compute(stratCtx);
+Z = combStrat.compute(stratCtx)
 
 toc;
 
