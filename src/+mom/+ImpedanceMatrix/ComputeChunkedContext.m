@@ -14,8 +14,6 @@ classdef ComputeChunkedContext < handle
     methods
         function obj = ComputeChunkedContext(memory_MB)
             obj.memory_MB_ = double(memory_MB);
-
-            fprintf("Memory used: %lu MB\n", obj.memory_MB_);
         end
     end
 

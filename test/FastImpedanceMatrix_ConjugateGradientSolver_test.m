@@ -9,16 +9,18 @@ sizeX = 1;
 sizeY = 1;
 origin = [0, 0, 0];
 
-order = 3;
-lambda = 5;
-k = 2 * pi / lambda;
+order = 5;
 
-sizes = 100:100:20000;
-times = zeros(2, numel(sizes));
+sizes = 100:100:5000;
+times = zeros(3, numel(sizes));
 
 n = 1;
 for countY = sizes
     gridSize = [countX, countY];
+
+    lambda = 2 * countY * sizeY;
+    k = 2 * pi / lambda;
+
     myRectMeshPrimitive1 = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
     myRectMesh1 = mom.MeshRect(myRectMeshPrimitive1, origin, 0, 0, 0);
     myMeshCluster = mom.Mesh2DCluster();
@@ -40,21 +42,35 @@ for countY = sizes
 
     times(1, n) = toc;
 
-    feederPosition = ceil(countY / 2);
+    feederPosition = ceil(basisFunctions.getCount() / 2);
     V = zeros(basisFunctions.getCount(), 1);
     V(feederPosition) = 1;
+
     excitationVectorX = [];
     excitationVectorY = V;
 
-    tolerance = 1e-3;
+    tolerance = 1e-4;
     maxIterationCount = 5000;
 
-    tic;
+    timesPerIteration = zeros(2, 4);
 
-    [currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrent(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
+    for k = 1:4
+        tic;
 
-    times(2, n) = toc;
+        [~, ~, ~, ~, iterationCount] = conjugateGradientSolver.solveCurrent(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
 
-    fprintf("[%d/%d]: currentYNorm = %d, iterationCount = %d\n", n, numel(sizes), norm(currentY), iterationCount);
+        timesPerIteration(1, k) = toc;
+
+        tic;
+
+        [~, ~, ~, ~, iterationCountPrecond] = conjugateGradientSolver.solveCurrentPrecond(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
+
+        timesPerIteration(2, k) = toc;
+    end
+
+    times(2, n) = sum(timesPerIteration(1, 2:end)) / 3;
+    times(3, n) = sum(timesPerIteration(2, 2:end)) / 3;
+
+    fprintf("[%d/%d] [%d]: iterationCount = %d, iterationCountPrecond = %d\n", n, numel(sizes), length(V),  iterationCount, iterationCountPrecond);
     n = n + 1;
 end
