@@ -5,8 +5,8 @@ srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
 % only dipole antennas will make sense
-countX = 400;
-countY = 400;
+countX = 300;
+countY = 33;
 gridSize = [countX, countY];
 sizeX = 1;
 sizeY = 1;
@@ -62,7 +62,6 @@ feederPosition = ceil(basisFunctions.getCount() / 2);
 V = zeros(basisFunctions.getCount(), 1);
 V(feederPosition) = 1;
 
-
 %
 % CG-FFT solver
 %
@@ -70,17 +69,21 @@ V(feederPosition) = 1;
 excitationVectorX = [];
 excitationVectorY = V;
 
+restart = 100;
 tolerance = 1e-3;
-maxIterationCount = 1000;
+maxIterationCount = 2000;
 
 tic;
 
-[currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrentPreconditioned(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
+%[currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrentPGMRES(excitationVectorX, excitationVectorY, restart, tolerance, maxIterationCount);
+[currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrentPCG(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
 
 t1 = toc;
 
 fprintf("Time to solve using CG-FFT: %f\n", t1);
-fprintf("Number of iterations: %d\n", iterationCount);
+fprintf("Number of iterations: %s\n", mat2str(iterationCount));
+
+fprintf("currentY norm = %f\n", norm(currentY));
 
 %{
 
