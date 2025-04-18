@@ -89,9 +89,8 @@ classdef ConjugateGradientSolver < handle
             excitationVector = [excitationVectorX(:); excitationVectorY(:)];
 
             %[currentVector, converged, residueNorm, iterationCount] = bicgstab(@(excitationVector) obj.applyOperatorsVector(excitationVector), excitationVector, tolerance, maxIterationCount, @(r) obj.applyPreconditionerVector(r));
-            %[currentVector, converged, residueNorm, iterationCount] = cgs(@(excitationVector) obj.applyOperatorsVector(excitationVector), excitationVector, tolerance, maxIterationCount, @(r) obj.applyPreconditionerVector(r));
+            %[currentVector, converged, residueNorm, iterationCount] = bicgstabl(@(excitationVector) obj.applyOperatorsVector(excitationVector), excitationVector, tolerance, maxIterationCount, @(r) obj.applyPreconditionerVector(r));
             [currentVector, converged, residueNorm, iterationCount] = obj.preconditionedConjugateGradientSolver(excitationVector, tolerance, maxIterationCount);
-            %[currentVector, converged, residueNorm, iterationCount] = gmres(@(excitationVector) obj.applyOperatorsVector(excitationVector), excitationVector, 2,  tolerance, maxIterationCount, @(r) obj.applyPreconditionerVector(r));
 
             currentVectorX = reshape(currentVector(1:obj.solverContext_.offsetX), obj.solverContext_.basisCountX.x, obj.solverContext_.basisCountX.y);
             currentVectorY = reshape(currentVector((obj.solverContext_.offsetX + 1):end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
@@ -202,7 +201,7 @@ classdef ConjugateGradientSolver < handle
                     z = [zYSection(:)];
                 case 'all'
                     rX = reshape(r(1:obj.solverContext_.offsetX), obj.solverContext_.basisCountX.x, obj.solverContext_.basisCountX.y);
-                    rY = reshape(r(obj.solverContext_.offsetX+1:end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
+                    rY = reshape(r((obj.solverContext_.offsetX + 1):end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
 
                     rXFFT = fft2(rX, obj.solverContext_.paddingX, obj.solverContext_.paddingY);
                     rYFFT = fft2(rY, obj.solverContext_.paddingX, obj.solverContext_.paddingY);
