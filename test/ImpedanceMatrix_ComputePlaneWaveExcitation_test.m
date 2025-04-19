@@ -59,6 +59,6 @@ direction = [0, 0, 1];
 polarization = [1, 1, 0];
 planeWaveExcitatiton = mom.ImpedanceMatrix.ComputePlaneWaveExcitation();
 
-V = planeWaveExcitatiton.compute(strategyContext, direction, polarization)
+V = planeWaveExcitatiton.compute(strategyContext, direction, polarization);
 
 I = Z / V;
