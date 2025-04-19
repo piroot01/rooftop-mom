@@ -76,9 +76,9 @@ classdef ConjugateGradientSolver < handle
         function [currentVectorX, currentVectorY, converged, residueNorm, iterationCount] = solveCurrentCG(obj, excitationVectorX, excitationVectorY, tolerance, maxIterationCount)
             excitationVector = [excitationVectorX(:); excitationVectorY(:)];
 
-            %[currentVector, converged, residueNorm, iterationCount] = obj.conjugateGradientSolver(excitationVector, tolerance, maxIterationCount);
+            [currentVector, converged, residueNorm, iterationCount] = obj.conjugateGradientSolver(excitationVector, tolerance, maxIterationCount);
             %[currentVector, converged, residueNorm, iterationCount] = bicgstab(@(excitationVector) obj.applyOperatorsVector(excitationVector), excitationVector, tolerance, maxIterationCount);
-            [currentVector, converged, residueNorm, iterationCount] = cgs(@(excitationVector) obj.applyOperatorsVector(excitationVector), excitationVector, tolerance, maxIterationCount);
+            %[currentVector, converged, residueNorm, iterationCount] = cgs(@(excitationVector) obj.applyOperatorsVector(excitationVector), excitationVector, tolerance, maxIterationCount);
 
             currentVectorX = reshape(currentVector(1:obj.solverContext_.offsetX), obj.solverContext_.basisCountX.x, obj.solverContext_.basisCountX.y);
             currentVectorY = reshape(currentVector((obj.solverContext_.offsetX + 1):end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
@@ -89,6 +89,15 @@ classdef ConjugateGradientSolver < handle
 
             %[currentVector, converged, residueNorm, iterationCount] = bicgstab(@(excitationVector) obj.applyOperatorsVector(excitationVector), excitationVector, tolerance, maxIterationCount, @(r) obj.applyPreconditionerVector(r));
             [currentVector, converged, residueNorm, iterationCount] = obj.preconditionedConjugateGradientSolver(excitationVector, tolerance, maxIterationCount);
+
+            currentVectorX = reshape(currentVector(1:obj.solverContext_.offsetX), obj.solverContext_.basisCountX.x, obj.solverContext_.basisCountX.y);
+            currentVectorY = reshape(currentVector((obj.solverContext_.offsetX + 1):end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
+        end
+
+        function [currentVectorX, currentVectorY, converged, residueNorm, iterationCount] = solveCurrentBiCGSTAB(obj, excitationVectorX, excitationVectorY, tolerance, maxIterationCount)
+            excitationVector = [excitationVectorX(:); excitationVectorY(:)];
+
+            [currentVector, converged, residueNorm, iterationCount] = bicgstab(@(excitationVector) obj.applyOperatorsVector(excitationVector), excitationVector, tolerance, maxIterationCount);
 
             currentVectorX = reshape(currentVector(1:obj.solverContext_.offsetX), obj.solverContext_.basisCountX.x, obj.solverContext_.basisCountX.y);
             currentVectorY = reshape(currentVector((obj.solverContext_.offsetX + 1):end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
@@ -226,15 +235,6 @@ classdef ConjugateGradientSolver < handle
             end
         end
 
-        function z = applyPreconditionerVector1(obj, r)
-            % New: P = 2*C^{-1} - C^{-1} * T * C^{-1}
-            %  where T = obj.applyOperatorsVector
-            z1 = obj.applyPreconditionerVector(r);        % C^{-1} * r
-            Tz1 = obj.applyOperatorsVector(z1);       % T * (C^{-1} * r)
-            z2 = obj.applyPreconditionerVector(Tz1);      % C^{-1} * [ T * C^{-1} * r ]
-            z  = 2*z1 - z2;                           % combine
-        end
-
         % TODO: rewrite so it is compatible with rooftopContent
         function result = applyOperatorsMatrix(obj, currentMatrix)
             bcx = obj.solverContext_.basisCountX;
@@ -266,7 +266,7 @@ classdef ConjugateGradientSolver < handle
         end
 
         function [currentVector, converged, residueNorm, iterationCount] = conjugateGradientSolver(obj, excitationVector, tolerance, maxIterationCount)
-            currentVector = zeros(size(excitationVector));
+            currentVector = obj.applyPreconditionerVector(excitationVector);
 
             residue = excitationVector - obj.applyOperatorsVector(currentVector);
             direction = residue;

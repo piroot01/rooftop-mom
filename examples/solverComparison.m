@@ -5,14 +5,14 @@ srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
 % only dipole antennas will make sense
-countX = 300;
-countY = 33;
+countX = 1;
+countY = 10000;
 gridSize = [countX, countY];
 sizeX = 1;
 sizeY = 1;
 origin = [0, 0, 0];
 
-order = 3;
+order = 8;
 lambda = 2 * countY * sizeY;
 k = 2 * pi / lambda;
 
@@ -40,7 +40,7 @@ conjugateGradientSolver = mom.FastImpedanceMatrix.ConjugateGradientSolver(fastSt
 conjugateGradientSolver.generateOperators();
 
 % for very large matrices
-%Z = conjugateGradientSolver.computeImpedanceMatrix1();
+Z = conjugateGradientSolver.computeImpedanceMatrix1();
 
 %{
 
@@ -70,22 +70,20 @@ excitationVectorX = [];
 excitationVectorY = V;
 
 restart = 100;
-tolerance = 1e-3;
-maxIterationCount = 2000;
+tolerance = 1e-6;
+maxIterationCount = 10000;
 
 tic;
 
 %[currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrentPGMRES(excitationVectorX, excitationVectorY, restart, tolerance, maxIterationCount);
 [currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrentPCG(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
+%[currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrentBiCGSTAB(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
+%[currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrentCG(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
 
 t1 = toc;
 
 fprintf("Time to solve using CG-FFT: %f\n", t1);
 fprintf("Number of iterations: %s\n", mat2str(iterationCount));
-
-fprintf("currentY norm = %f\n", norm(currentY));
-
-%{
 
 current = [currentX(:); currentY(:)];
 
@@ -108,5 +106,3 @@ fprintf("Time to solve using build-in '\\' solver: %f\n", t2);
 Zin = (I' * Z * I) / (abs(I(feederPosition))^2);
 
 fprintf("Input impedance of the dipole Zin = %s Ohms.\n", num2str(Zin));
-
-%}
