@@ -19,9 +19,12 @@ classdef ComputeChunkedOptimiser < handle
 
             [mask, interactions, chunks] = obj.generateMaskAndInteractionsAndChunks(strategyContext, masksCell, interactionsCell);
 
-            ZUniqueValues = obj.computeStrategy_.compute(strategyContext, chunks);
+            disp(mask);
 
-            Z = computeStrategyOptimiser.applyMask(ZUniqueValues, mask, interactions);
+            %ZUniqueValues = obj.computeStrategy_.compute(strategyContext, chunks);
+
+            %Z = computeStrategyOptimiser.applyMask(ZUniqueValues, mask, interactions);
+            Z = [];
         end
     end
 

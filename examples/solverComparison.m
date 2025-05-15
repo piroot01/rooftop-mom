@@ -5,14 +5,14 @@ srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
 % only dipole antennas will make sense
-countX = 1;
-countY = 10000;
+countX = 2;
+countY = 4;
 gridSize = [countX, countY];
 sizeX = 1;
 sizeY = 1;
 origin = [0, 0, 0];
 
-order = 8;
+order = 2;
 lambda = 2 * countY * sizeY;
 k = 2 * pi / lambda;
 
@@ -76,9 +76,9 @@ maxIterationCount = 10000;
 tic;
 
 %[currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrentPGMRES(excitationVectorX, excitationVectorY, restart, tolerance, maxIterationCount);
-[currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrentPCG(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
+%[currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrentPCG(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
 %[currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrentBiCGSTAB(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
-%[currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrentCG(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
+[currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrentCG(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
 
 t1 = toc;
 

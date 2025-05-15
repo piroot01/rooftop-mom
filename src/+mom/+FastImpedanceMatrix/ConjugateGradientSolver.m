@@ -129,6 +129,23 @@ classdef ConjugateGradientSolver < handle
             end
         end
 
+        function preconditionerMatrix = computePreconditionerMatrix(obj)
+            basisFunctionCount = obj.solverContext_.basisCountX.x * obj.solverContext_.basisCountX.y + obj.solverContext_.basisCountY.x * obj.solverContext_.basisCountY.y;
+            preconditionerMatrix = zeros(basisFunctionCount);
+
+            for column = 1:basisFunctionCount
+                canonicalVector = zeros(basisFunctionCount, 1);
+                canonicalVector(column) = 1;
+
+                preconditionerMatrix(:, column) = obj.applyPreconditionerVector(canonicalVector);
+
+                % just for debugging purposes
+                if mod(column, 100) == 0
+                    fprintf("Computed %d columns!\n", column);
+                end
+            end
+        end
+
         % TODO: currently not working for very big impedance matrices, use computeImpedanceMatrix1
         function impedanceMatrix = computeImpedanceMatrix2(obj)
             basisFunctionCount = obj.solverContext_.basisCountX.x * obj.solverContext_.basisCountX.y + obj.solverContext_.basisCountY.x * obj.solverContext_.basisCountY.y;
