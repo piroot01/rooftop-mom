@@ -46,7 +46,7 @@ classdef ComputeChunked < mom.ImpedanceMatrix.ComputeStrategy
             Ze = zeros(basisFunctionCount, basisFunctionCount);
             for n = 1:chunkCount
                 % for debugging
-                fprintf("Chunk ID=%d\n", n);
+                %fprintf("Chunk ID=%d\n", n);
 
                 chunk = chunks{n};
                 slice = slices{n};

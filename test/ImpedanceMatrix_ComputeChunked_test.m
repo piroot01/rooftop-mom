@@ -4,8 +4,8 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 3;
-countY = 3;
+countX = 1;
+countY = 1000;
 sizeX = 1;
 sizeY = 1;
 origin = [0, 0, 0];
@@ -55,8 +55,6 @@ compStratCtx = mom.ImpedanceMatrix.ComputeChunkedContext(memory_MB);
 tic;
 
 combStrat = mom.ImpedanceMatrix.ComputeChunked(compStratCtx);
-Z = combStrat.compute(stratCtx)
+combStrat.compute(stratCtx);
 
 toc;
-
-disp(size(Z));
