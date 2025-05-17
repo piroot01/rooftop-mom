@@ -5,8 +5,8 @@ srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
 % only dipole antennas will make sense
-countX = 2;
-countY = 4;
+countX = 1;
+countY = 20000;
 gridSize = [countX, countY];
 sizeX = 1;
 sizeY = 1;
@@ -40,7 +40,13 @@ conjugateGradientSolver = mom.FastImpedanceMatrix.ConjugateGradientSolver(fastSt
 conjugateGradientSolver.generateOperators();
 
 % for very large matrices
-Z = conjugateGradientSolver.computeImpedanceMatrix1();
+tic;
+
+Z = conjugateGradientSolver.computeImpedanceMatrix2();
+
+toc;
+
+%%
 
 %{
 

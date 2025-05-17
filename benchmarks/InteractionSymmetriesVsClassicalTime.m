@@ -137,6 +137,7 @@ for n = 1:testCount
 
     for m = 1:4
         % dipole using the classsical approach
+        %{
         if (sizeY < 1100)
             tic;
 
@@ -148,6 +149,7 @@ for n = 1:testCount
         end
 
         fprintf("[%d/%d]: Classical approach finished %f\n", m, 4, time_classical);
+        %}
 
         % accelerated approach computation - best case
         tic;
@@ -168,7 +170,7 @@ for n = 1:testCount
         fprintf("[%d/%d]: Accelerated approach worst case finished %f\n", m, 4, time_accelerated_worst);
 
         % store the times
-        timesPerSize(m, :) = [time_classical, time_accelerated_best, time_accelerated_worst];
+        timesPerSize(m, :) = [nan, time_accelerated_best, time_accelerated_worst];
     end
 
     time_classical_avg = sum(timesPerSize(2:4, 1)) / 3;
@@ -182,6 +184,6 @@ end
 %%
 
 % for tikz
-for k = 1:36
-    fprintf("            (%f, %f)\n", basisFunctionCounts(k, 1), times(k, 1));
+for k = 1:100
+    fprintf("        (%f, %f)\n", basisFunctionCounts(k, 1), times(k, 2));
 end

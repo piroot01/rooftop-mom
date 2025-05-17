@@ -124,7 +124,7 @@ classdef ConjugateGradientSolver < handle
 
                 % just for debugging purposes
                 if mod(column, 100) == 0
-                    fprintf("Computed %d columns!\n", column);
+                    %fprintf("Computed %d columns!\n", column);
                 end
             end
         end
@@ -141,7 +141,7 @@ classdef ConjugateGradientSolver < handle
 
                 % just for debugging purposes
                 if mod(column, 100) == 0
-                    fprintf("Computed %d columns!\n", column);
+                    %fprintf("Computed %d columns!\n", column);
                 end
             end
         end
@@ -252,34 +252,95 @@ classdef ConjugateGradientSolver < handle
             end
         end
 
-        % TODO: rewrite so it is compatible with rooftopContent
         function result = applyOperatorsMatrix(obj, currentMatrix)
+            % Unpack parameters
             bcx = obj.solverContext_.basisCountX;
             bcy = obj.solverContext_.basisCountY;
             padX = obj.solverContext_.paddingX;
             padY = obj.solverContext_.paddingY;
+            totalX = bcx.x * bcx.y;
+            totalY = bcy.x * bcy.y;
+            
+            % TODO: implement as a general setting
+            batchSize = 1024;
 
-            N = size(currentMatrix, 2);
+            switch obj.solverContext_.rooftopContent
+                case 'onlyX'
+                    N = size(currentMatrix, 2);
+                    result = zeros(totalX, N); % Preallocate output
+                    
+                    % Process in batches
+                    for start = 1:batchSize:N
+                        %fprintf("batch processing\n")
+                        endIdx = min(start + batchSize - 1, N);
+                        batch = start:endIdx;
+                        currentBatch = currentMatrix(:, batch);
+                        
+                        % Reshape and compute FFT with padding
+                        X_batch = reshape(currentBatch, bcx.x, bcx.y, []);
+                        X_FFT = fft2(X_batch, padX, padY); % [padX x padY x batchSize]
+                        
+                        % Apply Green's function and invert FFT
+                        GxFFT = obj.solverContext_.Gxx .* X_FFT;
+                        Gx = ifft2(GxFFT);
+                        
+                        % Extract and store
+                        GxSection = Gx(1:bcx.x, 1:bcx.y, :);
+                        result(:, batch) = reshape(GxSection, totalX, []);
+                    end
 
-            currentX = reshape(currentMatrix(1:bcx.x * bcx.y, :), bcx.x, bcx.y, N);
-            currentY = reshape(currentMatrix(bcx.x * bcx.y+1:end, :), bcy.x, bcy.y, N);
+                case 'onlyY'
+                    N = size(currentMatrix, 2);
+                    result = zeros(totalY, N); % Preallocate output
+                    
+                    % Process in batches
+                    for start = 1:batchSize:N
+                        %fprintf("batch processing\n")
+                        endIdx = min(start + batchSize - 1, N);
+                        batch = start:endIdx;
+                        currentBatch = currentMatrix(:, batch);
+                        
+                        % Reshape and compute FFT with padding
+                        Y_batch = reshape(currentBatch, bcy.x, bcy.y, []);
+                        Y_FFT = fft2(Y_batch, padX, padY); 
+                        
+                        % Apply Green's function and invert FFT
+                        GyFFT = obj.solverContext_.Gyy .* Y_FFT;
+                        Gy = ifft2(GyFFT);
+                        
+                        % Extract and store
+                        GySection = Gy(1:bcy.x, 1:bcy.y, :);
+                        result(:, batch) = reshape(GySection, totalY, []);
+                    end
 
-            currents = zeros(padX, padY, 2, N);
-            currents(1:bcx.x, 1:bcx.y, 1, :) = currentX;
-            currents(1:bcy.x, 1:bcy.y, 2, :) = currentY;
-
-            currentsFFT = fft2(currents);
-
-            GxFFT = obj.solverContext_.Gxx .* currentsFFT(:, :, 1, :) + obj.solverContext_.Gxy .* currentsFFT(:, :, 2, :);
-            GyFFT = obj.solverContext_.Gyx .* currentsFFT(:, :, 1, :) + obj.solverContext_.Gyy .* currentsFFT(:, :, 2, :);
-
-            Gx = ifft2(GxFFT);
-            Gy = ifft2(GyFFT);
-
-            GxSection = Gx(1:bcx.x, 1:bcx.y, 1, :);
-            GySection = Gy(1:bcy.x, 1:bcy.y, 1, :);
-
-            result = [reshape(GxSection, bcx.x * bcx.y, N); reshape(GySection, bcy.x * bcy.y, N)];
+                otherwise % 'all'
+                    N = size(currentMatrix, 2);
+                    result = zeros(totalX + totalY, N); 
+                    
+                    for start = 1:batchSize:N
+                        endIdx = min(start + batchSize - 1, N);
+                        batch = start:endIdx;
+                        currentBatch = currentMatrix(:, batch);
+                        
+                        % Split into X/Y components
+                        X_batch = reshape(currentBatch(1:totalX, :), bcx.x, bcx.y, []);
+                        Y_batch = reshape(currentBatch(totalX+1:end, :), bcy.x, bcy.y, []);
+                        
+                        % Compute FFTs
+                        X_FFT = fft2(X_batch, padX, padY);
+                        Y_FFT = fft2(Y_batch, padX, padY);
+                        
+                        % Apply Green's functions
+                        GxFFT = obj.solverContext_.Gxx .* X_FFT + obj.solverContext_.Gxy .* Y_FFT;
+                        GyFFT = obj.solverContext_.Gyx .* X_FFT + obj.solverContext_.Gyy .* Y_FFT;
+                        
+                        % Invert FFTs and store
+                        Gx = ifft2(GxFFT);
+                        Gy = ifft2(GyFFT);
+                        result(1:totalX, batch) = reshape(Gx(1:bcx.x, 1:bcx.y, :), totalX, []);
+                        result(totalX+1:end, batch) = reshape(Gy(1:bcy.x, 1:bcy.y, :), totalY, []);
+                    end
+            end
         end
 
         function [currentVector, converged, residueNorm, iterationCount] = conjugateGradientSolver(obj, excitationVector, tolerance, maxIterationCount)
