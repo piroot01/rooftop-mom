@@ -5,8 +5,8 @@ srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
 % only dipole antennas will make sense
-countX = 20;
-countY = 10;
+countX = 1;
+countY = 1000;
 gridSize = [countX, countY];
 sizeX = 1;
 sizeY = 1;
