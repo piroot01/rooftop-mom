@@ -12,12 +12,12 @@ classdef ConjugateGradientSolver < handle
     end
 
     methods
-        function generateOperators(obj)
+        function generateOperators(obj, chunkMemoryMB)
             magPartStrategy = mom.FastImpedanceMatrix.ComputeMagPart();
             elPartStrategy = mom.FastImpedanceMatrix.ComputeElPart();
 
-            [magPartX, magPartY] = magPartStrategy.compute(obj.strategyContext_);
-            elPart = elPartStrategy.compute(obj.strategyContext_);
+            [magPartX, magPartY] = magPartStrategy.compute(obj.strategyContext_, chunkMemoryMB);
+            elPart = elPartStrategy.compute(obj.strategyContext_, chunkMemoryMB);
 
             gridSize = double(obj.strategyContext_.rooftopBasisFunctions.getGridSize());
 
@@ -153,6 +153,23 @@ classdef ConjugateGradientSolver < handle
             I = eye(basisFunctionCount);
 
             impedanceMatrix = obj.applyOperatorsMatrix(I);
+        end
+
+        function [totalBytes, totalMiB] = getOperatorSizeMiB(obj)
+            Gfields = {'Gxx','Gxy','Gyx','Gyy'};
+            
+            totalBytes = 0;
+            for k = 1:numel(Gfields)
+                f = Gfields{k};
+                if isfield(obj.solverContext_, f)
+                    tmp = obj.solverContext_.(f);    %#ok<NASGU>
+                    S = whos('tmp');
+                    totalBytes = totalBytes + S.bytes;
+                end
+            end
+            
+            % Convert to MiB (1 MiB = 2^20 bytes)
+            totalMiB = totalBytes / 2^20;
         end
     end
 

@@ -1,25 +1,25 @@
 classdef ComputeMagPart < mom.FastImpedanceMatrix.ComputeStrategy
     methods
-        function [resultXDirection, resultYDirection] = compute(obj, strategyContext)
-            resultXDirection = obj.computeXDirection(strategyContext);
-            resultYDirection = obj.computeYDirection(strategyContext);
+        function [resultXDirection, resultYDirection] = compute(obj, strategyContext, memory_MB)
+            resultXDirection = obj.computeXDirection(strategyContext, memory_MB);
+            resultYDirection = obj.computeYDirection(strategyContext, memory_MB);
         end
 
-        function result = computeXDirection(obj, strategyContext)
+        function result = computeXDirection(obj, strategyContext, memory_MB)
             % for x direction, singularity corrections are applied at
             % indices (1,1) for type1 and (2,1) for type2.
-            result = obj.computeInDirectionInternal(strategyContext, 'x', [1, 1], [2, 1]);
+            result = obj.computeInDirectionInternal(strategyContext, 'x', [1, 1], [2, 1], memory_MB);
         end
         
-        function result = computeYDirection(obj, strategyContext)
+        function result = computeYDirection(obj, strategyContext, memory_MB)
             % for y direction, singularity corrections are applied at
             % indices (1,1) for type1 and (1,2) for type2.
-            result = obj.computeInDirectionInternal(strategyContext, 'y', [1, 1], [1, 2]);
+            result = obj.computeInDirectionInternal(strategyContext, 'y', [1, 1], [1, 2], memory_MB);
         end
     end
 
     methods (Access = private)
-        function result = computeInDirectionInternal(obj, strategyContext, direction, singularityIndex1, singularityIndex2)
+        function result = computeInDirectionInternal(obj, strategyContext, direction, singularityIndex1, singularityIndex2, memory_MB)
             % check if the given direction has any rooftop in the given direction
             gridSize = strategyContext.rooftopBasisFunctions.getGridSize();
 
@@ -31,12 +31,15 @@ classdef ComputeMagPart < mom.FastImpedanceMatrix.ComputeStrategy
                 return;
             end
 
+            basisFunctionCount = strategyContext.rooftopBasisFunctions.getCount();
+            [chunks, slices] = obj.getChunks(strategyContext, basisFunctionCount, memory_MB);
+            chunkCount = numel(chunks);
+
             % extract constants
             k = strategyContext.constants.k;
             Z0 = strategyContext.constants.Z0;
             p1 = strategyContext.constants.polarities(:, 1);
             p2 = strategyContext.constants.polarities(:, 2);
-            basisFunctionCount = strategyContext.rooftopBasisFunctions.getCount();
             orderSquared = strategyContext.quadrature.getOrder()^2;
 
             singularityMask = obj.getSingularityMask(strategyContext, direction, direction);
@@ -46,34 +49,32 @@ classdef ComputeMagPart < mom.FastImpedanceMatrix.ComputeStrategy
             rowRooftopPoints = strategyContext.rooftopBasisFunctions.getRooftopPointsInDirection(direction);
             columnRooftopPoints = rowRooftopPoints(:, 1:orderSquared, :);
 
-            columnQuadraturePointsPolarity = columnQuadraturePoints(:, :, p1);
-            rowQuadraturePointsPolarity = rowQuadraturePoints(:, :, p2);
-            columnRooftopPointsPolarity = columnRooftopPoints(:, :, p1);
-            rowRooftopPointsPolarity = rowRooftopPoints(:, :, p2);
+            result = zeros(basisFunctionCount, 1);
 
-            integralKernel = mom.ImpedanceMatrix.IntegralKernel.compute(strategyContext, ...
-                rowQuadraturePointsPolarity, columnQuadraturePointsPolarity);
+            for n = 1:chunkCount
+                % for debugging
+                fprintf("Chunk ID=%d\n", n);
 
-            distanceMatrix = integralKernel.distanceMatrix;
-            distanceMatrixZero = (distanceMatrix < eps);
+                chunk = [chunks{n}];
+                slice = [slices{n}];
 
-            rooftopPointsDot = pagemtimes(permute(rowRooftopPointsPolarity, [2, 1, 3]), columnRooftopPointsPolarity);
+                sliceRange = slice(1):slice(2);
 
-            bigSingularityMask = repelem(singularityMask, orderSquared, orderSquared);
+                chunkContext.chunkSize = numel(chunk);
 
-            greensFunction = integralKernel.greensFunction;
-            greensFunction(bigSingularityMask) = greensFunction(bigSingularityMask) - 1 ./ distanceMatrix(bigSingularityMask);
+                chunkContext.singularityMask = singularityMask(chunk, 1, :);
+                
+                % size of order^2 so does not require chopping
+                chunkContext.columnQuadraturePointsPolarity = columnQuadraturePoints(:, :, p1);
+                chunkContext.columnRooftopPointsPolarity = columnRooftopPoints(:, :, p1);
 
-            integrands = rooftopPointsDot .* greensFunction;
-            integrands(distanceMatrixZero) = rooftopPointsDot(distanceMatrixZero) * (-1i) * k;
+                chunkContext.rowQuadraturePointsPolarity = rowQuadraturePoints(:, sliceRange, p2);
+                chunkContext.rowRooftopPointsPolarity = rowRooftopPoints(:, sliceRange, p2);
 
-            weights = repmat(strategyContext.quadrature.getWeights(), basisFunctionCount, 1);
-            integrals = integrands .* weights;
+                result(chunk, :) = obj.computeChunk(strategyContext, chunkContext);
+            end
 
-            integralsReshaped = reshape(integrals, orderSquared, basisFunctionCount, orderSquared, 1, strategyContext.constants.polaritiesCount);
-            integralsSummed = sum(sum(integralsReshaped, 1), 3);
-            results = reshape(integralsSummed, [gridSize, strategyContext.constants.polaritiesCount]);
-            result = sum(results, 3);
+            result = reshape(result, gridSize);
 
             % apply singularity corrections
             singularityValuesType1 = mom.ImpedanceMatrix.singularity.type1(1, 1);
@@ -83,6 +84,37 @@ classdef ComputeMagPart < mom.FastImpedanceMatrix.ComputeStrategy
 
             % apply constants
             result = (1i * k * Z0) / (4 * pi) * result;
+        end
+
+        function result = computeChunk(~, strategyContext, chunkContext)
+            k = strategyContext.constants.k;
+            orderSquared = strategyContext.quadrature.getOrder()^2;
+
+            integralKernel = mom.ImpedanceMatrix.IntegralKernel.compute(strategyContext, ...
+                chunkContext.rowQuadraturePointsPolarity, chunkContext.columnQuadraturePointsPolarity);
+
+            distanceMatrix = integralKernel.distanceMatrix;
+            distanceMatrixZero = (distanceMatrix < eps);
+
+            rooftopPointsDot = pagemtimes(permute(chunkContext.rowRooftopPointsPolarity, [2, 1, 3]), ...
+                chunkContext.columnRooftopPointsPolarity);
+
+            bigSingularityMask = repelem(chunkContext.singularityMask, orderSquared, orderSquared);
+
+            greensFunction = integralKernel.greensFunction;
+            greensFunction(bigSingularityMask) = greensFunction(bigSingularityMask) - 1 ./ distanceMatrix(bigSingularityMask);
+
+            integrands = rooftopPointsDot .* greensFunction;
+            integrands(distanceMatrixZero) = rooftopPointsDot(distanceMatrixZero) * (-1i) * k;
+
+            weights = repmat(strategyContext.quadrature.getWeights(), chunkContext.chunkSize, 1);
+            integrals = integrands .* weights;
+
+            integralsReshaped = reshape(integrals, orderSquared, chunkContext.chunkSize, ...
+                orderSquared, 1, strategyContext.constants.polaritiesCount);
+            integralsSummed = sum(sum(integralsReshaped, 1), 3);
+            results = reshape(integralsSummed, [chunkContext.chunkSize, 1, strategyContext.constants.polaritiesCount]);
+            result = sum(results, 3);
         end
     end
 end

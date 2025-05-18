@@ -4,8 +4,8 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 2;
-countY = 2;
+countX = 3;
+countY = 3;
 sizeX = 1;
 sizeY = 1;
 gridSize = [countX, countY];
@@ -15,6 +15,9 @@ order = 5;
 
 lambda = 5;
 k = 2 * pi / lambda;
+
+memoryElementwise = 4096;
+memory_MB = memoryElementwise * 8 / 1e6;
 
 myRectMeshPrimitive1 = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
 myRectMesh1 = mom.MeshRect(myRectMeshPrimitive1, origin, 0, 0, 0);
@@ -33,6 +36,6 @@ strategy = mom.FastImpedanceMatrix.ComputeElPart();
 
 tic;
 
-strategy.compute(strategyCtx)
+strategy.compute(strategyCtx, memory_MB)
 
 toc;

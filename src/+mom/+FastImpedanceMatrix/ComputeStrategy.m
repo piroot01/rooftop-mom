@@ -1,4 +1,9 @@
 classdef (Abstract) ComputeStrategy < handle
+    properties (Access = private, Constant)
+        bytesPerElement_ = double(8);
+        bytesInMegabyte_ = double(1e6);
+    end
+
     methods
         function mask = getSingularityMask_(~, strategyContext, direction1, direction2, ID)
             p1 = strategyContext.constants.polarities(:, 1);
@@ -48,6 +53,37 @@ classdef (Abstract) ComputeStrategy < handle
 
                 % first minus rooftop x first minus rooftop
                 mask(1, 1, 4) = true;
+            end
+        end
+
+        function [chunks, slices] = getChunks(obj, strategyContext, basisFunctionCount ,memory_MB)
+            elementCount = memory_MB * obj.bytesInMegabyte_ / obj.bytesPerElement_;
+            quadratureOrder = strategyContext.quadrature.getOrder;
+            elementCountPerBlockSide = quadratureOrder^2;
+            elementCountSide = elementCount / elementCountPerBlockSide;
+
+            if elementCountSide < elementCountPerBlockSide
+                error('The given memory does not suffice!');
+            end
+
+            blockCountPerChunk = floor(double(elementCountSide) / elementCountPerBlockSide);
+            chunkCount = floor(basisFunctionCount / blockCountPerChunk);
+
+            if mod(basisFunctionCount, blockCountPerChunk) ~= 0
+                chunkCount = chunkCount + 1;
+            end
+
+            chunks = cell(chunkCount, 1);
+            slices = cell(chunkCount, 1);
+
+            for chunkIndex = 1:chunkCount
+                chunkStart = (chunkIndex - 1) * blockCountPerChunk + 1;
+                chunkEnd = min(chunkIndex * blockCountPerChunk, basisFunctionCount);
+                chunks{chunkIndex} = chunkStart:chunkEnd;
+
+                slicesStart = (chunkIndex - 1) * (blockCountPerChunk * elementCountPerBlockSide) + 1;
+                slicesEnd = min(chunkIndex * (elementCountPerBlockSide * blockCountPerChunk), basisFunctionCount * elementCountPerBlockSide);
+                slices{chunkIndex} = [slicesStart, slicesEnd];
             end
         end
     end

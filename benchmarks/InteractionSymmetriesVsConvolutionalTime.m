@@ -15,7 +15,8 @@ addpath(srcDir);
 % runs are used to compute statistics.
 
 % dipole lengths
-dipoleLengths = logspace(log10(10000), log10(20000), 50);
+dipoleLengths = logspace(log10(14000), log10(17000), 3);
+%dipoleLengths = 20000;
 
 % times
 timeToCompute = zeros(4, numel(dipoleLengths));
@@ -26,7 +27,7 @@ sizeY = 1;
 origin = [0, 0, 0];
 order = 3;
 
-memoryElementwise = 1e6;
+memoryElementwise = 1e5;
 memory_MB = memoryElementwise * 8 / 1e6;
 
 quadrature = mom.Quadrature(order);
@@ -75,6 +76,7 @@ for n = 1:testCount
 
     for m = 1:4
         % convolutional approach prepare operators
+        %{
         tic;
 
             conjugateGradientSolver.generateOperators();
@@ -91,18 +93,20 @@ for n = 1:testCount
         time_conv_imped = toc;
 
         fprintf("[%d/%d]: Convolutional approach finished in %f\n", m, 4, time_conv_imped);
-
+        %}
         % interaction symmetries approach computation - best case
         tic;
 
-        chunkedOptimiser.compute(strategyContext, gridSize);
+        Z = chunkedOptimiser.compute(strategyContext, gridSize);
 
         time_accelerated_best = toc;
+
+        clear Z;
 
         fprintf("[%d/%d]: Accelerated approach best case finished %f\n", m, 4, time_accelerated_best);
         
         % store the times
-        timesPerSize(m, :) = [time_conv_prep, time_conv_imped, time_accelerated_best];
+        timesPerSize(m, :) = [nan, nan, time_accelerated_best];
     end
 
     time_conv_prep_avg = sum(timesPerSize(2:4, 1)) / (length(timesPerSize) - 1);
@@ -117,5 +121,5 @@ end
 
 % for tikz
 for k = 1:length(basisFunctionCounts)
-    fprintf("        (%f, %f)\n", basisFunctionCounts(k), times(k, 2));
+    fprintf("        (%f, %f)\n", basisFunctionCounts(k), times(k, 3));
 end
