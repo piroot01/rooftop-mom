@@ -15,8 +15,8 @@ addpath(srcDir);
 % runs are used to compute statistics.
 
 % dipole lengths
-dipoleLengths = logspace(log10(100), log10(15000), 50);
-%dipoleLengths = 20000;
+%dipoleLengths = logspace(log10(12000), log10(300000), 5);
+dipoleLengths = 10000000;
 
 % iteration counts for the iterative solvers
 iterationCounts = zeros(numel(dipoleLengths), 2);
@@ -27,7 +27,7 @@ sizeY = 1;
 origin = [0, 0, 0];
 order = 3;
 
-memoryElementwise = 1e5;
+memoryElementwise = 1e7;
 memory_MB = memoryElementwise * 8 / 1e6;
 
 quadrature = mom.Quadrature(order);
@@ -58,15 +58,15 @@ for n = 1:testCount
 
     fprintf("Processing a dipole of length: %d\n", basisFunctionCounts(n));
 
-    rooftopBasisFunctions = mom.RooftopBasisFunctions(dipoleMesh, basisFunctions.getFaces());
+    %rooftopBasisFunctions = mom.RooftopBasisFunctions(dipoleMesh, basisFunctions.getFaces());
 
-    rooftopBasisFunctions.generatePoints(quadrature);
+    %rooftopBasisFunctions.generatePoints(quadrature);
 
-    strategyContext = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFunctions, rooftopBasisFunctions, k);
-    computeChunkedContext = mom.ImpedanceMatrix.ComputeChunkedContext(memory_MB);
-    strategy = mom.ImpedanceMatrix.ComputeChunked(computeChunkedContext);
+    %strategyContext = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFunctions, rooftopBasisFunctions, k);
+    %computeChunkedContext = mom.ImpedanceMatrix.ComputeChunkedContext(memory_MB);
+    %strategy = mom.ImpedanceMatrix.ComputeChunked(computeChunkedContext);
 
-    chunkedOptimiser = mom.ImpedanceMatrix.ComputeChunkedOptimiser(strategy, computeChunkedContext);
+    %chunkedOptimiser = mom.ImpedanceMatrix.ComputeChunkedOptimiser(strategy, computeChunkedContext);
     gridSize{1} = [countX, countY];
 
     fastRooftops = mom.FastImpedanceMatrix.RooftopBasisFunctions(quadrature, gridSize{1});
@@ -86,19 +86,20 @@ for n = 1:testCount
     tolerance = 1e-5;
     maxIterationCount = 10000;
 
-    Z = chunkedOptimiser.compute(strategyContext, gridSize);
+    %Z = chunkedOptimiser.compute(strategyContext, gridSize);
 
     for m = 1:4
         % convolutional approach prepare operators
         tic;
 
-            conjugateGradientSolver.generateOperators();
+            conjugateGradientSolver.generateOperators(memory_MB);
 
         time_conv_prep = toc;
 
         fprintf("[%d/%d]: Convolutional approach finished preparing operators in %f\n", m, 4, time_conv_prep);
 
         % convolutional approach - CG
+        %{
         tic;
             
             [~, ~, ~, ~, iterationCountCG] = conjugateGradientSolver.solveCurrentCG(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
@@ -106,6 +107,7 @@ for n = 1:testCount
         time_conv_cg = toc;
 
         fprintf("[%d/%d]: Convolutional - CG - approach finished in %f, iterations: %d\n", m, 4, time_conv_cg, iterationCountCG);
+        %}
 
         % convolutional approach - PCG
         tic;
@@ -117,6 +119,7 @@ for n = 1:testCount
         fprintf("[%d/%d]: Convolutional - PCG - approach finished in %f, iterations: %d\n", m, 4, time_conv_pcg, iterationCountPCG);
 
         % build-in matlab solver
+        %{
         tic;
 
         I = Z \ V;
@@ -124,10 +127,11 @@ for n = 1:testCount
         time_accelerated_solve = toc;
 
         fprintf("[%d/%d]: Accelerated approach best case finished %f\n", m, 4, time_accelerated_solve);
+        %}
         
         % store the times
-        timesPerSize(m, :) = [time_conv_prep, time_conv_cg, time_conv_pcg, time_accelerated_solve];
-        iterationCountsPerSize(m, :) = [iterationCountCG, iterationCountPCG];
+        timesPerSize(m, :) = [time_conv_prep, nan, time_conv_pcg, nan];
+        iterationCountsPerSize(m, :) = [nan, iterationCountPCG];
     end
 
     time_conv_prep_avg = sum(timesPerSize(2:4, 1)) / (length(timesPerSize) - 1);
@@ -147,5 +151,5 @@ end
 
 % for tikz
 for k = 1:length(basisFunctionCounts)
-    fprintf("        (%f, %f)\n", basisFunctionCounts(k), iterationCounts(k, 2));
+    fprintf("        (%f, %f)\n", basisFunctionCounts(k), times(k, 1));
 end

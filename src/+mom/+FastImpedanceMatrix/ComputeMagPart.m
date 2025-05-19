@@ -51,10 +51,10 @@ classdef ComputeMagPart < mom.FastImpedanceMatrix.ComputeStrategy
 
             result = zeros(basisFunctionCount, 1);
 
-            for n = 1:chunkCount
-                % for debugging
-                fprintf("Chunk ID=%d\n", n);
+            % degug
+            fprintf("Computing the magnetic part, chunk count: %d\n", chunkCount);
 
+            for n = 1:chunkCount
                 chunk = [chunks{n}];
                 slice = [slices{n}];
 
@@ -72,6 +72,9 @@ classdef ComputeMagPart < mom.FastImpedanceMatrix.ComputeStrategy
                 chunkContext.rowRooftopPointsPolarity = rowRooftopPoints(:, sliceRange, p2);
 
                 result(chunk, :) = obj.computeChunk(strategyContext, chunkContext);
+
+                % for debugging
+                fprintf("Chunk %d computed.\n", n);
             end
 
             result = reshape(result, gridSize);

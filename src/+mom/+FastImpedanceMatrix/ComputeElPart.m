@@ -24,9 +24,10 @@ classdef ComputeElPart < mom.FastImpedanceMatrix.ComputeStrategy
 
             result = zeros(faceCount, 1);
 
-            for n = 1:chunkCount
-                fprintf("Chunk ID=%d\n", n);
+            % degug
+            fprintf("Computing the electric part, chunk count: %d\n", chunkCount);
 
+            for n = 1:chunkCount
                 chunk = [chunks{n}];
                 slice = [slices{n}];
 
@@ -40,6 +41,9 @@ classdef ComputeElPart < mom.FastImpedanceMatrix.ComputeStrategy
                 chunkContext.columnQuadraturePoints = rowQuadraturePoints(:, 1:orderSquared);
 
                 result(chunk, :) = obj.computeChunk(strategyContext, chunkContext);
+
+                % for debugging
+                fprintf("Chunk %d computed.\n", n);
             end
 
             result = reshape(result, gridSize);

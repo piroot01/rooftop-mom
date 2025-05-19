@@ -37,7 +37,7 @@ fastStrategyCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFunctions
 
 conjugateGradientSolver = mom.FastImpedanceMatrix.ConjugateGradientSolver(fastStrategyCtx);
 
-conjugateGradientSolver.generateOperators();
+conjugateGradientSolver.generateOperators(memory_MB);
 
 impedanceMatrix = conjugateGradientSolver.computeImpedanceMatrix1();
 preconditionerMatrix = conjugateGradientSolver.computePreconditionerMatrix();

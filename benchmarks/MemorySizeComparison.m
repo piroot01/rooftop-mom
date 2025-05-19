@@ -16,7 +16,7 @@ addpath(srcDir);
 
 % dipole lengths
 %dipoleLengths = logspace(log10(500000), log10(1000000), 10);
-dipoleLengths = 500000;
+dipoleLengths = 10000000;
 
 sizeX = 1;
 sizeY = 1;
@@ -24,7 +24,7 @@ sizeY = 1;
 origin = [0, 0, 0];
 order = 3;
 
-memoryElementwise = 1e5;
+memoryElementwise = 1e6;
 memory_MB = memoryElementwise * 8 / 1e6;
 
 quadrature = mom.Quadrature(order);
@@ -72,7 +72,11 @@ for n = 1:testCount
     
     conjugateGradientSolver = mom.FastImpedanceMatrix.ConjugateGradientSolver(fastStrategyCtx);
 
+    tic;
+
     conjugateGradientSolver.generateOperators(memory_MB);
+
+    toc;
 
     %Z = conjugateGradientSolver.computeImpedanceMatrix2();
 
