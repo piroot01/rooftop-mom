@@ -4,9 +4,6 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-profile clear
-profile -memory on
-
 % constants
 c0 = 299792458; % m/s
 
@@ -15,7 +12,7 @@ c0 = 299792458; % m/s
 %
 
 kaMin = 10e-2;
-kaMax = 500;
+kaMax = 1000;
 
 numberOfRooftopsPerOneWavelength = 10;
 rectangleSideRatio = 2;
@@ -23,7 +20,7 @@ rectangleSideRatio = 2;
 patchCountPerShorterSide = ceil((kaMax * numberOfRooftopsPerOneWavelength) / (pi * sqrt(1 + floor(rectangleSideRatio)^2)));
 
 % the main input of the proram
-ka = 500;
+ka = 1000;
 
 % quadrature order
 order = 3;
@@ -127,18 +124,20 @@ fprintf("Number of iterations: %s\n", mat2str(iterationCount));
 % Effective area computation
 %
 
-phi = 0;
-theta = pi/2;
+% compute the radiation resistance matrix
+Z = conjugateGradientSolver.computeImpedanceMatrix1();
+Rr = real(Z);
+
+rHat = [0, 0, -1];
 
 I = [currentX(:); currentY(:)];
 
-U = mom.Operators.ComputeRCS.computeU(fastStrategyCtx, I, k, phi, theta)
+U = mom.Operators.ComputeRadiationIntensity.computeInDirection(fastStrategyCtx, I, k, rHat)
 
-G = 4 * pi * U
+Pr = 1/2 * real(I' * Rr * I)
+
+G = 4 * pi * U / Pr
 
 Aeff = G * lambda^2 / (4 * pi)
 
 AeffNorm = Aeff / (countX * countY)
-
-profile off
-profile viewer

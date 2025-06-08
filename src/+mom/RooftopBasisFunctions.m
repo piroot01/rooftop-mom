@@ -60,7 +60,7 @@ classdef RooftopBasisFunctions < handle
             [obj.uniqueRooftopSizes_, ~, obj.uniqueRooftopSizeIndices_] = unique(round(allRooftopSizes.', 10), 'rows', 'stable');
         end
 
-        function points = getQuadraturePoints(obj)
+        function points = getQuadraturePoints(obj, ~)
             points = obj.quadraturePoints_;
         end
 
