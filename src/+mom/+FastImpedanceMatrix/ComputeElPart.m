@@ -20,7 +20,8 @@ classdef ComputeElPart < mom.FastImpedanceMatrix.ComputeStrategy
             singularityMask = false(faceCount, 1);
             singularityMask(1) = true;
 
-            rowQuadraturePoints = strategyContext.rooftopBasisFunctions.getQuadraturePoints();
+            % needs padded quadrature points
+            rowQuadraturePoints = strategyContext.rooftopBasisFunctions.getQuadraturePoints(true);
 
             result = zeros(faceCount, 1);
 
@@ -85,3 +86,4 @@ classdef ComputeElPart < mom.FastImpedanceMatrix.ComputeStrategy
         end
     end
 end
+

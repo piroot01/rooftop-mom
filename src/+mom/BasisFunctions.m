@@ -38,6 +38,16 @@ classdef BasisFunctions < handle
             end
         end
 
+        function count = getCountInDirection(obj, direction)
+            if direction == 'x'
+                count = size(obj.facesX_, 2);
+            elseif direction == 'y'
+                count = size(obj.facesY_, 2);
+            else
+                error("Unknown direction: %s\n", direction);
+            end
+        end
+
         function faces = getFaces(obj)
             if obj.isMesh2DCluster_
                 faces = obj.getFacesAsCell();

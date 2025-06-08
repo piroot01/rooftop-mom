@@ -15,7 +15,6 @@ quadrature = mom.Quadrature(order);
 rooftopBasisFunctions = mom.FastImpedanceMatrix.RooftopBasisFunctions(quadrature, gridSize);
 rooftopBasisFunctions.generatePoints();
 
-rooftopBasisFunctions.getRooftopPointsInDirection('x');
+rooftopBasisFunctions.getRooftopPoints()
 
-points = rooftopBasisFunctions.getQuadraturePoints('x')
-
+rooftopBasisFunctions.getQuadraturePoints()

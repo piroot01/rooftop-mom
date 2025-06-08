@@ -8,7 +8,7 @@ classdef ComputePlaneWaveExcitation < handle
             basisFunctionCount = strategyContext.basisFunctions.getCount();
 
             quadratureWeights = strategyContext.quadrature.getWeights2D();
-            quadraturePoints = strategyContext.rooftopBasisFunctions.getQuadraturePoints();
+            quadraturePoints = strategyContext.rooftopBasisFunctions.getQuadraturePoints(false);
             rooftopPoints = strategyContext.rooftopBasisFunctions.getRooftopPoints();
 
             exponent = (1i) * k * pagemtimes(direction, quadraturePoints);

@@ -5,14 +5,14 @@ srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
 % only dipole antennas will make sense
-countX = 1;
-countY = 1000;
+countX = 50;
+countY = 50;
 gridSize = [countX, countY];
 sizeX = 1;
 sizeY = 1;
 origin = [0, 0, 0];
 
-order = 2;
+order = 4;
 lambda = 2 * countY * sizeY;
 k = 2 * pi / lambda;
 

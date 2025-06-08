@@ -1,4 +1,3 @@
-
 clc; clearvars; format long;
 
 % load the source
@@ -6,15 +5,15 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 3;
-countY = 3;
+countX = 2;
+countY = 2;
 sizeX = 1;
 sizeY = 1;
 
 origin = [0, 0, 0];
 
 % quadrature order
-order = 5;
+order = 2;
 
 lambda = 2 * countY * sizeY;
 k = 2 * pi / lambda;
@@ -55,10 +54,13 @@ Z = chunkedOptimiser.compute(strategyContext, gridSize);
 
 toc;
 
-direction = [0, 0, 1];
-polarization = [1, 1, 0];
+direction = [0, 0, -1];
+polarization = [0, 1, 0];
 planeWaveExcitatiton = mom.ImpedanceMatrix.ComputePlaneWaveExcitation();
 
 V = planeWaveExcitatiton.compute(strategyContext, direction, polarization);
+V = V(:);
 
-I = Z / V;
+I = Z \ V;
+
+norm(I)
