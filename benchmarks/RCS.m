@@ -14,13 +14,13 @@ c0 = 299792458; % m/s
 % inputs
 %
 
-kaMin = 1e-2;
+kaMin = 1e-1;
 
 % this value will determine the radiator size
-kaMax = 50;
+kaMax = 1000;
 
 % number of samples
-N = 100;
+N = 50;
 
 numberOfRooftopsPerOneWavelength = 10;
 rectangleSideRatio = 2;
@@ -41,8 +41,9 @@ memoryElementwise = 1e7;
 memory_MB = memoryElementwise * 8 / 1e6;
 
 % CG settings
-tolerance = 1e-4;
+tolerance = 1e-3;
 maxIterationCount = 10000;
+restart = 100;
 
 % plane wave parameters
 direction = [0, 0, -1];
@@ -104,7 +105,8 @@ planeWaveExcitatiton = mom.ImpedanceMatrix.ComputePlaneWaveExcitation();
 times = zeros(2, N);
 
 default = struct( ...
-    'RCS',  0  ...
+    'RCS',  0,  ...
+    'RCSNorm', 0 ...
 );
 
 values = repmat(default, N, 1);
@@ -157,6 +159,8 @@ for n = 1:N
 
     timeToSolveTheSystem = toc;
 
+    clear excitationVectorX excitationVectorY;
+
     fprintf("Time to solve using PCG-FFT: %f\n", timeToSolveTheSystem);
     fprintf("Number of iterations: %s\n", mat2str(iterationCount));
 
@@ -169,28 +173,34 @@ for n = 1:N
     % reshape the current
     I = [currentX(:); currentY(:)];
 
-    %rho = mom.Operators.ComputeRCS.computeFromExcitation(fastStrategyCtx, I, V, k, Ei);
-    rho = mom.Operators.ComputeRCS.computeInDirection(fastStrategyCtx, I, k, rHat, Ei);
-    fprintf("Normed RCS = %f\n", rho);
+    rho = mom.Operators.ComputeRCS.computeFromExcitation(fastStrategyCtx, I, V, k, Ei);
+    %rho = mom.Operators.ComputeRCS.computeInDirection(fastStrategyCtx, I, k, rHat, Ei);
+    fprintf("RCS = %f\n", rho);
     values(n).RCS = rho;
-
-    %rho / (countX * countY)
+    values(n).RCSNorm = rho / area^2;
 end
 
 
 %%
 
 RCS_vec = [values.RCS];
+RCSNorm_vec = [values.RCSNorm];
 
 lambda_vec = (pi ./ ka) .* sqrt(1 + rectangleSideRatio^2) * countX * sizeX;
 
 pastelRed   = [1.0, 0.5, 0.5];
 pastelGreen = [0.5, 1.0, 0.5];
+pastelBlue = [0.5, 0.5, 1.0];
+pastelYellow = [0.5, 1.0, 1.0];
 
 figure;
 loglog(ka, RCS_vec, 'o-', 'LineWidth', 1.5, 'MarkerSize', 10, 'Color', pastelRed);
 hold on;
+loglog(ka, RCSNorm_vec, 'o-', 'LineWidth', 1.5, 'MarkerSize', 10, 'Color', pastelBlue);
+hold on;
 loglog(ka, 4 * pi * area^2 ./ lambda_vec.^2, 'x-', 'LineWidth', 1.5, 'MarkerSize', 10, 'Color', pastelGreen);
+hold on;
+loglog(ka, 4 * pi ./ lambda_vec.^2, 'x-', 'LineWidth', 1.5, 'MarkerSize', 10, 'Color', pastelYellow);
 grid on;
 
 % Labeling

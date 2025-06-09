@@ -112,6 +112,15 @@ classdef ConjugateGradientSolver < handle
             currentVectorY = reshape(currentVector((obj.solverContext_.offsetX + 1):end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
         end
 
+        function [currentVectorX, currentVectorY, converged, residueNorm, iterationCount] = solveCurrentGMRES(obj, excitationVectorX, excitationVectorY, restart, tolerance, maxIterationCount)
+            excitationVector = [excitationVectorX(:); excitationVectorY(:)];
+
+            [currentVector, converged, residueNorm, iterationCount] = gmres(@(excitationVector) obj.applyOperatorsVector(excitationVector), excitationVector, restart, tolerance, maxIterationCount);
+
+            currentVectorX = reshape(currentVector(1:obj.solverContext_.offsetX), obj.solverContext_.basisCountX.x, obj.solverContext_.basisCountX.y);
+            currentVectorY = reshape(currentVector((obj.solverContext_.offsetX + 1):end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
+        end
+
         function impedanceMatrix = computeImpedanceMatrix1(obj)
             basisFunctionCount = obj.solverContext_.basisCountX.x * obj.solverContext_.basisCountX.y + obj.solverContext_.basisCountY.x * obj.solverContext_.basisCountY.y;
             impedanceMatrix = zeros(basisFunctionCount);
@@ -435,6 +444,10 @@ classdef ConjugateGradientSolver < handle
                 beta = rTrNew / rTr;
                 direction = residue + beta * direction;
                 rTr = rTrNew;
+
+                if mod(iterationCount, 10) == 0
+                    fprintf("Elapsed %d iterations, residueNorm = %f.\n", iterationCount, residueNorm);
+                end
             end
         end
 
@@ -465,6 +478,10 @@ classdef ConjugateGradientSolver < handle
                 beta = rTzNew / rTz;
                 direction = preconditionedResidue + beta * direction;
                 rTz = rTzNew;
+
+                if mod(iterationCount, 10) == 0
+                    fprintf("Elapsed %d iterations, residueNorm = %f.\n", iterationCount, residueNorm);
+                end
             end
         end
     end
