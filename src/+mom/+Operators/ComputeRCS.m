@@ -1,5 +1,10 @@
 classdef ComputeRCS < handle
     methods(Static)
+        function rho = computeFromExcitation(strategyContext, I, V, k, Ei)
+            rho = (strategyContext.constants.Z0 * k)^2 / (4 * pi) * abs(V(:)' * I(:))^2 / norm(Ei)^2;
+        end
+        
+        % probably does not work
         function rho = computeInDirection(strategyContext, I, k, rHat, Ei)
             F = mom.Operators.ComputeFarField.computeInDirection(strategyContext, k, rHat);
             rho = 4 * pi * real((I' * F') * (F * I)) / norm(Ei)^2;

@@ -17,10 +17,10 @@ c0 = 299792458; % m/s
 kaMin = 1e-2;
 
 % this value will determine the radiator size
-kaMax = 100;
+kaMax = 10;
 
 % number of samples
-N = 20;
+N = 100;
 
 numberOfRooftopsPerOneWavelength = 10;
 rectangleSideRatio = 2;
@@ -166,9 +166,6 @@ for n = 1:N
     Pr = conjugateGradientSolver.computeRadiatedPower(I);
     fprintf("Pr = %f\n", Pr);
     values(n).Pr = Pr;
-
-    % Rr will be huge
-    clear Rr;
 
     rHat = [0, 0, -1];
 

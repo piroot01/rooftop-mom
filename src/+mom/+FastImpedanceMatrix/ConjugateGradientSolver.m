@@ -193,7 +193,7 @@ classdef ConjugateGradientSolver < handle
         function Pr = computeRadiatedPower(obj, I)
             v = obj.applyOperatorsVector(I);  
 
-            Pr = 1/2 * real(I' * v);  
+            Pr = 1/2 * real(I' * v);
         end
 
         % TODO: currently not working for very big impedance matrices, use computeImpedanceMatrix1

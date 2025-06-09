@@ -165,7 +165,7 @@ for n = 1:N
     % reshape the current
     I = [currentX(:); currentY(:)];
 
-    rho = mom.Operators.ComputeRCS.computeInDirection(fastStrategyCtx, I, k, rHat, Ei);
+    rho = mom.Operators.ComputeRCS.computeFromExcitation(fastStrategyCtx, I, V, k, Ei);
     fprintf("RCS = %f\n", rho);
     values(n).RCS = rho;
 end
