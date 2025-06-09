@@ -14,13 +14,13 @@ c0 = 299792458; % m/s
 % inputs
 %
 
-kaMin = 1e-2;
+kaMin = 0.1; 
 
 % this value will determine the radiator size
-kaMax = 10;
+kaMax = 40;
 
 % number of samples
-N = 20;
+N = 30;
 
 numberOfRooftopsPerOneWavelength = 10;
 rectangleSideRatio = 2;
@@ -168,6 +168,8 @@ for n = 1:N
     rho = mom.Operators.ComputeRCS.computeFromExcitation(fastStrategyCtx, I, V, k, Ei);
     fprintf("RCS = %f\n", rho);
     values(n).RCS = rho;
+
+    %rho / (countX * countY)
 end
 
 

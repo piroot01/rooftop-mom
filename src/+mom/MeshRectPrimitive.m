@@ -52,5 +52,10 @@ classdef MeshRectPrimitive < handle
             allIndices = obj.getAllIndices();
             indices = allIndices(obj.genom_);
         end
+
+        function [meshSizeX, meshSizeY] = getMeshSize(obj)
+            meshSizeX = obj.patchCountX_ * obj.patchSizeX_;
+            meshSizeY = obj.patchCountY_ * obj.patchSizeY_;
+        end
     end
 end

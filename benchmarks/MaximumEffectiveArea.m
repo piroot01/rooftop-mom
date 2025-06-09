@@ -20,7 +20,7 @@ kaMin = 1e-2;
 kaMax = 10;
 
 % number of samples
-N = 100;
+N = 10;
 
 numberOfRooftopsPerOneWavelength = 10;
 rectangleSideRatio = 2;
@@ -94,9 +94,6 @@ planeWaveExcitatiton = mom.ImpedanceMatrix.ComputePlaneWaveExcitation();
 times = zeros(2, N);
 
 default = struct( ...
-    'Pr',        0, ...
-    'U',         0, ...
-    'G',         0, ...
     'Aeff',      0, ...
     'AeffNorm',  0  ...
 );
@@ -163,21 +160,8 @@ for n = 1:N
     % reshape the current
     I = [currentX(:); currentY(:)];
 
-    Pr = conjugateGradientSolver.computeRadiatedPower(I);
-    fprintf("Pr = %f\n", Pr);
-    values(n).Pr = Pr;
-
-    rHat = [0, 0, -1];
-
-    U = mom.Operators.ComputeRadiationIntensity.computeInDirection(fastStrategyCtx, I, k, rHat);
-    fprintf("U = %f\n", U);
-    values(n).U = U;
-
-    G = 4 * pi * U / Pr;
-    fprintf("G = %f\n", G);
-    values(n).G = G;
-
-    Aeff = G * lambda^2 / (4 * pi);
+    v = V(:)' * I(:);
+    Aeff = (fastStrategyCtx.constants.Z0/4) * abs(v).^2 / real(v);
     fprintf("Aeff = %f\n", Aeff);
     values(n).Aeff = Aeff;
 

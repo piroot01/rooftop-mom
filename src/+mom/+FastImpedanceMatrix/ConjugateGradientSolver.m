@@ -191,7 +191,7 @@ classdef ConjugateGradientSolver < handle
         end
 
         function Pr = computeRadiatedPower(obj, I)
-            v = obj.applyOperatorsVector(I);  
+            v = obj.applyOperatorsVector(I);
 
             Pr = 1/2 * real(I' * v);
         end
