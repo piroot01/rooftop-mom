@@ -1,7 +1,7 @@
 classdef ComputeRCS < handle
     methods(Static)
         function rho = computeFromExcitation(strategyContext, I, V, k, Ei)
-            rho = (strategyContext.constants.Z0 * k)^2 / (4 * pi) * abs(V(:)' * I(:))^2 / norm(Ei)^2;
+            rho = strategyContext.constants.Z0 * k^2 / (4 * pi) * abs(V(:)' * I(:))^2 / norm(Ei)^2;
         end
         
         % probably does not work
