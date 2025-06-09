@@ -124,10 +124,54 @@ classdef ConjugateGradientSolver < handle
 
                 % just for debugging purposes
                 if mod(column, 100) == 0
-                    %fprintf("Computed %d columns!\n", column);
+                    fprintf("[impedance matrix]: Computed %d columns!\n", column);
                 end
             end
         end
+
+        function radiationResistanceMatrix = computeRadiationResistanceMatrix(obj)
+            % we make use of the fact that the matrix is symmetric
+            basisFunctionCount = obj.solverContext_.basisCountX.x * obj.solverContext_.basisCountX.y + obj.solverContext_.basisCountY.x * obj.solverContext_.basisCountY.y;
+            radiationResistanceMatrix = zeros(basisFunctionCount);
+
+            for column = 1:basisFunctionCount
+                canonicalVector = zeros(basisFunctionCount, 1);
+                canonicalVector(column) = 1;
+
+                radiationResistanceMatrix(:, column) = real(obj.applyOperatorsVector(canonicalVector));
+
+                % just for debugging purposes
+                if mod(column, 100) == 0
+                    fprintf("[radiationResistanceMatrix]: Computed %d columns!\n", column);
+                end
+            end
+        end
+
+        function radiationResistanceMatrix = computeParRadiationResistanceMatrix(obj)
+            bx = obj.solverContext_.basisCountX;
+            by = obj.solverContext_.basisCountY;
+            N  = bx.x*bx.y + by.x*by.y;
+
+            radiationResistanceMatrix = zeros(N);
+
+            pObj = parallel.pool.Constant(obj);
+
+            parfor column = 1:N
+                localObj = pObj.Value;
+
+                canonicalVector = zeros(N, 1);
+                canonicalVector(column) = 1;
+
+                radiationResistanceMatrix(:, column) = real(localObj.applyOperatorsVector(canonicalVector));
+
+                % just for debugging purposes
+                if mod(column,100) == 0
+                    fprintf('[radiationResistanceMatrix]: Computed %d/%d columns on worker %d\n', ...
+                            column, N, getCurrentTask().ID);
+                end
+            end
+        end
+
 
         function preconditionerMatrix = computePreconditionerMatrix(obj)
             basisFunctionCount = obj.solverContext_.basisCountX.x * obj.solverContext_.basisCountX.y + obj.solverContext_.basisCountY.x * obj.solverContext_.basisCountY.y;
@@ -144,6 +188,12 @@ classdef ConjugateGradientSolver < handle
                     %fprintf("Computed %d columns!\n", column);
                 end
             end
+        end
+
+        function Pr = computeRadiatedPower(obj, I)
+            v = obj.applyOperatorsVector(I);  
+
+            Pr = 1/2 * real(I' * v);  
         end
 
         % TODO: currently not working for very big impedance matrices, use computeImpedanceMatrix1

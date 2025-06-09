@@ -5,15 +5,15 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 2;
-countY = 2;
+countX = 4;
+countY = 4;
 sizeX = 1;
 sizeY = 1;
 
 origin = [0, 0, 0];
 
 % quadrature order
-order = 2;
+order = 3;
 
 lambda = 2 * countY * sizeY;
 k = 2 * pi / lambda;
@@ -25,7 +25,7 @@ memory_MB = memoryElementwise * 8 / 1e6;
 % 1. step: generate a mesh
 dipolePrimitive = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
 % rotate the dipole such that the dipole is in the z axis
-dipolePrimitiveTransformed = mom.MeshRect(dipolePrimitive, origin, pi/2, 0, 0);
+dipolePrimitiveTransformed = mom.MeshRect(dipolePrimitive, origin, 0, 0, 0);
 dipoleMesh = dipolePrimitiveTransformed.getAsMesh();
 
 % 2. step: create Quadrature
@@ -55,21 +55,25 @@ Z = chunkedOptimiser.compute(strategyContext, gridSize);
 
 toc;
 
-direction = [1, 1, 0];
-polarization = [1, 1, 0];
+direction = [0, 0, -1];
+polarization = [0, 1, 0];
 planeWaveExcitatiton = mom.ImpedanceMatrix.ComputePlaneWaveExcitation();
 
-%V = planeWaveExcitatiton.compute(strategyContext, direction, polarization);
+V = planeWaveExcitatiton.compute(strategyContext, direction, polarization)
 
-feederPosition = ceil(basisFunctions.getCount() / 2);
-V = zeros(1, basisFunctions.getCount());
-V(feederPosition) = 1;
+%feederPosition = ceil(basisFunctions.getCount() / 2);
+%V = zeros(1, basisFunctions.getCount());
+%V(feederPosition) = 1;
 
-I = Z / V;
+I = Z \ V(:)
 
-polarization = [0, 1, 0];
+direction = [0, 0, -1];
 
-U = mom.Operators.ComputeRCS.computeU(strategyContext, I, k, 0, 0);
+RCS = mom.Operators.ComputeRCS.computeInDirection(strategyContext, I, k, direction, 1)
+
+F = mom.Operators.ComputeFarField.computeInDirection(strategyContext, k, direction);
+
+V_opticalTheorem = -1i * 4 * pi / (sqrt(strategyContext.constants.Z0) * k) * F'
 
 %{
 

@@ -4,6 +4,9 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
+%profile clear;
+%profile -memory on;
+
 % constants
 c0 = 299792458; % m/s
 
@@ -11,16 +14,24 @@ c0 = 299792458; % m/s
 % inputs
 %
 
-kaMin = 10e-2;
-kaMax = 1000;
+kaMin = 1e-2;
+
+% this value will determine the radiator size
+kaMax = 100;
+
+% number of samples
+N = 20;
 
 numberOfRooftopsPerOneWavelength = 10;
 rectangleSideRatio = 2;
 
-patchCountPerShorterSide = ceil((kaMax * numberOfRooftopsPerOneWavelength) / (pi * sqrt(1 + floor(rectangleSideRatio)^2)));
+patchCountPerShorterSide = ceil((kaMax * numberOfRooftopsPerOneWavelength) / (pi * sqrt(1 + floor(rectangleSideRatio^2))));
 
 % the main input of the proram
-ka = 1000;
+ka = logspace(log10(kaMin), log10(kaMax), N);
+
+% unknown threshold
+unknownCountThreshold = 1e7;
 
 % quadrature order
 order = 3;
@@ -32,6 +43,12 @@ memory_MB = memoryElementwise * 8 / 1e6;
 % CG settings
 tolerance = 1e-4;
 maxIterationCount = 10000;
+
+% plane wave parameters
+direction = [0, 0, -1];
+
+% polarization parallel to the y axis
+polarization = [0, 1, 0];
 
 %
 % preparation
@@ -51,10 +68,6 @@ sizeY = 1;
 
 origin = [0, 0, 0];
 
-% calculation of the lambda from the ka
-lambda = ((patchCountPerShorterSide * pi) / ka) * sqrt(1 + floor(rectangleSideRatio)^2)
-k = 2 * pi / lambda;
-
 % shift to center the mesh (probably not neccessery)
 shift = [countX/2, countY/2, 0];
 
@@ -67,77 +80,124 @@ myMeshCluster.loadMesh(myRectMesh1.getAsMesh());
 quadrature = mom.Quadrature(order);
 basisFunctions = mom.BasisFunctions(myMeshCluster);
 
-fprintf("Unknown count: %d\n", basisFunctions.getCount());
+unknownCount = basisFunctions.getCount();
+fprintf("Unknown count: %d\n", unknownCount);
+
+if unknownCount > unknownCountThreshold
+    error("Unknown count threshold, reduce the kaMax.\n");
+end
 
 fastRooftops = mom.FastImpedanceMatrix.RooftopBasisFunctions(quadrature, gridSize);
 
-fastStrategyCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFunctions, fastRooftops, k);
+planeWaveExcitatiton = mom.ImpedanceMatrix.ComputePlaneWaveExcitation();
 
-conjugateGradientSolver = mom.FastImpedanceMatrix.ConjugateGradientSolver(fastStrategyCtx);
+times = zeros(2, N);
+
+default = struct( ...
+    'Pr',        0, ...
+    'U',         0, ...
+    'G',         0, ...
+    'Aeff',      0, ...
+    'AeffNorm',  0  ...
+);
+
+values = repmat(default, N, 1);
+
+for n = 1:N
+    fprintf("\n[[Computing the sample %d]]\n\n", n);
+
+    % calculation of the lambda from the ka
+    lambda = ((double(patchCountPerShorterSide) * pi) / ka(n)) * sqrt(1 + rectangleSideRatio^2);
+    k = 2 * pi / lambda;
+    fprintf("lambda = %f\n", lambda);
+
+    fastStrategyCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFunctions, fastRooftops, k);
+
+    conjugateGradientSolver = mom.FastImpedanceMatrix.ConjugateGradientSolver(fastStrategyCtx);
 
 %
 % operator generation
 %
 
-tic;
+    tic;
 
-conjugateGradientSolver.generateOperators(memory_MB);
+    conjugateGradientSolver.generateOperators(memory_MB);
 
-timeToComputeOperators = toc;
+    timeToComputeOperators = toc;
 
-fprintf("Time to compute the Green's operator: %f\n", timeToComputeOperators);
+    fprintf("Time to compute the Green's operator: %f\n", timeToComputeOperators);
+
+    times(1, n) = timeToComputeOperators;
 
 %
 % excitation - plane wave perpendicular to the radiator
 %
 
-direction = [0, 0, -1];
+    V = planeWaveExcitatiton.compute(fastStrategyCtx, direction, polarization);
+    V = V(:);
 
-% polarization parallel to the y axis
-polarization = [0, 1, 0];
-
-
-planeWaveExcitatiton = mom.ImpedanceMatrix.ComputePlaneWaveExcitation();
-
-V = planeWaveExcitatiton.compute(fastStrategyCtx, direction, polarization);
-V = V(:);
-
-excitationVectorX = V(1:basisFunctions.getCountInDirection('x'));
-excitationVectorY = V((basisFunctions.getCountInDirection('x') + 1):end);
+    excitationVectorX = V(1:basisFunctions.getCountInDirection('x'));
+    excitationVectorY = V((basisFunctions.getCountInDirection('x') + 1):end);
 
 %
 % PCG-FFT solver
 %
 
-fprintf("Starting the solver ...\n");
+    fprintf("Starting the solver ...\n");
 
-tic;
+    tic;
 
-[currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrentPCG(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
+    [currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrentPCG(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
 
-timeToSolveTheSystem = toc;
+    timeToSolveTheSystem = toc;
 
-fprintf("Time to solve using PCG-FFT: %f\n", timeToSolveTheSystem);
-fprintf("Number of iterations: %s\n", mat2str(iterationCount));
+    fprintf("Time to solve using PCG-FFT: %f\n", timeToSolveTheSystem);
+    fprintf("Number of iterations: %s\n", mat2str(iterationCount));
+
+    times(2, n) = timeToSolveTheSystem;
 
 %
 % Effective area computation
 %
 
-% compute the radiation resistance matrix
-Z = conjugateGradientSolver.computeImpedanceMatrix1();
-Rr = real(Z);
+    % reshape the current
+    I = [currentX(:); currentY(:)];
 
-rHat = [0, 0, -1];
+    Pr = conjugateGradientSolver.computeRadiatedPower(I);
+    fprintf("Pr = %f\n", Pr);
+    values(n).Pr = Pr;
 
-I = [currentX(:); currentY(:)];
+    % Rr will be huge
+    clear Rr;
 
-U = mom.Operators.ComputeRadiationIntensity.computeInDirection(fastStrategyCtx, I, k, rHat)
+    rHat = [0, 0, -1];
 
-Pr = 1/2 * real(I' * Rr * I)
+    U = mom.Operators.ComputeRadiationIntensity.computeInDirection(fastStrategyCtx, I, k, rHat);
+    fprintf("U = %f\n", U);
+    values(n).U = U;
 
-G = 4 * pi * U / Pr
+    G = 4 * pi * U / Pr;
+    fprintf("G = %f\n", G);
+    values(n).G = G;
 
-Aeff = G * lambda^2 / (4 * pi)
+    Aeff = G * lambda^2 / (4 * pi);
+    fprintf("Aeff = %f\n", Aeff);
+    values(n).Aeff = Aeff;
 
-AeffNorm = Aeff / (countX * countY)
+    AeffNorm = Aeff / (countX * countY * sizeX * sizeY);
+    fprintf("AeffNorm = %f\n", AeffNorm);
+    values(n).AeffNorm = AeffNorm;
+end
+
+
+%%
+
+AeffNorm_vec = [values.AeffNorm]
+
+figure;
+loglog(ka, AeffNorm_vec, 'o-', 'LineWidth', 2, 'MarkerSize', 6, 'Color', 'red');
+grid on;
+
+% Labeling
+xlabel('ka');
+ylabel('A_{eff} / (l^2 / 2)');

@@ -18,7 +18,6 @@ classdef ComputeFarField < handle
                 phiHat = phiVec / phiVecNorm;
             end
 
-
             thetaHat = cross(phiHat, rHat);
 
             % compute the integral

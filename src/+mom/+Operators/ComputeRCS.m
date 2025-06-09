@@ -1,5 +1,11 @@
 classdef ComputeRCS < handle
     methods(Static)
+        function rho = computeInDirection(strategyContext, I, k, rHat, Ei)
+            F = mom.Operators.ComputeFarField.computeInDirection(strategyContext, k, rHat);
+            rho = 4 * pi * real((I' * F') * (F * I)) / norm(Ei)^2;
+        end
+
+        %{
         function [RCS_dB, thetaVec, phiVec] = compute(strategyContext, I, f, thetaSamples, phiSamples)
             if nargin < 3
                 f = 0;
@@ -70,45 +76,7 @@ classdef ComputeRCS < handle
 
             RCS_dB = 10*log10(RCS_lin + eps);
         end
-
-        function U = computeU(strategyContext, I, k, theta, phi)
-            rbf    = strategyContext.rooftopBasisFunctions;
-            quad   = strategyContext.quadrature;
-
-            order  = quad.getOrder();
-            N      = strategyContext.basisFunctions.getCount();
-            w2D    = quad.getWeights2D();
-            weightsAll = repmat(w2D, N, 1);
-
-            quadPtsAll = rbf.getQuadraturePoints(false);
-            rrAll      = rbf.getRooftopPoints();
-
-            hatr = [sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta)]; 
-
-            exponent = pagemtimes(hatr, quadPtsAll);
-            phase = exp(1i * k * exponent);
-
-            integrand = rrAll .* phase;
-
-            thetahat = [cos(theta)*cos(phi), cos(theta)*sin(phi), -sin(theta)];
-            phihat   = [-sin(phi), cos(phi), 0];
-
-            integralTheta = pagemtimes(thetahat, (integrand .* weightsAll.'));
-            integralPhi = pagemtimes(phihat, (integrand .* weightsAll.'));
-
-            integralThetaReshaped = reshape(integralTheta, order^2, N, 2);
-            FTheta = sum(sum(integralThetaReshaped, 1), 3);
-            FTheta = (-1i * strategyContext.constants.Z0 * k / (4 * pi)) * FTheta;
-
-            integralPhiReshaped = reshape(integralPhi, order^2, N, 2);
-            FPhi = sum(sum(integralPhiReshaped, 1), 3);
-            FPhi = (-1i * strategyContext.constants.Z0 * k / (4 * pi)) * FPhi;
-
-            UTheta = (1/(2 * strategyContext.constants.Z0)) * abs(FTheta * I)^2;
-            UPhi = (1/(2 * strategyContext.constants.Z0)) * abs(FPhi * I)^2;
-
-            U = UTheta + UPhi;
-        end
+        %}
     end
 end
 
