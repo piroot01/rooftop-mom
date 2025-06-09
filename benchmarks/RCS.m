@@ -79,17 +79,17 @@ origin = [0, 0, 0];
 shift = [countX/2, countY/2, 0];
 
 % mesh generation
-myRectMeshPrimitive1 = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
-myRectMesh1 = mom.MeshRect(myRectMeshPrimitive1, origin - shift, 0, 0, 0);
-myMeshCluster = mom.Mesh2DCluster();
-myMeshCluster.loadMesh(myRectMesh1.getAsMesh());
+rectPrimitive = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
+rectMesh = mom.MeshRect(rectPrimitive, origin - shift, 0, 0, 0);
+meshCluster = mom.Mesh2DCluster();
+meshCluster.loadMesh(rectMesh.getAsMesh());
 
 % obtain the geometrical size of the radiator
-[lx, ly] = myRectMeshPrimitive1.getMeshSize();
+[lx, ly] = rectPrimitive.getMeshSize();
 area = double(lx * ly);
 
 quadrature = mom.Quadrature(order);
-basisFunctions = mom.BasisFunctions(myMeshCluster);
+basisFunctions = mom.BasisFunctions(meshCluster);
 
 unknownCount = basisFunctions.getCount();
 fprintf("Unknown count: %d\n", unknownCount);
