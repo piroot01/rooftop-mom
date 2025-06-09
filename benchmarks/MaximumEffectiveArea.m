@@ -192,7 +192,7 @@ end
 
 %%
 
-AeffNorm_vec = [values.AeffNorm]
+AeffNorm_vec = [values.AeffNorm];
 
 figure;
 loglog(ka, AeffNorm_vec, 'o-', 'LineWidth', 2, 'MarkerSize', 6, 'Color', 'red');

@@ -4,6 +4,9 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
+%profile clear;
+%profile -memory on;
+
 % constants
 c0 = 299792458; % m/s
 
@@ -11,18 +14,24 @@ c0 = 299792458; % m/s
 % inputs
 %
 
-kaMin = 10e-2;
+kaMin = 1e-2;
 
 % this value will determine the radiator size
-kaMax = 5;
+kaMax = 10;
+
+% number of samples
+N = 20;
 
 numberOfRooftopsPerOneWavelength = 10;
 rectangleSideRatio = 2;
 
-patchCountPerShorterSide = ceil((kaMax * numberOfRooftopsPerOneWavelength) / (pi * sqrt(1 + floor(rectangleSideRatio)^2)));
+patchCountPerShorterSide = ceil((kaMax * numberOfRooftopsPerOneWavelength) / (pi * sqrt(1 + floor(rectangleSideRatio^2))));
 
-% input ka
-ka = 5;
+% the main input of the proram
+ka = logspace(log10(kaMin), log10(kaMax), N);
+
+% unknown threshold
+unknownCountThreshold = 1e7;
 
 % quadrature order
 order = 3;
@@ -34,6 +43,18 @@ memory_MB = memoryElementwise * 8 / 1e6;
 % CG settings
 tolerance = 1e-4;
 maxIterationCount = 10000;
+
+% plane wave parameters
+direction = [0, 0, -1];
+
+% polarization parallel to the y axis
+polarization = [0, 1, 0];
+
+% RCS config
+rHat = [0, 0, -1];
+
+% intensity of the incidental wave
+Ei = 1;
 
 %
 % preparation
@@ -53,12 +74,6 @@ sizeY = 1;
 
 origin = [0, 0, 0];
 
-% calculation of the lambda from the ka
-lambda = ((patchCountPerShorterSide * pi) / ka) * sqrt(1 + floor(rectangleSideRatio)^2);
-k = 2 * pi / lambda;
-
-fprintf("lambda = %f\n", lambda);
-
 % shift to center the mesh (probably not neccessery)
 shift = [countX/2, countY/2, 0];
 
@@ -71,70 +86,99 @@ myMeshCluster.loadMesh(myRectMesh1.getAsMesh());
 quadrature = mom.Quadrature(order);
 basisFunctions = mom.BasisFunctions(myMeshCluster);
 
-fprintf("Unknown count: %d\n", basisFunctions.getCount());
+unknownCount = basisFunctions.getCount();
+fprintf("Unknown count: %d\n", unknownCount);
+
+if unknownCount > unknownCountThreshold
+    error("Unknown count threshold, reduce the kaMax.\n");
+end
 
 fastRooftops = mom.FastImpedanceMatrix.RooftopBasisFunctions(quadrature, gridSize);
 
-fastStrategyCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFunctions, fastRooftops, k);
+planeWaveExcitatiton = mom.ImpedanceMatrix.ComputePlaneWaveExcitation();
 
-conjugateGradientSolver = mom.FastImpedanceMatrix.ConjugateGradientSolver(fastStrategyCtx);
+times = zeros(2, N);
+
+default = struct( ...
+    'RCS',  0  ...
+);
+
+values = repmat(default, N, 1);
+
+for n = 1:N
+    fprintf("\n[[Computing the sample %d]]\n\n", n);
+
+    % calculation of the lambda from the ka
+    lambda = ((double(patchCountPerShorterSide) * pi) / ka(n)) * sqrt(1 + rectangleSideRatio^2);
+    k = 2 * pi / lambda;
+    fprintf("lambda = %f\n", lambda);
+
+    fastStrategyCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFunctions, fastRooftops, k);
+
+    conjugateGradientSolver = mom.FastImpedanceMatrix.ConjugateGradientSolver(fastStrategyCtx);
 
 %
 % operator generation
 %
 
-tic;
+    tic;
 
-conjugateGradientSolver.generateOperators(memory_MB);
+    conjugateGradientSolver.generateOperators(memory_MB);
 
-timeToComputeOperators = toc;
+    timeToComputeOperators = toc;
 
-fprintf("Time to compute the Green's operator: %f\n", timeToComputeOperators);
+    fprintf("Time to compute the Green's operator: %f\n", timeToComputeOperators);
+
+    times(1, n) = timeToComputeOperators;
 
 %
 % excitation - plane wave perpendicular to the radiator
 %
 
-direction = [0, 0, -1];
+    V = planeWaveExcitatiton.compute(fastStrategyCtx, direction, polarization);
+    V = V(:);
 
-% polarization parallel to the y axis
-polarization = [0, 1, 0];
-
-
-planeWaveExcitatiton = mom.ImpedanceMatrix.ComputePlaneWaveExcitation();
-
-V = planeWaveExcitatiton.compute(fastStrategyCtx, direction, polarization);
-V = V(:);
-
-excitationVectorX = V(1:basisFunctions.getCountInDirection('x'));
-excitationVectorY = V((basisFunctions.getCountInDirection('x') + 1):end);
+    excitationVectorX = V(1:basisFunctions.getCountInDirection('x'));
+    excitationVectorY = V((basisFunctions.getCountInDirection('x') + 1):end);
 
 %
 % PCG-FFT solver
 %
 
-fprintf("Starting the solver ...\n");
+    fprintf("Starting the solver ...\n");
 
-tic;
+    tic;
 
-[currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrentPCG(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
+    [currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrentPCG(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
 
-timeToSolveTheSystem = toc;
+    timeToSolveTheSystem = toc;
 
-fprintf("Time to solve using PCG-FFT: %f\n", timeToSolveTheSystem);
-fprintf("Number of iterations: %s\n", mat2str(iterationCount));
+    fprintf("Time to solve using PCG-FFT: %f\n", timeToSolveTheSystem);
+    fprintf("Number of iterations: %s\n", mat2str(iterationCount));
+
+    times(2, n) = timeToSolveTheSystem;
 
 %
 % RCS computation
 %
 
-rHat = [0, 0, -1];
+    % reshape the current
+    I = [currentX(:); currentY(:)];
 
-% intensity of the incidental wave
-Ei = 1;
+    rho = mom.Operators.ComputeRCS.computeInDirection(fastStrategyCtx, I, k, rHat, Ei);
+    fprintf("RCS = %f\n", rho);
+    values(n).RCS = rho;
+end
 
-I = [currentX(:); currentY(:)];
 
-rho = mom.Operators.ComputeRCS.computeInDirection(fastStrategyCtx, I, k, rHat, Ei);
+%%
 
-fprintf("RCS = %f\n", rho);
+RCS_vec = [values.RCS];
+
+figure;
+loglog(ka, RCS_vec, 'o-', 'LineWidth', 2, 'MarkerSize', 6, 'Color', 'red');
+grid on;
+
+% Labeling
+xlabel('ka');
+ylabel('RCS');
