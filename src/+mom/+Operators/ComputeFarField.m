@@ -2,7 +2,7 @@ classdef ComputeFarField < handle
     methods(Static)
         function F = computeInDirection(strategyContext, k, rHat)
             % integral constant
-            integralConstant = (-1i * k * sqrt(strategyContext.constants.Z0)) / (4 * pi);
+            integralConstant = (-1i * strategyContext.constants.Z0 * k) / (4 * pi);
 
             % prepare the phiHat and thetaHat
             zHat = [0; 0; 1];
@@ -46,11 +46,8 @@ classdef ComputeFarField < handle
             FTheta = sum(sum(integralThetaReshaped, 1), 3);
             FPhi = sum(sum(integralPhiReshaped, 1), 3);
 
-            FTheta = integralConstant * FTheta;
-            FPhi = integralConstant * FPhi;
-
             % combine into a matrix 2 x N
-            F = cat(1, FTheta, FPhi);
+            F = integralConstant .* cat(1, FTheta, FPhi);
         end
     end
 end

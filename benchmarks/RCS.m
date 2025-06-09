@@ -14,13 +14,13 @@ c0 = 299792458; % m/s
 % inputs
 %
 
-kaMin = 0.1; 
+kaMin = 1e-2;
 
 % this value will determine the radiator size
-kaMax = 40;
+kaMax = 50;
 
 % number of samples
-N = 30;
+N = 100;
 
 numberOfRooftopsPerOneWavelength = 10;
 rectangleSideRatio = 2;
@@ -82,6 +82,10 @@ myRectMeshPrimitive1 = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
 myRectMesh1 = mom.MeshRect(myRectMeshPrimitive1, origin - shift, 0, 0, 0);
 myMeshCluster = mom.Mesh2DCluster();
 myMeshCluster.loadMesh(myRectMesh1.getAsMesh());
+
+% obtain the geometrical size of the radiator
+[lx, ly] = myRectMeshPrimitive1.getMeshSize();
+area = double(lx * ly);
 
 quadrature = mom.Quadrature(order);
 basisFunctions = mom.BasisFunctions(myMeshCluster);
@@ -165,8 +169,9 @@ for n = 1:N
     % reshape the current
     I = [currentX(:); currentY(:)];
 
-    rho = mom.Operators.ComputeRCS.computeFromExcitation(fastStrategyCtx, I, V, k, Ei);
-    fprintf("RCS = %f\n", rho);
+    %rho = mom.Operators.ComputeRCS.computeFromExcitation(fastStrategyCtx, I, V, k, Ei);
+    rho = mom.Operators.ComputeRCS.computeInDirection(fastStrategyCtx, I, k, rHat, Ei);
+    fprintf("Normed RCS = %f\n", rho);
     values(n).RCS = rho;
 
     %rho / (countX * countY)
@@ -177,10 +182,19 @@ end
 
 RCS_vec = [values.RCS];
 
+lambda_vec = (pi ./ ka) .* sqrt(1 + rectangleSideRatio^2) * countX * sizeX;
+
+pastelRed   = [1.0, 0.5, 0.5];
+pastelGreen = [0.5, 1.0, 0.5];
+
 figure;
-loglog(ka, RCS_vec, 'o-', 'LineWidth', 2, 'MarkerSize', 6, 'Color', 'red');
+loglog(ka, RCS_vec, 'o-', 'LineWidth', 1.5, 'MarkerSize', 10, 'Color', pastelRed);
+hold on;
+loglog(ka, 4 * pi * area^2 ./ lambda_vec.^2, 'x-', 'LineWidth', 1.5, 'MarkerSize', 10, 'Color', pastelGreen);
 grid on;
 
 % Labeling
 xlabel('ka');
 ylabel('RCS');
+
+legend({'MoM', 'Analytical'}, 'Location', 'best');

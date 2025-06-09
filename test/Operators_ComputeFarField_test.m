@@ -70,12 +70,12 @@ I = Z / V;
 
 rHat = [0; 0; -1];
 
-F = mom.Operators.ComputeFarField.computeInDirection(strategyContext, k, rHat)
+F = mom.Operators.ComputeFarField.computeInDirection(strategyContext, k, rHat);
 
-U = mom.Operators.computeRadiationIntensity.computeInDirection(strategyContext, I, k, rHat)
+%U = mom.Operators.computeRadiationIntensity.computeInDirection(strategyContext, I, k, rHat)
 
-U = F' * F
+%U = F' * F
 
-IUI = 1/2 * (I' * U * I)
+%IUI = 1/2 * (I' * U * I)
 
-G = 4 * pi * IUI / 1
+%G = 4 * pi * IUI / 1

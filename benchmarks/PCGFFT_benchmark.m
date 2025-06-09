@@ -12,7 +12,7 @@ addpath(srcDir);
 %
 
 % unknown number
-N = 1000000;
+N = 1000;
 
 % quadrature order
 order = 5;

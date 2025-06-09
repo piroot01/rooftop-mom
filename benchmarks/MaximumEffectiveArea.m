@@ -17,10 +17,10 @@ c0 = 299792458; % m/s
 kaMin = 1e-2;
 
 % this value will determine the radiator size
-kaMax = 10;
+kaMax = 700;
 
 % number of samples
-N = 10;
+N = 50;
 
 numberOfRooftopsPerOneWavelength = 10;
 rectangleSideRatio = 2;

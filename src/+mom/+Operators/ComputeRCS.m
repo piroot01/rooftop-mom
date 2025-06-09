@@ -7,7 +7,8 @@ classdef ComputeRCS < handle
         % probably does not work
         function rho = computeInDirection(strategyContext, I, k, rHat, Ei)
             F = mom.Operators.ComputeFarField.computeInDirection(strategyContext, k, rHat);
-            rho = 4 * pi * real((I' * F') * (F * I)) / norm(Ei)^2;
+            v = F * I;
+            rho = 4 * pi * sum(abs(v).^2) / norm(Ei)^2;
         end
 
         %{
