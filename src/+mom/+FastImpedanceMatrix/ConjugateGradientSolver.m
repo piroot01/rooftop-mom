@@ -8,6 +8,8 @@ classdef ConjugateGradientSolver < handle
     methods
         function obj = ConjugateGradientSolver(strategyContext)
             obj.strategyContext_ = strategyContext;
+
+            fftw('planner','exhaustive');
         end
     end
 
@@ -71,24 +73,35 @@ classdef ConjugateGradientSolver < handle
 
                 obj.solverContext_.detG = obj.solverContext_.Gxx .* obj.solverContext_.Gyy - obj.solverContext_.Gxy .* obj.solverContext_.Gyx;
             end
+
+            obj.solverContext_.invDetG = 1 ./ obj.solverContext_.detG;
         end
 
-        function [currentVectorX, currentVectorY, converged, residueNorm, iterationCount] = solveCurrentCG(obj, excitationVectorX, excitationVectorY, tolerance, maxIterationCount)
+        function [currentVectorX, currentVectorY, converged, residueNorm, iterationCount] = solveCurrentCG(obj, excitationVectorX, excitationVectorY, tolerance, maxIterationCount, initialCurrentVectorXY)
             excitationVector = [excitationVectorX(:); excitationVectorY(:)];
 
-            [currentVector, converged, residueNorm, iterationCount] = obj.conjugateGradientSolver(excitationVector, tolerance, maxIterationCount);
-            %[currentVector, converged, residueNorm, iterationCount] = bicgstab(@(excitationVector) obj.applyOperatorsVector(excitationVector), excitationVector, tolerance, maxIterationCount);
-            %[currentVector, converged, residueNorm, iterationCount] = cgs(@(excitationVector) obj.applyOperatorsVector(excitationVector), excitationVector, tolerance, maxIterationCount);
+            if nargin == 5 || isempty(initialCurrentVectorXY)
+                initialCurrentVectorXY_ = zeros(size(excitationVector)); 
+            elseif nargin == 6
+                initialCurrentVectorXY_ = initialCurrentVectorXY;
+            end
+
+            [currentVector, converged, residueNorm, iterationCount] = obj.conjugateGradientSolver(excitationVector, tolerance, maxIterationCount, initialCurrentVectorXY_);
 
             currentVectorX = reshape(currentVector(1:obj.solverContext_.offsetX), obj.solverContext_.basisCountX.x, obj.solverContext_.basisCountX.y);
             currentVectorY = reshape(currentVector((obj.solverContext_.offsetX + 1):end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
         end
 
-        function [currentVectorX, currentVectorY, converged, residueNorm, iterationCount] = solveCurrentPCG(obj, excitationVectorX, excitationVectorY, tolerance, maxIterationCount)
+        function [currentVectorX, currentVectorY, converged, residueNorm, iterationCount] = solveCurrentPCG(obj, excitationVectorX, excitationVectorY, tolerance, maxIterationCount, initialCurrentVectorXY)
             excitationVector = [excitationVectorX(:); excitationVectorY(:)];
 
-            %[currentVector, converged, residueNorm, iterationCount] = bicgstab(@(excitationVector) obj.applyOperatorsVector(excitationVector), excitationVector, tolerance, maxIterationCount, @(r) obj.applyPreconditionerVector(r));
-            [currentVector, converged, residueNorm, iterationCount] = obj.preconditionedConjugateGradientSolver(excitationVector, tolerance, maxIterationCount);
+            if nargin == 5 || isempty(initialCurrentVectorXY)
+                initialCurrentVectorXY_ = zeros(size(excitationVector)); 
+            elseif nargin == 6
+                initialCurrentVectorXY_ = initialCurrentVectorXY;
+            end
+
+            [currentVector, converged, residueNorm, iterationCount] = obj.preconditionedConjugateGradientSolver(excitationVector, tolerance, maxIterationCount, initialCurrentVectorXY_);
 
             currentVectorX = reshape(currentVector(1:obj.solverContext_.offsetX), obj.solverContext_.basisCountX.x, obj.solverContext_.basisCountX.y);
             currentVectorY = reshape(currentVector((obj.solverContext_.offsetX + 1):end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
@@ -289,7 +302,7 @@ classdef ConjugateGradientSolver < handle
 
                     rXFFT = fft2(rX, obj.solverContext_.paddingX, obj.solverContext_.paddingY);
 
-                    zXFFT = rXFFT ./ obj.solverContext_.detG;
+                    zXFFT = rXFFT .* obj.solverContext_.invDetG;
 
                     zX = ifft2(zXFFT);
 
@@ -301,7 +314,7 @@ classdef ConjugateGradientSolver < handle
 
                     rYFFT = fft2(rY, obj.solverContext_.paddingX, obj.solverContext_.paddingY);
 
-                    zYFFT = rYFFT ./ obj.solverContext_.detG;
+                    zYFFT = rYFFT .* obj.solverContext_.invDetG;
 
                     zY = ifft2(zYFFT);
 
@@ -315,8 +328,8 @@ classdef ConjugateGradientSolver < handle
                     rXFFT = fft2(rX, obj.solverContext_.paddingX, obj.solverContext_.paddingY);
                     rYFFT = fft2(rY, obj.solverContext_.paddingX, obj.solverContext_.paddingY);
 
-                    zXFFT = (obj.solverContext_.Gyy .* rXFFT - obj.solverContext_.Gxy .* rYFFT) ./ obj.solverContext_.detG;
-                    zYFFT = (obj.solverContext_.Gxx .* rYFFT - obj.solverContext_.Gyx .* rXFFT) ./ obj.solverContext_.detG;
+                    zXFFT = (obj.solverContext_.Gyy .* rXFFT - obj.solverContext_.Gxy .* rYFFT) .* obj.solverContext_.invDetG;
+                    zYFFT = (obj.solverContext_.Gxx .* rYFFT - obj.solverContext_.Gyx .* rXFFT) .* obj.solverContext_.invDetG;
 
                     zX = ifft2(zXFFT);
                     zY = ifft2(zYFFT);
@@ -419,10 +432,9 @@ classdef ConjugateGradientSolver < handle
             end
         end
 
-        function [currentVector, converged, residueNorm, iterationCount] = conjugateGradientSolver(obj, excitationVector, tolerance, maxIterationCount)
-            currentVector = obj.applyPreconditionerVector(excitationVector);
-
-            residue = excitationVector - obj.applyOperatorsVector(currentVector);
+        function [currentVector, converged, residueNorm, iterationCount] = conjugateGradientSolver(obj, excitationVector, tolerance, maxIterationCount, initialCurrentVector)
+            currentVector = initialCurrentVector;
+            residue = excitationVector - obj.applyOperatorsVector(initialCurrentVector);
             direction = residue;
             rTr = residue.' * residue;
             excitationNorm = norm(excitationVector);
@@ -445,16 +457,15 @@ classdef ConjugateGradientSolver < handle
                 direction = residue + beta * direction;
                 rTr = rTrNew;
 
-                if mod(iterationCount, 10) == 0
+                if mod(iterationCount, 1) == 0
                     fprintf("Elapsed %d iterations, residueNorm = %f.\n", iterationCount, residueNorm);
                 end
             end
         end
 
-        function [currentVector, converged, residueNorm, iterationCount] = preconditionedConjugateGradientSolver(obj, excitationVector, tolerance, maxIterationCount)
-            currentVector = zeros(size(excitationVector));
-
-            residue = excitationVector - obj.applyOperatorsVector(currentVector);
+        function [currentVector, converged, residueNorm, iterationCount] = preconditionedConjugateGradientSolver(obj, excitationVector, tolerance, maxIterationCount, initialCurrentVector)
+            currentVector = initialCurrentVector;
+            residue = excitationVector - obj.applyOperatorsVector(initialCurrentVector);
             preconditionedResidue = obj.applyPreconditionerVector(residue);
             direction = preconditionedResidue;
             rTz = residue.' * preconditionedResidue;
@@ -479,7 +490,7 @@ classdef ConjugateGradientSolver < handle
                 direction = preconditionedResidue + beta * direction;
                 rTz = rTzNew;
 
-                if mod(iterationCount, 10) == 0
+                if mod(iterationCount, 1) == 0
                     fprintf("Elapsed %d iterations, residueNorm = %f.\n", iterationCount, residueNorm);
                 end
             end

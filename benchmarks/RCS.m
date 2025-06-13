@@ -14,13 +14,13 @@ c0 = 299792458; % m/s
 % inputs
 %
 
-kaMin = 1e-1;
+kaMin = 1e-2;
 
 % this value will determine the radiator size
-kaMax = 1000;
+kaMax = 100;
 
 % number of samples
-N = 50;
+N = 60;
 
 numberOfRooftopsPerOneWavelength = 10;
 rectangleSideRatio = 2;
@@ -41,9 +41,9 @@ memoryElementwise = 1e7;
 memory_MB = memoryElementwise * 8 / 1e6;
 
 % CG settings
-tolerance = 1e-3;
+tolerance = 1e-5;
 maxIterationCount = 10000;
-restart = 100;
+restart = 50;
 
 % plane wave parameters
 direction = [0, 0, -1];
@@ -111,6 +111,8 @@ default = struct( ...
 
 values = repmat(default, N, 1);
 
+lastCurrentVector = [];
+
 for n = 1:N
     fprintf("\n[[Computing the sample %d]]\n\n", n);
 
@@ -155,7 +157,7 @@ for n = 1:N
 
     tic;
 
-    [currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrentPCG(excitationVectorX, excitationVectorY, tolerance, maxIterationCount);
+    [currentX, currentY, converged, residueNorm, iterationCount] = conjugateGradientSolver.solveCurrentPCG(excitationVectorX, excitationVectorY, tolerance, maxIterationCount, lastCurrentVector);
 
     timeToSolveTheSystem = toc;
 
@@ -172,6 +174,8 @@ for n = 1:N
 
     % reshape the current
     I = [currentX(:); currentY(:)];
+
+    lastCurrentVector = I;
 
     rho = mom.Operators.ComputeRCS.computeFromExcitation(fastStrategyCtx, I, V, k, Ei);
     %rho = mom.Operators.ComputeRCS.computeInDirection(fastStrategyCtx, I, k, rHat, Ei);
