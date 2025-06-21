@@ -12,7 +12,7 @@ addpath(srcDir);
 %
 
 % unknown number
-N = 1000;
+N = 2000;
 
 % quadrature order
 order = 5;
@@ -34,9 +34,7 @@ function [countX, countY] = generateSizeForUnknownCount(N)
     countY = N + 1;
 end
 
-%[countX, countY] = generateSizeForUnknownCount(N);
-countX = 100;
-countY = 200;
+[countX, countY] = generateSizeForUnknownCount(N);
 gridSize = [countX, countY];
 sizeX = 1;
 sizeY = 1;
@@ -56,7 +54,6 @@ quadrature = mom.Quadrature(order);
 basisFunctions = mom.BasisFunctions(myMeshCluster);
 
 fastRooftops = mom.FastImpedanceMatrix.RooftopBasisFunctions(quadrature, gridSize);
-fastRooftops.generatePoints();
 
 fastStrategyCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFunctions, fastRooftops, k);
 

@@ -1,82 +1,11 @@
-classdef ConjugateGradientSolver < handle
-    properties (Access = private)
-        strategyContext_;
-
-        solverContext_;
-    end
-
-    methods
+classdef ConjugateGradientSolver < mom.FastImpedanceMatrix.GreensOperator
+    methods (Access = public)
         function obj = ConjugateGradientSolver(strategyContext)
             obj.strategyContext_ = strategyContext;
-
-            fftw('planner','exhaustive');
         end
     end
 
-    methods
-        function generateOperators(obj, chunkMemoryMB)
-            magPartStrategy = mom.FastImpedanceMatrix.ComputeMagPart();
-            elPartStrategy = mom.FastImpedanceMatrix.ComputeElPart();
-
-            [magPartX, magPartY] = magPartStrategy.compute(obj.strategyContext_, chunkMemoryMB);
-            elPart = elPartStrategy.compute(obj.strategyContext_, chunkMemoryMB);
-
-            gridSize = double(obj.strategyContext_.rooftopBasisFunctions.getGridSize());
-
-            obj.solverContext_.basisCountX.x = gridSize(1) - 1;
-            obj.solverContext_.basisCountX.y = gridSize(2);
-            obj.solverContext_.basisCountY.x = gridSize(1);
-            obj.solverContext_.basisCountY.y = gridSize(2) - 1;
-            obj.solverContext_.offsetX = (gridSize(1) - 1) * gridSize(2);
-
-            M = gridSize(1) * 2;
-            N = gridSize(2) * 2;
-
-            obj.solverContext_.paddingX = M;
-            obj.solverContext_.paddingY = N;
-
-            [u, v] = ndgrid(0:(M - 1), 0:(N - 1));
-            forwardShiftX = exp((1i * pi * u) / gridSize(1));
-            forwardShiftY = exp((1i * pi * v) / gridSize(2));
-            backwardShiftX = conj(forwardShiftX);
-            backwardShiftY = conj(forwardShiftY);
-
-            if ~all(isnan(magPartX), 'all') && all(isnan(magPartY), 'all')
-                obj.solverContext_.rooftopContent = 'onlyX';
-
-                magPartXFFT = fft2(mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(magPartX, gridSize));
-                elPartFFT = fft2(mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(elPart, gridSize));
-
-                obj.solverContext_.Gxx = magPartXFFT + (1 - forwardShiftX) .* (1 - backwardShiftX) .* elPartFFT;
-
-                obj.solverContext_.detG = obj.solverContext_.Gxx;
-            elseif all(isnan(magPartX), 'all') && ~all(isnan(magPartY), 'all')
-                obj.solverContext_.rooftopContent = 'onlyY';
-
-                magPartYFFT = fft2(mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(magPartY, gridSize));
-                elPartFFT = fft2(mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(elPart, gridSize));
-
-                obj.solverContext_.Gyy = magPartYFFT + (1 - forwardShiftY) .* (1 - backwardShiftY) .* elPartFFT;
-
-                obj.solverContext_.detG = obj.solverContext_.Gyy;
-            else
-                obj.solverContext_.rooftopContent = 'all';
-
-                magPartXFFT = fft2(mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(magPartX, gridSize));
-                magPartYFFT = fft2(mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(magPartY, gridSize));
-                elPartFFT = fft2(mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(elPart, gridSize));
-
-                obj.solverContext_.Gxx = magPartXFFT + (1 - forwardShiftX) .* (1 - backwardShiftX) .* elPartFFT;
-                obj.solverContext_.Gxy = (1 - forwardShiftX) .* (1 - backwardShiftY) .* elPartFFT;
-                obj.solverContext_.Gyx = (1 - forwardShiftY) .* (1 - backwardShiftX) .* elPartFFT;
-                obj.solverContext_.Gyy = magPartYFFT + (1 - forwardShiftY) .* (1 - backwardShiftY) .* elPartFFT;
-
-                obj.solverContext_.detG = obj.solverContext_.Gxx .* obj.solverContext_.Gyy - obj.solverContext_.Gxy .* obj.solverContext_.Gyx;
-            end
-
-            obj.solverContext_.invDetG = 1 ./ obj.solverContext_.detG;
-        end
-
+    methods (Access = public)
         function [currentVectorX, currentVectorY, converged, residueNorm, iterationCount] = solveCurrentCG(obj, excitationVectorX, excitationVectorY, tolerance, maxIterationCount, initialCurrentVectorXY)
             excitationVector = [excitationVectorX(:); excitationVectorY(:)];
 
@@ -88,8 +17,8 @@ classdef ConjugateGradientSolver < handle
 
             [currentVector, converged, residueNorm, iterationCount] = obj.conjugateGradientSolver(excitationVector, tolerance, maxIterationCount, initialCurrentVectorXY_);
 
-            currentVectorX = reshape(currentVector(1:obj.solverContext_.offsetX), obj.solverContext_.basisCountX.x, obj.solverContext_.basisCountX.y);
-            currentVectorY = reshape(currentVector((obj.solverContext_.offsetX + 1):end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
+            currentVectorX = reshape(currentVector(1:obj.greensOperator_.offsetX), obj.greensOperator_.basisCountX.x, obj.greensOperator_.basisCountX.y);
+            currentVectorY = reshape(currentVector((obj.greensOperator_.offsetX + 1):end), obj.greensOperator_.basisCountY.x, obj.greensOperator_.basisCountY.y);
         end
 
         function [currentVectorX, currentVectorY, converged, residueNorm, iterationCount] = solveCurrentPCG(obj, excitationVectorX, excitationVectorY, tolerance, maxIterationCount, initialCurrentVectorXY)
@@ -103,8 +32,8 @@ classdef ConjugateGradientSolver < handle
 
             [currentVector, converged, residueNorm, iterationCount] = obj.preconditionedConjugateGradientSolver(excitationVector, tolerance, maxIterationCount, initialCurrentVectorXY_);
 
-            currentVectorX = reshape(currentVector(1:obj.solverContext_.offsetX), obj.solverContext_.basisCountX.x, obj.solverContext_.basisCountX.y);
-            currentVectorY = reshape(currentVector((obj.solverContext_.offsetX + 1):end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
+            currentVectorX = reshape(currentVector(1:obj.greensOperator_.offsetX), obj.greensOperator_.basisCountX.x, obj.greensOperator_.basisCountX.y);
+            currentVectorY = reshape(currentVector((obj.greensOperator_.offsetX + 1):end), obj.greensOperator_.basisCountY.x, obj.greensOperator_.basisCountY.y);
         end
 
         function [currentVectorX, currentVectorY, converged, residueNorm, iterationCount] = solveCurrentBiCGSTAB(obj, excitationVectorX, excitationVectorY, tolerance, maxIterationCount)
@@ -112,8 +41,8 @@ classdef ConjugateGradientSolver < handle
 
             [currentVector, converged, residueNorm, iterationCount] = bicgstab(@(excitationVector) obj.applyOperatorsVector(excitationVector), excitationVector, tolerance, maxIterationCount);
 
-            currentVectorX = reshape(currentVector(1:obj.solverContext_.offsetX), obj.solverContext_.basisCountX.x, obj.solverContext_.basisCountX.y);
-            currentVectorY = reshape(currentVector((obj.solverContext_.offsetX + 1):end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
+            currentVectorX = reshape(currentVector(1:obj.greensOperator_.offsetX), obj.greensOperator_.basisCountX.x, obj.greensOperator_.basisCountX.y);
+            currentVectorY = reshape(currentVector((obj.greensOperator_.offsetX + 1):end), obj.greensOperator_.basisCountY.x, obj.greensOperator_.basisCountY.y);
         end
 
         function [currentVectorX, currentVectorY, converged, residueNorm, iterationCount] = solveCurrentPGMRES(obj, excitationVectorX, excitationVectorY, restart, tolerance, maxIterationCount)
@@ -121,8 +50,8 @@ classdef ConjugateGradientSolver < handle
 
             [currentVector, converged, residueNorm, iterationCount] = gmres(@(excitationVector) obj.applyOperatorsVector(excitationVector), excitationVector, restart, tolerance, maxIterationCount, @(r) obj.applyPreconditionerVector(r));
 
-            currentVectorX = reshape(currentVector(1:obj.solverContext_.offsetX), obj.solverContext_.basisCountX.x, obj.solverContext_.basisCountX.y);
-            currentVectorY = reshape(currentVector((obj.solverContext_.offsetX + 1):end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
+            currentVectorX = reshape(currentVector(1:obj.greensOperator_.offsetX), obj.greensOperator_.basisCountX.x, obj.greensOperator_.basisCountX.y);
+            currentVectorY = reshape(currentVector((obj.greensOperator_.offsetX + 1):end), obj.greensOperator_.basisCountY.x, obj.greensOperator_.basisCountY.y);
         end
 
         function [currentVectorX, currentVectorY, converged, residueNorm, iterationCount] = solveCurrentGMRES(obj, excitationVectorX, excitationVectorY, restart, tolerance, maxIterationCount)
@@ -130,12 +59,12 @@ classdef ConjugateGradientSolver < handle
 
             [currentVector, converged, residueNorm, iterationCount] = gmres(@(excitationVector) obj.applyOperatorsVector(excitationVector), excitationVector, restart, tolerance, maxIterationCount);
 
-            currentVectorX = reshape(currentVector(1:obj.solverContext_.offsetX), obj.solverContext_.basisCountX.x, obj.solverContext_.basisCountX.y);
-            currentVectorY = reshape(currentVector((obj.solverContext_.offsetX + 1):end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
+            currentVectorX = reshape(currentVector(1:obj.greensOperator_.offsetX), obj.greensOperator_.basisCountX.x, obj.greensOperator_.basisCountX.y);
+            currentVectorY = reshape(currentVector((obj.greensOperator_.offsetX + 1):end), obj.greensOperator_.basisCountY.x, obj.greensOperator_.basisCountY.y);
         end
 
         function impedanceMatrix = computeImpedanceMatrix1(obj)
-            basisFunctionCount = obj.solverContext_.basisCountX.x * obj.solverContext_.basisCountX.y + obj.solverContext_.basisCountY.x * obj.solverContext_.basisCountY.y;
+            basisFunctionCount = obj.greensOperator_.basisCountX.x * obj.greensOperator_.basisCountX.y + obj.greensOperator_.basisCountY.x * obj.greensOperator_.basisCountY.y;
             impedanceMatrix = zeros(basisFunctionCount);
 
             for column = 1:basisFunctionCount
@@ -153,7 +82,7 @@ classdef ConjugateGradientSolver < handle
 
         function radiationResistanceMatrix = computeRadiationResistanceMatrix(obj)
             % we make use of the fact that the matrix is symmetric
-            basisFunctionCount = obj.solverContext_.basisCountX.x * obj.solverContext_.basisCountX.y + obj.solverContext_.basisCountY.x * obj.solverContext_.basisCountY.y;
+            basisFunctionCount = obj.greensOperator_.basisCountX.x * obj.greensOperator_.basisCountX.y + obj.greensOperator_.basisCountY.x * obj.greensOperator_.basisCountY.y;
             radiationResistanceMatrix = zeros(basisFunctionCount);
 
             for column = 1:basisFunctionCount
@@ -170,8 +99,8 @@ classdef ConjugateGradientSolver < handle
         end
 
         function radiationResistanceMatrix = computeParRadiationResistanceMatrix(obj)
-            bx = obj.solverContext_.basisCountX;
-            by = obj.solverContext_.basisCountY;
+            bx = obj.greensOperator_.basisCountX;
+            by = obj.greensOperator_.basisCountY;
             N  = bx.x*bx.y + by.x*by.y;
 
             radiationResistanceMatrix = zeros(N);
@@ -196,7 +125,7 @@ classdef ConjugateGradientSolver < handle
 
 
         function preconditionerMatrix = computePreconditionerMatrix(obj)
-            basisFunctionCount = obj.solverContext_.basisCountX.x * obj.solverContext_.basisCountX.y + obj.solverContext_.basisCountY.x * obj.solverContext_.basisCountY.y;
+            basisFunctionCount = obj.greensOperator_.basisCountX.x * obj.greensOperator_.basisCountX.y + obj.greensOperator_.basisCountY.x * obj.greensOperator_.basisCountY.y;
             preconditionerMatrix = zeros(basisFunctionCount);
 
             for column = 1:basisFunctionCount
@@ -220,7 +149,7 @@ classdef ConjugateGradientSolver < handle
 
         % TODO: currently not working for very big impedance matrices, use computeImpedanceMatrix1
         function impedanceMatrix = computeImpedanceMatrix2(obj)
-            basisFunctionCount = obj.solverContext_.basisCountX.x * obj.solverContext_.basisCountX.y + obj.solverContext_.basisCountY.x * obj.solverContext_.basisCountY.y;
+            basisFunctionCount = obj.greensOperator_.basisCountX.x * obj.greensOperator_.basisCountX.y + obj.greensOperator_.basisCountY.x * obj.greensOperator_.basisCountY.y;
 
             I = eye(basisFunctionCount);
 
@@ -233,8 +162,8 @@ classdef ConjugateGradientSolver < handle
             totalBytes = 0;
             for k = 1:numel(Gfields)
                 f = Gfields{k};
-                if isfield(obj.solverContext_, f)
-                    tmp = obj.solverContext_.(f);    %#ok<NASGU>
+                if isfield(obj.greensOperator_, f)
+                    tmp = obj.greensOperator_.(f);    %#ok<NASGU>
                     S = whos('tmp');
                     totalBytes = totalBytes + S.bytes;
                 end
@@ -247,95 +176,95 @@ classdef ConjugateGradientSolver < handle
 
     methods (Access = private)
         function result = applyOperatorsVector(obj, currentVector)
-            switch obj.solverContext_.rooftopContent
+            switch obj.greensOperator_.rooftopContent
                 case 'onlyX'
                     currentVectorX = currentVector;
 
-                    currentVectorXFFT = fft2(currentVectorX, obj.solverContext_.paddingX, obj.solverContext_.paddingY);
+                    currentVectorXFFT = fft2(currentVectorX, obj.greensOperator_.paddingX, obj.greensOperator_.paddingY);
 
-                    GxFFT = obj.solverContext_.Gxx .* currentVectorXFFT;
+                    GxFFT = obj.greensOperator_.Gxx .* currentVectorXFFT;
 
                     Gx = ifft2(GxFFT);
 
-                    GxSection = Gx(1:obj.solverContext_.basisCountX.x, 1:obj.solverContext_.basisCountX.y);
+                    GxSection = Gx(1:obj.greensOperator_.basisCountX.x, 1:obj.greensOperator_.basisCountX.y);
 
                     result = [GxSection(:)];
                 case 'onlyY'
                     currentVectorY = currentVector.';
 
-                    currentVectorYFFT = fft2(currentVectorY, obj.solverContext_.paddingX, obj.solverContext_.paddingY);
+                    currentVectorYFFT = fft2(currentVectorY, obj.greensOperator_.paddingX, obj.greensOperator_.paddingY);
 
-                    GyFFT = obj.solverContext_.Gyy .* currentVectorYFFT;
+                    GyFFT = obj.greensOperator_.Gyy .* currentVectorYFFT;
 
                     Gy = ifft2(GyFFT);
 
-                    GySection = Gy(1:obj.solverContext_.basisCountY.x, 1:obj.solverContext_.basisCountY.y);
+                    GySection = Gy(1:obj.greensOperator_.basisCountY.x, 1:obj.greensOperator_.basisCountY.y);
 
                     result = [GySection(:)];
                 case 'all'
-                    currentVectorX = reshape(currentVector(1:obj.solverContext_.offsetX), obj.solverContext_.basisCountX.x, obj.solverContext_.basisCountX.y);
-                    currentVectorY = reshape(currentVector((obj.solverContext_.offsetX + 1):end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
+                    currentVectorX = reshape(currentVector(1:obj.greensOperator_.offsetX), obj.greensOperator_.basisCountX.x, obj.greensOperator_.basisCountX.y);
+                    currentVectorY = reshape(currentVector((obj.greensOperator_.offsetX + 1):end), obj.greensOperator_.basisCountY.x, obj.greensOperator_.basisCountY.y);
 
-                    paddingX = obj.solverContext_.paddingX;
-                    paddingY = obj.solverContext_.paddingY;
+                    paddingX = obj.greensOperator_.paddingX;
+                    paddingY = obj.greensOperator_.paddingY;
 
                     currentVectorXFFT = fft2(currentVectorX, paddingX, paddingY);
                     currentVectorYFFT = fft2(currentVectorY, paddingX, paddingY);
 
-                    GxFFT = obj.solverContext_.Gxx .* currentVectorXFFT + obj.solverContext_.Gxy .* currentVectorYFFT; 
-                    GyFFT = obj.solverContext_.Gyx .* currentVectorXFFT + obj.solverContext_.Gyy .* currentVectorYFFT; 
+                    GxFFT = obj.greensOperator_.Gxx .* currentVectorXFFT + obj.greensOperator_.Gxy .* currentVectorYFFT; 
+                    GyFFT = obj.greensOperator_.Gyx .* currentVectorXFFT + obj.greensOperator_.Gyy .* currentVectorYFFT; 
 
                     Gx = ifft2(GxFFT);
                     Gy = ifft2(GyFFT);
 
-                    GxSection = Gx(1:obj.solverContext_.basisCountX.x, 1:obj.solverContext_.basisCountX.y);
-                    GySection = Gy(1:obj.solverContext_.basisCountY.x, 1:obj.solverContext_.basisCountY.y);
+                    GxSection = Gx(1:obj.greensOperator_.basisCountX.x, 1:obj.greensOperator_.basisCountX.y);
+                    GySection = Gy(1:obj.greensOperator_.basisCountY.x, 1:obj.greensOperator_.basisCountY.y);
 
                     result = [GxSection(:); GySection(:)];
             end
         end
 
         function z = applyPreconditionerVector(obj, r)
-            switch obj.solverContext_.rooftopContent
+            switch obj.greensOperator_.rooftopContent
                 case 'onlyX'
                     rX = r;
 
-                    rXFFT = fft2(rX, obj.solverContext_.paddingX, obj.solverContext_.paddingY);
+                    rXFFT = fft2(rX, obj.greensOperator_.paddingX, obj.greensOperator_.paddingY);
 
-                    zXFFT = rXFFT .* obj.solverContext_.invDetG;
+                    zXFFT = rXFFT .* obj.greensOperator_.invDetG;
 
                     zX = ifft2(zXFFT);
 
-                    zXSection = zX(1:obj.solverContext_.basisCountX.x, 1:obj.solverContext_.basisCountX.y);
+                    zXSection = zX(1:obj.greensOperator_.basisCountX.x, 1:obj.greensOperator_.basisCountX.y);
 
                     z = [zXSection(:)];
                 case 'onlyY'
                     rY = r.';
 
-                    rYFFT = fft2(rY, obj.solverContext_.paddingX, obj.solverContext_.paddingY);
+                    rYFFT = fft2(rY, obj.greensOperator_.paddingX, obj.greensOperator_.paddingY);
 
-                    zYFFT = rYFFT .* obj.solverContext_.invDetG;
+                    zYFFT = rYFFT .* obj.greensOperator_.invDetG;
 
                     zY = ifft2(zYFFT);
 
-                    zYSection = zY(1:obj.solverContext_.basisCountY.x, 1:obj.solverContext_.basisCountY.y);
+                    zYSection = zY(1:obj.greensOperator_.basisCountY.x, 1:obj.greensOperator_.basisCountY.y);
 
                     z = [zYSection(:)];
                 case 'all'
-                    rX = reshape(r(1:obj.solverContext_.offsetX), obj.solverContext_.basisCountX.x, obj.solverContext_.basisCountX.y);
-                    rY = reshape(r((obj.solverContext_.offsetX + 1):end), obj.solverContext_.basisCountY.x, obj.solverContext_.basisCountY.y);
+                    rX = reshape(r(1:obj.greensOperator_.offsetX), obj.greensOperator_.basisCountX.x, obj.greensOperator_.basisCountX.y);
+                    rY = reshape(r((obj.greensOperator_.offsetX + 1):end), obj.greensOperator_.basisCountY.x, obj.greensOperator_.basisCountY.y);
 
-                    rXFFT = fft2(rX, obj.solverContext_.paddingX, obj.solverContext_.paddingY);
-                    rYFFT = fft2(rY, obj.solverContext_.paddingX, obj.solverContext_.paddingY);
+                    rXFFT = fft2(rX, obj.greensOperator_.paddingX, obj.greensOperator_.paddingY);
+                    rYFFT = fft2(rY, obj.greensOperator_.paddingX, obj.greensOperator_.paddingY);
 
-                    zXFFT = (obj.solverContext_.Gyy .* rXFFT - obj.solverContext_.Gxy .* rYFFT) .* obj.solverContext_.invDetG;
-                    zYFFT = (obj.solverContext_.Gxx .* rYFFT - obj.solverContext_.Gyx .* rXFFT) .* obj.solverContext_.invDetG;
+                    zXFFT = (obj.greensOperator_.Gyy .* rXFFT - obj.greensOperator_.Gxy .* rYFFT) .* obj.greensOperator_.invDetG;
+                    zYFFT = (obj.greensOperator_.Gxx .* rYFFT - obj.greensOperator_.Gyx .* rXFFT) .* obj.greensOperator_.invDetG;
 
                     zX = ifft2(zXFFT);
                     zY = ifft2(zYFFT);
 
-                    zXSection = zX(1:obj.solverContext_.basisCountX.x, 1:obj.solverContext_.basisCountX.y);
-                    zYSection = zY(1:obj.solverContext_.basisCountY.x, 1:obj.solverContext_.basisCountY.y);
+                    zXSection = zX(1:obj.greensOperator_.basisCountX.x, 1:obj.greensOperator_.basisCountX.y);
+                    zYSection = zY(1:obj.greensOperator_.basisCountY.x, 1:obj.greensOperator_.basisCountY.y);
 
                     z = [zXSection(:); zYSection(:)];
             end
@@ -343,17 +272,17 @@ classdef ConjugateGradientSolver < handle
 
         function result = applyOperatorsMatrix(obj, currentMatrix)
             % Unpack parameters
-            bcx = obj.solverContext_.basisCountX;
-            bcy = obj.solverContext_.basisCountY;
-            padX = obj.solverContext_.paddingX;
-            padY = obj.solverContext_.paddingY;
+            bcx = obj.greensOperator_.basisCountX;
+            bcy = obj.greensOperator_.basisCountY;
+            padX = obj.greensOperator_.paddingX;
+            padY = obj.greensOperator_.paddingY;
             totalX = bcx.x * bcx.y;
             totalY = bcy.x * bcy.y;
             
             % TODO: implement as a general setting
             batchSize = 1024;
 
-            switch obj.solverContext_.rooftopContent
+            switch obj.greensOperator_.rooftopContent
                 case 'onlyX'
                     N = size(currentMatrix, 2);
                     result = zeros(totalX, N); % Preallocate output
@@ -370,7 +299,7 @@ classdef ConjugateGradientSolver < handle
                         X_FFT = fft2(X_batch, padX, padY); % [padX x padY x batchSize]
                         
                         % Apply Green's function and invert FFT
-                        GxFFT = obj.solverContext_.Gxx .* X_FFT;
+                        GxFFT = obj.greensOperator_.Gxx .* X_FFT;
                         Gx = ifft2(GxFFT);
                         
                         % Extract and store
@@ -394,7 +323,7 @@ classdef ConjugateGradientSolver < handle
                         Y_FFT = fft2(Y_batch, padX, padY); 
                         
                         % Apply Green's function and invert FFT
-                        GyFFT = obj.solverContext_.Gyy .* Y_FFT;
+                        GyFFT = obj.greensOperator_.Gyy .* Y_FFT;
                         Gy = ifft2(GyFFT);
                         
                         % Extract and store
@@ -420,8 +349,8 @@ classdef ConjugateGradientSolver < handle
                         Y_FFT = fft2(Y_batch, padX, padY);
                         
                         % Apply Green's functions
-                        GxFFT = obj.solverContext_.Gxx .* X_FFT + obj.solverContext_.Gxy .* Y_FFT;
-                        GyFFT = obj.solverContext_.Gyx .* X_FFT + obj.solverContext_.Gyy .* Y_FFT;
+                        GxFFT = obj.greensOperator_.Gxx .* X_FFT + obj.greensOperator_.Gxy .* Y_FFT;
+                        GyFFT = obj.greensOperator_.Gyx .* X_FFT + obj.greensOperator_.Gyy .* Y_FFT;
                         
                         % Invert FFTs and store
                         Gx = ifft2(GxFFT);
