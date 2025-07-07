@@ -129,6 +129,44 @@ classdef BasisFunctions < handle
 
     methods (Access = private)
         function [facesX, facesY] = generateBasisFunctionFaceIndices(~, mesh)
+            faces = mesh.getFaces();      % 4×F uint32
+            [countX, ~] = deal( ...
+                mesh.primitive.getPatchCountX(), ...
+                mesh.primitive.getPatchCountY() ...
+            );
+
+            % 1) Build the list of all edges with their owning face
+            faceCount = size(faces,2);
+            faceIdx   = uint32(1:faceCount);
+            v = faces;  % just alias
+            
+            % each row is [vMin, vMax, faceID]
+            edges = [ min(v(1,:),v(2,:))', max(v(1,:),v(2,:))', faceIdx' ;
+                      min(v(2,:),v(3,:))', max(v(2,:),v(3,:))', faceIdx' ;
+                      min(v(3,:),v(4,:))', max(v(3,:),v(4,:))', faceIdx' ;
+                      min(v(4,:),v(1,:))', max(v(4,:),v(1,:))', faceIdx' ];
+                  
+            % 2) find duplicates (i.e. shared edges)
+            edges = sortrows(edges, [1 2]);
+            dupMask = all(edges(1:end-1,1:2) == edges(2:end,1:2), 2);
+            sharedEdgeIdx = find(dupMask);
+            
+            % 3) pull out the two face IDs for each shared edge
+            f1 = edges(sharedEdgeIdx, 3);
+            f2 = edges(sharedEdgeIdx+1, 3);
+
+            % 4) classify into X‐pairs or Y‐pairs
+            diffs = abs(double(f2) - double(f1));
+            isX   = (diffs == 1) & (floor((double(min(f1,f2))-1)/countX) == floor((double(max(f1,f2))-1)/countX));
+            isY   = (diffs == countX);
+
+            facesX = uint32([min(f1(isX),f2(isX)), max(f1(isX),f2(isX))].').';
+            facesY = uint32([min(f1(isY),f2(isY)), max(f1(isY),f2(isY))].').';
+        end
+
+
+        %{
+        function [facesX, facesY] = generateBasisFunctionFaceIndices(~, mesh)
             function edges = generateEdges(faces)
                 faceCount = size(faces, 2);
 
@@ -165,9 +203,10 @@ classdef BasisFunctions < handle
                 facesY = faces(~adjacentIdx, :);
             end
 
-            [facesX, facesY] = getDoubleFaces(generateEdges(mesh.getFaces()));
+            [facesX, facesY] = getDoubleFaces(generateEdges(mesh.getFaces()))
             facesX = uint32(facesX.');
             facesY = uint32(facesY.');
         end
+        %}
     end
 end

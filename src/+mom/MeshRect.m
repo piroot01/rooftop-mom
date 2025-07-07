@@ -52,9 +52,14 @@ classdef MeshRect < handle
             pointsX = rectSide(countX, sizeX);
             pointsY = rectSide(countY, sizeY);
 
+            allVertices = getVertices(pointsX, pointsY);
+            allFaces = getFaces(countX, countY);
+
+            activePatches = obj.rectPrimitive_.getIndices();
+
             mesh = mom.Mesh2D();
-            mesh.vertices = getVertices(pointsX, pointsY);
-            mesh.faces = getFaces(countX, countY);
+            mesh.vertices = allVertices;
+            mesh.faces = allFaces(:, activePatches(:).');
        end
     end
 end

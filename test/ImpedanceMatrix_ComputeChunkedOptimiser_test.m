@@ -5,8 +5,8 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 10;
-countY = 11;
+countX = 3;
+countY = 3;
 sizeX = 1;
 sizeY = 1;
 
@@ -22,8 +22,13 @@ k = 2 * pi / lambda;
 memoryElementwise = 10e5;
 memory_MB = memoryElementwise * 8 / 1e6;
 
+antennaGenome = true(countX, countY);
+antennaGenome(2, 2) = false;
+
+disp(antennaGenome);
+
 % 1. step: generate a mesh
-dipolePrimitive = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
+dipolePrimitive = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, antennaGenome(:).');
 dipolePrimitiveTransformed = mom.MeshRect(dipolePrimitive, origin, 0, 0, 0);
 dipoleMesh = dipolePrimitiveTransformed.getAsMesh();
 
@@ -54,4 +59,5 @@ Z = chunkedOptimiser.compute(strategyContext, gridSize);
 
 toc;
 
-disp(size(Z));
+%disp(size(Z));
+disp(Z);

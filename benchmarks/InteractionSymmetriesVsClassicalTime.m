@@ -5,6 +5,8 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
+
+
 % The task is to display three graphs:
 %   1. The classical algorithm
 %   2. The best‐case scenario of the accelerated interaction-symmetries approach

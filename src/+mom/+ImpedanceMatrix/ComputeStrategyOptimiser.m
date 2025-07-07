@@ -36,6 +36,10 @@ classdef ComputeStrategyOptimiser < handle
             else
                 [maskXY, interactionsXY] = obj.generateMaskXY(facesX, facesY, gridSize);
 
+                facesX
+                facesY
+
+
                 if sameSize
                     [maskXX, maskYY, interactionsXX, interactionsYY] = obj.generateMaskXXAndYYSameSize(facesX, facesY, gridSize);
                 else

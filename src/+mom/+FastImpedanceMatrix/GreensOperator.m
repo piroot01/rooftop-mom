@@ -6,7 +6,7 @@ classdef GreensOperator < handle
     end
 
     methods
-        function obj = ConjugateGradientSolver(strategyContext)
+        function obj = GreensOperator(strategyContext)
             obj.strategyContext_ = strategyContext;
 
             %fftw('planner','exhaustive');
