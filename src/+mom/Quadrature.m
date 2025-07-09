@@ -40,7 +40,7 @@ classdef Quadrature
             v2 = basisFunctionMesh(:, 2:4:end);
             v4 = basisFunctionMesh(:, 4:4:end);
 
-            uSide= v2 - v1;
+            uSide = v2 - v1;
             vSide = v4 - v1;
 
             uCount = numel(obj.points2Du_);

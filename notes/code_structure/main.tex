@@ -25,7 +25,7 @@
     \begin{enumerate}[label=\Roman*.]
         \item \textbf{mesh}: Will form a namespace which will accommodate classes for the mesh structure. Keep in mind that there will also be a structure that explicitly generates a regular mesh \(M\times N\) with a given genome.
         \item \textbf{basis functions}: Block dedicated to the class that has the edge‐detection algorithm, divergence‐conforming basis‐function class that manages the indexing of the basis functions. Next there will be concrete variants of the divergence‐conforming basis functions called rooftop basis functions. Two variants will exist: one that specifically works with the genome of the mesh structure, and a second that ignores the genome and rapidly generates the appropriate structures.
-        \item \textbf{MoM strategy}: A more general name would be “MoM strategy,” because it will not only include the impedance‐matrix assembly process—there are solvers (iterative, e.g.\ CGFFT) that do not require the impedance matrix. Thus this namespace will be divided into two parts: \texttt{WithImpedanceMatrix} and \texttt{WithoutImpedanceMatrix}. The top‐level class will decide which strategy to use based on user input and the desired output (impedance matrix, current vector, etc.). The input will be the appropriate excitation.
+        \item \textbf{core}: A more general name would be “MoM strategy,” because it will not only include the impedance‐matrix assembly process—there are solvers (iterative, e.g.\ CGFFT) that do not require the impedance matrix. The top‐level class will decide which strategy to use based on user input and the desired output (impedance matrix, current vector, etc.). The input will be the appropriate excitation.
         \begin{enumerate}[label=\roman*.]
             \item \textbf{memory manager}: Decides the maximum sizes of blocks, vectors, and matrices for subsequent planners.
             \item \textbf{impedance‐matrix planner}: Contains several variants of the planning process. Each class produces a structure that accommodates any information needed for the next stage of assembly—basically the indices of the matrix that need to be computed in each iteration and how.
@@ -81,6 +81,7 @@
         \item \texttt{utils}: Namespace that bundles functions that operates with the \texttt{Mesh} and \texttt{MeshCluster} objects
         \begin{enumerate}[label=\roman*.]
             \item \texttt{generateInnerEdges}: Function that will return a 2 x $N$ array of patch indices sorted (for better acceleration performance) from given mesh object.
+            \item \texttt{generateGridSizes}: Function that for \texttt{Mesh} and \texttt{MeshCluster} generates apropriately sized grids for each of the mesh elements. Returns it as a cell of pairs. The prerequisity is that the meshes are plannar structures.
         \end{enumerate}
     \end{enumerate}
 
@@ -99,10 +100,155 @@
             \item \texttt{faces}: Returns sorted faces first the X direction then Y direction.
             \item \texttt{facesCell}: For each mesh in cluster new cell.
             \item \texttt{facesCellDir}: Returns only specific section of the basis functions based on the direction.
-            \item \texttt{meshIDMask}: Generates a mask ID mask, each of the basis functions (column of the structure), is given a number based on its mesh location. Used later for mesh size adjustment.
-            \item <<TEMP>> \texttt{meshCount}: Returns the size of the cluster. I am not sure if it stays here, absolutely not key here. 
+            \item \texttt{generateIDMask}: Generates a mask ID mask, each of the basis functions (column of the structure), is given a number based on its mesh location. Used later for mesh size adjustment.
+            \item \texttt{mesh}: Returns a handle to the internal mesh (read-only ideally but in MATLAB it is not possible I am affraid).
         \end{enumerate}
-        \item \texttt{RooftopBasisFunctions}: This class derives from the \texttt{UniformRectDivergenceComforming} and generates the point matrix for each rooftop based on the indices of the basis functions, one by one.
-        \item \texttt{FastRooftopBasisFunctions}: This one does not derive from the \texttt{UniformRectDivergenceComforming}, the input is the \texttt{UniformRectPrimitive} it is used for the superfast CG-FFT algorithms.
+        \item \texttt{RooftopBasisFunctions}: This class derives from the \texttt{UniformRectDivergenceComforming} and generates the point matrix for each rooftop based on the indices of the basis functions, one by one. The class also contains the quadrature points for each of the rooftops.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{constructor}: Requires the instance of \texttt{GaussLegendre2RectQuadrature} and \texttt{Mesh} or \texttt{MeshCluster} for the base class.
+            \item \texttt{generate}: Triggers the \texttt{generateIndices} function from the base class. Then it generates the points of the given quadrature. 
+            \item \texttt{generateQuadraturePoints}: Computes the shifted quadrature points for each of the basis functions.
+            \item \texttt{generateRooftopPoints}: Computes the rooftop points for all given basis function indices.
+            \item \texttt{generateRooftopDivPoints}: Computes the divergence of the rooftops.
+            \item \texttt{rooftopSizes}: For each of the rooftops gives domain rectangle dimensions, each size is given an index, which will be used for construction of the jacobi mask.
+            \item \texttt{rooftopSizesUniquePerms}: Returns the vector of unique rooftop sizes, permutations of the sizes included (needed for the singularity extraction).
+            \item \texttt{rooftopSizesUniqueCombs}: Returns the vector of unique rooftop sizes, unordered, used for jacobi mask.
+        \end{enumerate}
+        \item \texttt{FastRooftopBasisFunctions}: This one does not derive from the \texttt{UniformRectDivergenceComforming}, it is used for the superfast CG-FFT algorithms.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{constructor}: The input can be the \texttt{Mesh}, if we are able to deduce the gridsize of the mesh based on the \texttt{Mesh} structure. If not then the instance of \texttt{UniformRectPrimitive} will be used.
+            \item \texttt{gridsize}: Returns the grid size of the mesh as a cell to be homogenous with multiple meshes.
+            \item \texttt{count}: Returns the number of basis functions for given grid.
+            \item \texttt{generateRooftopPointsDir}: Returns the rooftop points for rooftops in certain direction.
+            \item \texttt{generateQuadraturePointsDir}: Returns the quadrature points for rooftops in certain direction.
+            \item \texttt{generateQuadraturePoints}: Returns all quadrature points, used for electric part of the impedance matrix.
+        \end{enumerate}
+        \item \texttt{GaussLegendre2RectQuadrature}: Class that will be used for generating the quadrature weights and quadrature points for a pair of rectangular domains. Each quadrature order will has different class instance.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{order}: Gives the quadrature order.
+            \item \texttt{generate}: Generates the weights and points for two unit squares.
+            \item \texttt{weigths4D}: Obtain the weights for 4D integration.
+            \item \texttt{weigths2D}: Obtain the weights for 2D integration.
+            \item \texttt{points}: Returns pair of points, each one for one rectangle.
+        \end{enumerate}
     \end{enumerate}
+
+    \subsection{\texttt{core}}
+
+    This namespace is dedicated to the computation of the impedance matrix, currents --- basically the core components of the whole code. Very important aspect of the core is memory management. For every method of moments it is crucial to be able to manage the memory usage of the matrix, operator assembly.
+
+    \begin{enumerate}[label=\Roman*.]
+        \item \texttt{MoMStrategy}: This class will decide what classes to construct in order to compute what the user wants.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{constructor}
+            \item \texttt{loadMesh}
+        \end{enumerate}
+        \item \texttt{MoMStrategySettings}: This class will hold the complete settings for the algorithm 
+        \item \texttt{MemoryManager}: Based on what the MoMStrategy chooses to compute, the memory manager will comute required block size (maximal count of doubles for a given quadrature). It will also consider the memory needed for the accompanioning matrices.
+        \item \texttt{Constants}: This class will host all necessary constants for the MoM, so speed of light, vacuum permitivity, vacuum permeability etc. It will has multiple constructors based on the desired input (most common is wavenumber, but ka will be also desired).
+    \end{enumerate}
+
+    \subsubsection{\texttt{impedanceMatrix}}
+
+    All about the computation of the impedance matrix, its actual assembly will be placed in this namespace. The \texttt{ComputeContext} will serve as a holder of necessary classes for the impedance matrix construction process. The base class \texttt{ComputeStrategy} has the common function for all derived classes which will compute the impedance matrix.
+
+    \begin{enumerate}[label=\Roman*.]
+        \item \texttt{singularIntegrals}: This namespace will accommodate the analytic formulas for the singular integrals.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{type1}
+            \item \texttt{type2}
+            \item \texttt{type3}
+        \end{enumerate}
+        \item \texttt{InteractionSymmetriesAccelerator}: This class will implement the interaction symmetries approach of accelerating the impedance matrix computation. It will basically serves as a decorator of the Assembler stack.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{generate}: Returns the part of the impedance matrix based on the instance input (\texttt{FullAssembler}, \texttt{MagneticPartAssembler}, ...) and the given \texttt{AssemblerContext}. It will basically wrap around the \texttt{generateImpl} of the objects injecting the custom computed interaction and consequently filling the matrix using the symmetries.
+            \item \texttt{generateContext}: Returns the mask, interactions and chunks. It is a private function.
+        \end{enumerate}
+        \item \texttt{InteractionSymmetriesAcceleratorImpl}: Class that helps to separate the internals and utility functions of the interaction symmetries aceelerator. This class implements the main logic for the interaction symmetries approach. It is created at the same time as the \texttt{InteractionSymmetriesAccelerator}
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{generate}: Returns the computed impedance matrix masks and the arrays of interactions that yields unique interaction impedance value.
+            \item \texttt{generateSingle}: Returns a single mask and interaction array.
+            \item \texttt{apply}: Applies the mask and returns the fully occupied matrix.
+            \item \texttt{generateToeplitz}
+            \item \texttt{generateBothDir}
+            \item \texttt{generateSameDir}
+            \item \texttt{generateCrossDir}
+        \end{enumerate}
+        \item \texttt{Assembler}: Base class for impedance matrix assembly classes. It will also host necessary functions for the common matrix assembly process - singularity mask generator etc. It will also has common constants saved in it (polarity mask, ...).
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{generate}: An abstract method that must be implemented by all derived classes.
+            \item \texttt{generateSingularityMask}
+            \item \texttt{generateIDMask}
+            \item \texttt{generateJacobianMask}
+        \end{enumerate}
+        \item \texttt{AssemblerChunkPlanner}: Plans the chunk scheme for the Assembler. It can generate the chunk scheme for all chunks in the matrix, or based on the given interaction scheme, used for selective matrix rendering. It will be initialized with the \texttt{Assembler}, therefore its methods accesible to all derived classes.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{constructor}: Needs only the double count (block size) for the subsequent calculations.
+            \item \texttt{generate}: Based on the given double count in one block it will produce the chunk scheme for the whole impedance matrix.
+            \item \texttt{generateSelected}: It will return the chunk scheme based on the given interaction matrix.
+            \item \texttt{chunksToSlices}: Converts the chunks into slices for the distance matrix computation.
+        \end{enumerate}
+        \item \texttt{AssemblerContext}: All necessary classes for the actual computation will be placed here.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{quadrature}: Returns the internal quadrature reference.
+            \item \texttt{basisFunctions}: Returns handle to the basisFunctions.
+            \item \texttt{constants}
+        \end{enumerate}
+        \item \texttt{MagneticPartAssembler}: Assembles only the magnetic part of the impedance matrix.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{constructor}: The input is the memory requirements.
+            \item \texttt{generate}: Implements the base class abstraction. Input will be only the \texttt{AssemblerContext}, so in the future we can call on one instance of the assembler multiple antenna wavenumbers or electrical sizes.
+            \item \texttt{generateImpl}: Implementation of the assembly, but the additional parameter of the method it the interaction matrix for selected parts of the impedance matrix calculations.
+            \item \texttt{generateChunk}: Private method implementing the chunk computation.
+            \item \texttt{prepareSingularityContext}: Computes the necessary arrays for singularity evaluation.
+            \item \texttt{computeSingularities}: Computes the values of the extracted singular integrals using the functions in the \texttt{singularIntegrals} namespace.
+        \end{enumerate}
+        \item \texttt{ElectricPartAssembler}: Assembles only the electric part of the impedance matrix.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{constructor}
+            \item \texttt{generate}
+            \item \texttt{generateImpl}
+            \item \texttt{generateChunk}
+            \item \texttt{computeSingularities}
+        \end{enumerate}
+        \item \texttt{FullAssembler}: Assembles full impedance matrix.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{constructor}
+            \item \texttt{generate}
+            \item \texttt{generateImpl}
+        \end{enumerate}
+        \item \texttt{utils}: Namespace that governs any utility functions for the \texttt{impedanceMatrix} namespace.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{generateIntegralKernel}: Produces the integral kernel matrix for the impedance matrix assembly.
+            \item \texttt{generateDistanceMatrix}: Used for the scalar Green's function computation.
+        \end{enumerate}
+    \end{enumerate}
+
+    \subsubsection{\texttt{greensMatrix}}
+
+    This namespace contains essentially the same algorithms (potentially can be condensed into one namespace with a different inputs).
+
+    \begin{enumerate}[label=\Roman*.]
+        \item \texttt{Assembler}: Basically the same role as in the i
+        \item \texttt{AssemblerChunkPlanner}: Plans the chunk scheme for the whole code.
+        \item \texttt{ElectricPartAssembler}:
+        \item \texttt{MagneticPartAssembler}:
+        \item \texttt{FullAssembler}
+        \item \texttt{utils}: Namespace for helper functions.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{toeplitzToCirculant}:
+        \end{enumerate}
+    \end{enumerate}
+
+    \subsubsection{\texttt{solvers}}
+
+    Here will be placed all the solvers, ie. the algorithms that will compute the current vector.
+
+    \begin{enumerate}[label=\Roman*.]
+        \item \texttt{Inversion}
+        \item \texttt{ConjugateGradient}
+        \item \texttt{ConjugateGradientSpectralPreconditioner}
+        \item \texttt{GeneralizedMinimalResidual}
+    \end{enumerate}
+
 \end{document}
