@@ -9,18 +9,13 @@ countY = 3;
 sizeX = 2;
 sizeY = 1;
 
-missing = randperm(countX * countY, 6);
-
-genome = true(countX * countY, 1);
-genome(missing) = false;
-
-rectPrimitive1 = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY, genome);
+rectPrimitive1 = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
 rect1 = rooftopMoM.mesh.UniformRect(rectPrimitive1);
 mesh1 = rect1.generateMesh();
 
 origin = [10; 20; 30];
 
-rectPrimitive2 = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY, []);
+rectPrimitive2 = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
 rect2 = rooftopMoM.mesh.UniformRect(rectPrimitive2, origin, 0, 0, 0);
 mesh2 = rect2.generateMesh();
 

@@ -22,11 +22,7 @@ classdef UniformRect < handle
     end
 
     methods
-        function mesh = generateMesh(obj, useGenome)
-            if nargin < 2
-                useGenome = true;
-            end
-
+        function mesh = generateMesh(obj)
             countX = obj.uniformRectPrimitive_.countX();
             countY = obj.uniformRectPrimitive_.countY();
             sizeX = obj.uniformRectPrimitive_.sizeX();
@@ -37,22 +33,6 @@ classdef UniformRect < handle
 
             vertices = obj.generateVertices_(pointsX, pointsY);
             faces = obj.generateFaces_();
-
-            if useGenome
-                indicesGenome = obj.uniformRectPrimitive_.indicesGenome();
-                facesGenome = faces(:, indicesGenome);
-
-                % Create a logical mask for used vertices.
-                used = false(1, size(vertices, 2));
-                used(facesGenome(:)) = true;
-
-                % Map old vertex indices to new compact indices using cumulative sum.
-                newIndices = uint32(cumsum(used));
-
-                % Remove unused vertices and remap faces.
-                vertices = vertices(:, used);
-                faces = newIndices(facesGenome);
-            end
 
             mesh = rooftopMoM.mesh.Mesh(vertices, faces);
         end
