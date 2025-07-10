@@ -48,7 +48,7 @@
     This is the top-level namespace of the project. The class \texttt{RooftopMoMStrategy} will be the user interface with the whole package. The settings of the compute strategy is placed in \texttt{RooftopMoMStrategySettings}. But the user will be also be able to create a custom wrappers/decorators of the internals so no strict encapsulation will not be restricted.
 
     \begin{enumerate}[label=\Roman*.]
-        \item \texttt{RooftopMoMStrategy}: The top class --- decides what strategy of the computation to choose --- it will disponate with several constructors, including the empty one for fully custom approach.
+        \item \texttt{Strategy}: The top class --- decides what strategy of the computation to choose --- it will disponate with several constructors, including the empty one for fully custom approach.
         \begin{enumerate}[label=\roman*.]
             \item \texttt{constructor}: There will be three levels of constructors: first the empty one, so the user must use the load methods to use the MoM properly, the second one will accepts only the setting structure and last one will accepts the settings 
             \item \texttt{loadMesh}: Load the mesh with the structure of \texttt{mesh/Mesh} or \texttt{mesh/MeshCluster}, basically any structure with vertices list and apropriate face list with the uniform rectangular structure will be accepted.
@@ -59,7 +59,7 @@
             \item \texttt{loadSettings}: Insert the instance of \texttt{RooftopMoMStrategySettings} manually.
             \item \texttt{generate}: Initiates the private function \texttt{checkRequirements} if it suceddes it will create necessary strucures to compute the desired objects and returns general instance of \texttt{RooftopMoMStrategyResult} which hold necessary informations.
         \end{enumerate}
-        \item \texttt{RooftopMoMStrategySettings}: Here will be placed all the settings required for deterministic behaviour of the MoM. The idea is that based on these tags we decide what needs to be computed and what is not: \textit{impedanceMatrixElectricPart}, \textit{impedanceMatrixMagneticPart}, \textit{impedanceMatrix}, \textit{currentsInverse}, \textit{currentsCGFFT}, \textit{currentsPCGFFT}, \textit{currentsGMRES}. There will be more settings if we desire.
+        \item \texttt{StrategySettings}: Here will be placed all the settings required for deterministic behaviour of the MoM. The idea is that based on these tags we decide what needs to be computed and what is not: \textit{impedanceMatrixElectricPart}, \textit{impedanceMatrixMagneticPart}, \textit{impedanceMatrix}, \textit{currentsInverse}, \textit{currentsCGFFT}, \textit{currentsPCGFFT}, \textit{currentsGMRES}. There will be more settings if we desire.
         \begin{enumerate}[label=\roman*.]
             \item \texttt{constructor}: This will be parameteric constructor. Three level constructor aproach.
             \item \texttt{setTarget}: Parameteric, but for the first time i would make it such that one target is required.
@@ -69,7 +69,7 @@
             \item \texttt{setMemoryGiB}
             \item \texttt{memoryGiB}
         \end{enumerate}
-        \item \texttt{RooftopMoMStrategyResult}: This class will has every possible output of the MoM stored in it, potentially the times of each of the crucial operation as well, the data will be structuralized as a dictionary. For each of the methods will returns a structure that will has commonly two main fields: \textit{data}, \texttt{timeOfExecution}, and potentially others ie. \texttt{iterationCount}, \texttt{relativeResiduals}, ... If the desired output is not accessible then it was not computed and it marked as \textit{nan}.
+        \item \texttt{StrategyResult}: This class will has every possible output of the MoM stored in it, potentially the times of each of the crucial operation as well, the data will be structuralized as a dictionary. For each of the methods will returns a structure that will has commonly two main fields: \textit{data}, \texttt{timeOfExecution}, and potentially others ie. \texttt{iterationCount}, \texttt{relativeResiduals}, ... If the desired output is not accessible then it was not computed and it marked as \textit{nan}.
         \begin{enumerate}[label=\roman*.]
             \item \texttt{impedanceMatrixElectricPart}
             \item \texttt{impedanceMatrixMagneticPart}
@@ -85,15 +85,15 @@
     \begin{enumerate}[label=\Roman*.]
         \item \texttt{UniformRectPrimitive}: This is a entry structure that will hold the dimensions of the elementary cell and how many are those in each direction. As well it will hold the genome of the mesh (binary table). The basic unit will be 1 m for now, in future there will be also a posibility to use relative unit system.
         \begin{enumerate}[label=\roman*.]
-            \item \texttt{patchCountX}
-            \item \texttt{patchCountY}
-            \item \texttt{patchCount}: Returns the total number of patches in the mesh.
-            \item \texttt{patchCountGenome}: Return the total minus the genome sum.
-            \item \texttt{patchSizeX}
-            \item \texttt{patchSizeY}
+            \item \texttt{countX}
+            \item \texttt{countY}
+            \item \texttt{count}: Returns the total number of patches in the mesh.
+            \item \texttt{countGenome}: Return the total minus the genome sum.
+            \item \texttt{sizeX}
+            \item \texttt{sizeY}
             \item \texttt{meshSize}: Returns the geometrical size of the mesh in a pair.
-            \item \texttt{patchIndices}: Returns all indices of the patches of the mesh as a 1D vector. Basically used for the mesh generation.
-            \item \texttt{patchIndicesGenome}: The same as \texttt{patchIndices}, but returns only those where the genome is 1, keeps the indexing.
+            \item \texttt{indices}: Returns all indices of the patches of the mesh as a 1D vector. Basically used for the mesh generation.
+            \item \texttt{indicesGenome}: The same as \texttt{patchIndices}, but returns only those where the genome is 1, keeps the indexing.
         \end{enumerate}
         \item \texttt{UniformRect}: Takes the \texttt{UniformRectPrimitive} and places the mesh in 3D according to the bottom-left corner (in the future add more variety of rect origins), as well three euler angles which will orient the rectangular plate. The output of this structure is the universal Mesh, but with optimal basis function ordering (important for best acceleration techniques performance).
         \begin{enumerate}[label=\roman*.]
