@@ -12,10 +12,10 @@ sizeY = 1;
 missing = randperm(countX * countY, 6)
 
 genome = true(countX * countY, 1);
-genome(missing) = false
+genome(missing) = false;
 
 rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY, genome);
 
 rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
 
-rect.generateMesh()
+rect.generateMesh();

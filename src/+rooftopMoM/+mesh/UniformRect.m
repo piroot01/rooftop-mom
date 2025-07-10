@@ -42,13 +42,15 @@ classdef UniformRect < handle
                 indicesGenome = obj.uniformRectPrimitive_.indicesGenome();
                 facesGenome = faces(:, indicesGenome);
 
-                % Identify which vertices are actually used by the culled faces.
-                usedVertexIndices = unique(facesGenome(:));
-                newIndices = zeros(1, size(vertices, 2), 'uint32');
-                newIndices(usedVertexIndices) = uint32(1:numel(usedVertexIndices));
+                % Create a logical mask for used vertices.
+                used = false(1, size(vertices, 2));
+                used(facesGenome(:)) = true;
 
-                % Remap face indices to the new compact numbering and remove unused vertices.
-                vertices = vertices(:, usedVertexIndices);
+                % Map old vertex indices to new compact indices using cumulative sum.
+                newIndices = uint32(cumsum(used));
+
+                % Remove unused vertices and remap faces.
+                vertices = vertices(:, used);
                 faces = newIndices(facesGenome);
             end
 
