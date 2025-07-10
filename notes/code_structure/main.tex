@@ -43,6 +43,41 @@
 
     Here we will expand the whole code structure down to a single function, each will has a brief description what it does. This will not only clarify the code oritentation, it will also motivate each component existence and usage, which should be homogenous with SRP. It will also extinct the duplicity and wrong context of the component. Each (sub)subsection will represent namespace. Then each of the top-level enumerates will represent class names and the subsequent indented enumerated will list all methods of the class.
 
+    \section{\texttt{rooftopMoM}}
+
+    This is the top-level namespace of the project. The class \texttt{RooftopMoMStrategy} will be the user interface with the whole package. The settings of the compute strategy is placed in \texttt{RooftopMoMStrategySettings}. But the user will be also be able to create a custom wrappers/decorators of the internals so no strict encapsulation will not be restricted.
+
+    \begin{enumerate}[label=\Roman*.]
+        \item \texttt{RooftopMoMStrategy}: The top class --- decides what strategy of the computation to choose --- it will disponate with several constructors, including the empty one for fully custom approach.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{constructor}: There will be three levels of constructors: first the empty one, so the user must use the load methods to use the MoM properly, the second one will accepts only the setting structure and last one will accepts the settings 
+            \item \texttt{loadMesh}: Load the mesh with the structure of \texttt{mesh/Mesh} or \texttt{mesh/MeshCluster}, basically any structure with vertices list and apropriate face list with the uniform rectangular structure will be accepted.
+            \item \texttt{loadUniformRect}: Accepts the \texttt{UniformRect} abstraction through which the \texttt{Mesh} or if the input is cell of \texttt{UniformRect} it will produce the \texttt{MeshCluster}.
+            \item \texttt{loadUniformRectPrimitive}: Loads the primitive and assumes that the origin of the mesh is at $(0, 0, 0)$ and all Euler angles are zero.
+            \item \texttt{loadRooftopBasisFunctions}: Loads the \texttt{basisFunctions/RooftopBasisFunctions}, the mesh is not required because it is accesible through the \texttt{mesh} handle.
+            \item \texttt{loadFastRooftopBasisFunctions}
+            \item \texttt{loadSettings}: Insert the instance of \texttt{RooftopMoMStrategySettings} manually.
+            \item \texttt{generate}: Initiates the private function \texttt{checkRequirements} if it suceddes it will create necessary strucures to compute the desired objects and returns general instance of \texttt{RooftopMoMStrategyResult} which hold necessary informations.
+        \end{enumerate}
+        \item \texttt{RooftopMoMStrategySettings}: Here will be placed all the settings required for deterministic behaviour of the MoM. The idea is that based on these tags we decide what needs to be computed and what is not: \textit{impedanceMatrixElectricPart}, \textit{impedanceMatrixMagneticPart}, \textit{impedanceMatrix}, \textit{currentsInverse}, \textit{currentsCGFFT}, \textit{currentsPCGFFT}, \textit{currentsGMRES}. There will be more settings if we desire.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{constructor}: This will be parameteric constructor. Three level constructor aproach.
+            \item \texttt{setTarget}: Parameteric, but for the first time i would make it such that one target is required.
+            \item \texttt{target}: Returns the target name.
+            \item \texttt{setMemoryMiB}: Give the MoM maximal amout of the memory for the computation in MiB. Other units will be considered.
+            \item \texttt{memoryMiB}: Returns the given memory in MiB.
+            \item \texttt{setMemoryGiB}
+            \item \texttt{memoryGiB}
+        \end{enumerate}
+        \item \texttt{RooftopMoMStrategyResult}: This class will has every possible output of the MoM stored in it, potentially the times of each of the crucial operation as well, the data will be structuralized as a dictionary. For each of the methods will returns a structure that will has commonly two main fields: \textit{data}, \texttt{timeOfExecution}, and potentially others ie. \texttt{iterationCount}, \texttt{relativeResiduals}, ... If the desired output is not accessible then it was not computed and it marked as \textit{nan}.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{impedanceMatrixElectricPart}
+            \item \texttt{impedanceMatrixMagneticPart}
+            \item \texttt{impedanceMatrix}
+            \item \texttt{currrents}
+        \end{enumerate}
+    \end{enumerate}
+
     \subsection{\texttt{mesh}}
 
     All classes asociated with the mesh generation will be placed here. Up on these structures will be placed the classes from the basis function, everything about the geometry of the problem will live here. Therefore we will introduce a structure(s) that will form a bridge to the basis function class.
@@ -85,7 +120,7 @@
         \end{enumerate}
     \end{enumerate}
 
-    \subsection{\texttt{basis\_functions}}
+    \subsection{\texttt{basisFunctions}}
 
     As described in the section of key components, here will be placed all classes that generates from the \texttt{Mesh} or \texttt{MeshCluster} the two key structures: indices list and points. The indices list will be generated for divergence conforming basis functions directly from the mesh based on the edge detection algorithm. Each inner edge of the mesh is associated with one divergence conforming basis function.
 
@@ -117,11 +152,11 @@
         \item \texttt{FastRooftopBasisFunctions}: This one does not derive from the \texttt{UniformRectDivergenceComforming}, it is used for the superfast CG-FFT algorithms.
         \begin{enumerate}[label=\roman*.]
             \item \texttt{constructor}: The input can be the \texttt{Mesh}, if we are able to deduce the gridsize of the mesh based on the \texttt{Mesh} structure. If not then the instance of \texttt{UniformRectPrimitive} will be used.
-            \item \texttt{gridsize}: Returns the grid size of the mesh as a cell to be homogenous with multiple meshes.
             \item \texttt{count}: Returns the number of basis functions for given grid.
             \item \texttt{generateRooftopPointsDir}: Returns the rooftop points for rooftops in certain direction.
             \item \texttt{generateQuadraturePointsDir}: Returns the quadrature points for rooftops in certain direction.
             \item \texttt{generateQuadraturePoints}: Returns all quadrature points, used for electric part of the impedance matrix.
+            \item \texttt{meshPrimitive}: Returns (should be read-only) handle to the \texttt{UniformRectPrimitive}.
         \end{enumerate}
         \item \texttt{GaussLegendre2RectQuadrature}: Class that will be used for generating the quadrature weights and quadrature points for a pair of rectangular domains. Each quadrature order will has different class instance.
         \begin{enumerate}[label=\roman*.]
@@ -138,12 +173,6 @@
     This namespace is dedicated to the computation of the impedance matrix, currents --- basically the core components of the whole code. Very important aspect of the core is memory management. For every method of moments it is crucial to be able to manage the memory usage of the matrix, operator assembly.
 
     \begin{enumerate}[label=\Roman*.]
-        \item \texttt{MoMStrategy}: This class will decide what classes to construct in order to compute what the user wants.
-        \begin{enumerate}[label=\roman*.]
-            \item \texttt{constructor}
-            \item \texttt{loadMesh}
-        \end{enumerate}
-        \item \texttt{MoMStrategySettings}: This class will hold the complete settings for the algorithm 
         \item \texttt{MemoryManager}: Based on what the MoMStrategy chooses to compute, the memory manager will comute required block size (maximal count of doubles for a given quadrature). It will also consider the memory needed for the accompanioning matrices.
         \item \texttt{Constants}: This class will host all necessary constants for the MoM, so speed of light, vacuum permitivity, vacuum permeability etc. It will has multiple constructors based on the desired input (most common is wavenumber, but ka will be also desired).
     \end{enumerate}
@@ -250,5 +279,9 @@
         \item \texttt{ConjugateGradientSpectralPreconditioner}
         \item \texttt{GeneralizedMinimalResidual}
     \end{enumerate}
+
+    \subsection{operators}
+
+    This namespace will contain some obligatory operators for proper \texttt{core} function, like the generation of the excitation vector. Then there will be operators that will utilize the outputs of the \texttt{core} like the impedance matrix for input impedance, or the current vector for \texttt{FarField} or \texttt{RCS} and others.
 
 \end{document}
