@@ -97,6 +97,7 @@
         \end{enumerate}
         \item \texttt{UniformRect}: Takes the \texttt{UniformRectPrimitive} and places the mesh in 3D according to the bottom-left corner (in the future add more variety of rect origins), as well three euler angles which will orient the rectangular plate. The output of this structure is the universal Mesh, but with optimal basis function ordering (important for best acceleration techniques performance).
         \begin{enumerate}[label=\roman*.]
+            \item \texttt{constructor}: There will be 2 types of constructor default --- the user provides only the \texttt{UniformRectPrimitive} --- and the unit determinant transformations are not used. Second will require all transformation parameters, origin and three Euler angles.
             \item \texttt{generateMesh}: Outputs the mesh of the primitive with optimal ordering of the faces.
         \end{enumerate}
         \item \texttt{Mesh}: The central structure of the \texttt{mesh} namespace will hold the mesh structure in two arrays, so by a list of vertices and list of faces (each face will be connected to $n$ vertices). There is a small problem, if the interaction symmetry algorithm has to be optimally perfoment we will prefer some determined scheme for the face ordering because it will influence the basis function ordering.
