@@ -104,10 +104,13 @@
         \begin{enumerate}[label=\roman*.]
             \item \texttt{vertices}
             \item \texttt{faces}
+            \item \texttt{setVertices}
+            \item \texttt{setFaces}
             \item \texttt{count}: Return 1, here is due to the exchange with \texttt{MeshCluster} which will has \texttt{count} implemented.
         \end{enumerate}
         \item \texttt{MeshCluster}: Multiple \texttt{Mesh} structures can be accommodate here. The reindexing of the vertices and faces is automatical. Each mesh is represented as a element of a cell. The point is that the \texttt{MeshCluster} is interchangible with the \texttt{Mesh} class.
         \begin{enumerate}[label=\roman*.]
+            \item \texttt{get}: Returns a mesh instance for a given index.
             \item \texttt{insert}
             \item \texttt{remove}
             \item \texttt{vertices}

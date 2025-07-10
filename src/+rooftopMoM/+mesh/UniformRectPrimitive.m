@@ -5,20 +5,20 @@ classdef UniformRectPrimitive < handle
         sizeX_ double;
         sizeY_ double;
 
-        genom_ logical;
+        genome_ logical;
     end
 
     methods
-        function obj = UniformRectPrimitive(countX, countY, sizeX, sizeY, genom)
+        function obj = UniformRectPrimitive(countX, countY, sizeX, sizeY, genome)
             obj.countX_ = countX;
             obj.countY_ = countY;
             obj.sizeX_ = sizeX;
             obj.sizeY_ = sizeY;
 
-            if ~isempty(genom) && numel(genom) == count(obj)
-                obj.genom_ = logical(genom);
+            if ~isempty(genome) && numel(genome) == count(obj)
+                obj.genome_ = logical(genome);
             else
-                obj.genom_ = true(1, obj.countX_ * obj.countY_);
+                obj.genome_ = true(1, obj.countX_ * obj.countY_);
             end
         end
     end
@@ -45,7 +45,7 @@ classdef UniformRectPrimitive < handle
         end
 
         function count = countGenome(obj)
-            count = sum(obj.genom_);
+            count = sum(obj.genome_);
         end
 
         function indices = indices(obj)
@@ -54,7 +54,7 @@ classdef UniformRectPrimitive < handle
 
         function indicesGenome = indicesGenome(obj)
             indices = obj.indices();
-            indicesGenome = indices(obj.genom_);
+            indicesGenome = indices(obj.genome_);
         end
 
         function [rectSizeX, rectSizeY] = meshSize(obj)

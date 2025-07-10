@@ -23,6 +23,14 @@ classdef Mesh < handle
             faces = obj.faces_;
         end
 
+        function setVertices(obj, vertices)
+            obj.vertices_ = vertices;
+        end
+
+        function setFaces(obj, faces)
+            obj.faces_ = faces;
+        end
+
         function count = count(~)
             count = uint32(1);
         end
