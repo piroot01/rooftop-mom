@@ -1,41 +1,38 @@
-function indices = generateInteriorEdges(vertices, faces, tol)
+function indices = generateInteriorEdges(faces)
 % generateInnerEdges: Finds all interior edges of a quad mesh.
 %
-%   input:
+%   Input:
 %       faces: 4xN array of vertex indices (each comlumn is one quad)
-%   output:
+%   Output:
 %       indices: 2xE array of face-pairs sharing the interior edge
-    if nargin < 3
-        tol = eps;
-    end
 
     faceCount = size(faces, 2);
 
-    % Build a local 2D frame in the mesh plane.
-    v1 = vertices(:, faces(1, 1))
-    v2 = vertices(:, faces(2, 1))
-    v4 = vertices(:, faces(4, 1))
-    e1 = v2 - v1;
-    e2 = v4 - v1;
+    v1 = faces(1, :).';
+    v2 = faces(2, :).';
+    v3 = faces(3, :).';
+    v4 = faces(4, :).';
 
-    % Create an orthonormal basis (u, v).
-    u = e1 / norm(e1);
+    % Build all edges with sorted vertices.
+    faceIndices   = uint32(1:faceCount).';
+    edges = [ min(v1, v2), max(v1, v2), faceIndices; ...
+              min(v2, v3), max(v2, v3), faceIndices; ...
+              min(v3, v4), max(v3, v4), faceIndices; ...
+              min(v4, v1), max(v4, v1), faceIndices ];
 
-    % Create a rejection of the e2 to the span(u).
-    e2Rejection = e2 - (dot(e2, u) * u);
-    v = e2Rejection / norm(e2Rejection);
+    % Group edges by vertex pairs.
+    [~, ~, ic] = unique(edges(:, 1:2), 'rows');
 
-    % Project all vertices into the (u, v) coordinates.
-    localVertices = vertices - v1;
-    uCoords = u.' * vertices;
-    vCoords = v.' * vertices;
+    % Count occurrences per edge.
+    counts = accumarray(ic, 1);
 
-    % Cluster unique grid-lines with tol tolerance.
-    [uLines, ~, uIndices] = uniquetol(uCoords.', tol, 'ByRows', false)
-    [vLines, ~, vIndices] = uniquetol(vCoords.', tol, 'ByRows', false)
+    % Collect face indices for each edge and sort them.
+    facePairs = accumarray(ic, edges(:, 3), [], @(xs) {sort(xs)});
 
-    uLinesCount = numel(uLines)
-    vLinesCount = numel(vLines)
+    % Select edges shared by exactly two faces (interior).
+    interiorEdgesMask = (counts == 2);
+    interiorFacePairs = facePairs(interiorEdgesMask);
 
-    faceGrid = reshape(1:faceCount, uLinesCount - 1, vLinesCount - 1)
+    % Convert to 2xE output.
+    indices = [interiorFacePairs{:}];
 end
