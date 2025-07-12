@@ -1,5 +1,5 @@
 function indices = generateInteriorEdges(faces)
-% generateInnerEdges: Finds all interior edges of a quad mesh.
+% generateInteriorEdges: Finds all interior edges of a quad mesh.
 %
 %   Input:
 %       faces: 4xN array of vertex indices (each comlumn is one quad)

@@ -5,6 +5,9 @@ classdef Mesh < handle
 
         % F×N array where each column lists the indices of the F vertices that make up one face.
         faces_ uint32;
+
+        % When multiple meshes interact, we must offset each mesh so the indices does not clash.
+        offset_ uint32 = uint32(0);
     end
 
     methods
@@ -26,16 +29,24 @@ classdef Mesh < handle
             faces = obj.faces_;
         end
 
-        function setVertices(obj, vertices)
-            obj.vertices_ = vertices;
-        end
-
-        function setFaces(obj, faces)
-            obj.faces_ = faces;
+        function faces = facesCell(obj)
+            faces{1} = obj.faces_;
         end
 
         function count = count(~)
             count = uint32(1);
+        end
+
+        function result = isCluster(~)
+            result = false;
+        end
+
+        function offset = offset(obj)
+            offset = obj.offset_;
+        end
+
+        function setOffset(obj, offset)
+            obj.offset_ = offset;
         end
     end
 end

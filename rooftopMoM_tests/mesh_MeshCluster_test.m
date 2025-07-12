@@ -26,3 +26,6 @@ cluster.insert(mesh2);
 cluster.vertices()
 cluster.faces()
 
+cluster.facesCell()
+
+cluster.offset()

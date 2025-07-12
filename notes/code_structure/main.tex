@@ -97,13 +97,15 @@
             \item \texttt{constructor}: There will be 2 types of constructor default --- the user provides only the \texttt{UniformRectPrimitive} --- and the unit determinant transformations are not used. Second will require all transformation parameters, origin and three Euler angles.
             \item \texttt{generateMesh}: Outputs the mesh of the primitive with optimal ordering of the faces.
         \end{enumerate}
-        \item \texttt{Mesh}: The central structure of the \texttt{mesh} namespace will hold the mesh structure in two arrays, so by a list of vertices and list of faces (each face will be connected to $n$ vertices). There is a small problem, if the interaction symmetry algorithm has to be optimally perfoment we will prefer some determined scheme for the face ordering because it will influence the basis function ordering.
+        \item \texttt{Mesh}: The central structure of the \texttt{mesh} namespace will hold the mesh structure in two arrays, so by a list of vertices and list of faces (each face will be connected to $n$ vertices). There is a small problem, if the interaction symmetry algorithm has to be optimally perfoment we will prefer some determined scheme for the face ordering because it will influence the basis function ordering. Each mesh will have its offset that is often the number of the vertices of the actual mesh.
         \begin{enumerate}[label=\roman*.]
             \item \texttt{vertices}
             \item \texttt{faces}
-            \item \texttt{setVertices}
-            \item \texttt{setFaces}
+            \item \texttt{facesCell}: The same as \texttt{faces} but as a cell.
             \item \texttt{count}: Return 1, here is due to the exchange with \texttt{MeshCluster} which will has \texttt{count} implemented.
+            \item \texttt{offset}: Returns the current face-index offset of the mesh.
+            \item \texttt{setOffset}
+            \item \texttt{isCluster}
         \end{enumerate}
         \item \texttt{MeshCluster}: Multiple \texttt{Mesh} structures can be accommodate here. The reindexing of the vertices and faces is automatical. Each mesh is represented as a element of a cell. The point is that the \texttt{MeshCluster} is interchangible with the \texttt{Mesh} class.
         \begin{enumerate}[label=\roman*.]
@@ -112,7 +114,10 @@
             \item \texttt{remove}
             \item \texttt{vertices}
             \item \texttt{faces}
+            \item \texttt{facesCell}: Returns the same as faces but each mesh is separate cell.
             \item \texttt{count}: Returns the total number of \texttt{Mesh} instances in the cell. Useful for iterating through the cluster.
+            \item \texttt{offset}: Returns the offsets for each of the meshes.
+            \item \texttt{isCluster}
         \end{enumerate}
         \item \texttt{utils}: Namespace that bundles functions that operates with the \texttt{Mesh} and \texttt{MeshCluster} objects
         \begin{enumerate}[label=\roman*.]
@@ -125,6 +130,7 @@
             \item \texttt{generateRectGridSize}: Determine grid counts along principal directions.
             \item \texttt{generateRectFaceSize}: Compute the side lengths of a quadrilateral face.
             \item \texttt{generateRectBoundary}: Compute axis-aligned bounding rectangle in local face basis.
+            \item \texttt{generateMeshInteriorEdges}: Compute all interior edges of a mesh (mesh cluster).
         \end{enumerate}
     \end{enumerate}
 
@@ -136,13 +142,12 @@
         \item \texttt{UniformRectDivergenceConforming}: This is a special case of the divergence comforming basis functions based on uniformly discretized mesh into rectangular patches, other type very popular are RWG basis functions.
         \begin{enumerate}[label=\roman*.]
             \item \texttt{constructor}: Takes the \texttt{Mesh} or \texttt{MeshCluster} instance and saves a reference.
-            \item \texttt{generateIndices}: calls the function \texttt{generateInnerEdges} from \texttt{mesh/utils}
+            \item \texttt{generate}: calls the function \texttt{generateInnerEdges} from \texttt{mesh/utils}
             \item \texttt{count}: Returns the total number of basis funcitons.
             \item \texttt{countDir}: Returns the number of basis funcitons in given direction.
-            \item \texttt{faces}: Returns sorted faces first the X direction then Y direction.
-            \item \texttt{facesCell}: For each mesh in cluster new cell.
-            \item \texttt{facesCellDir}: Returns only specific section of the basis functions based on the direction.
-            \item \texttt{generateIDMask}: Generates a mask ID mask, each of the basis functions (column of the structure), is given a number based on its mesh location. Used later for mesh size adjustment.
+            \item \texttt{indices}: Returns sorted faces first the X direction then Y direction. Shifted for multiple meshes.
+            \item \texttt{indicesCell}: For each mesh it generates the indices (x then y direction), shifted or not.
+            \item \texttt{indicesCellDir}: Returns only specific section of the basis functions based on the direction.
             \item \texttt{mesh}: Returns a handle to the internal mesh (read-only ideally but in MATLAB it is not possible I am affraid).
         \end{enumerate}
         \item \texttt{RooftopBasisFunctions}: This class derives from the \texttt{UniformRectDivergenceComforming} and generates the point matrix for each rooftop based on the indices of the basis functions, one by one. The class also contains the quadrature points for each of the rooftops.
@@ -172,6 +177,10 @@
             \item \texttt{weigths4D}: Obtain the weights for 4D integration.
             \item \texttt{weigths2D}: Obtain the weights for 2D integration.
             \item \texttt{points}: Returns pair of points, each one for one rectangle.
+        \end{enumerate}
+        \item \texttt{utils}: Namespace of helper functions.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{generateIDMask}: Generates a mask ID mask, each of the basis functions (column of the structure), is given a number based on its mesh location. Used later for mesh size adjustment.
         \end{enumerate}
     \end{enumerate}
 

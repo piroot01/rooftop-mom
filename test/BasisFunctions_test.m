@@ -4,8 +4,8 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 1;
-countY = 3;
+countX = 10;
+countY = 4;
 sizeX = 0.4;
 sizeY = 0.5;
 origin = [0, 0, 0];
@@ -33,21 +33,9 @@ quadrature = mom.Quadrature(order);
 
 % 3. step: create BasisFunctions
 % mesh
-%basisFuncs = mom.BasisFunctions(myMesh1);
-%basisFuncs.getFaces()
+basisFuncs = mom.BasisFunctions(meshCluster);
+basisFuncs.getFaces()
 %basisFuncs.getCount()
 %celldisp(basisFuncs.getFacesAsCell());
 %celldisp(basisFuncs.getFacesXAsCell());
 %basisFuncs.getIDs()
-
-% cluster
-basisFuncsCluster = mom.BasisFunctions(meshCluster);
-celldisp(basisFuncsCluster.getFacesAsCell())
-basisFuncsCluster.getFaces()
-basisFuncsCluster.getGridSizes()
-%basisFuncsCluster.getCount()
-%celldisp(basisFuncsCluster.getFacesAsCell());
-%celldisp(basisFuncsCluster.getFacesXAsCell());
-%basisFuncsCluster.getIDs()
-
-toc;

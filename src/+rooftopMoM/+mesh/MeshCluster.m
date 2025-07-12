@@ -1,6 +1,8 @@
 classdef MeshCluster < handle
     properties (Access = private)
         meshes_ cell = {};
+
+        lastOffset_ uint32 = 0;
     end
 
     methods
@@ -9,10 +11,13 @@ classdef MeshCluster < handle
         end
 
         function insert(obj, mesh)
+            mesh.setOffset(obj.lastOffset_);
             obj.meshes_{end + 1} = mesh;
+            obj.lastOffset_ = obj.lastOffset_ + uint32(size(mesh.vertices(), 2));
         end
 
         function remove(obj, index)
+            obj.lastOffset_ = obj.lastOffset_ - uint32(size(obj.get(index).vertices(), 2));
             obj.meshes_{index} = [];
         end
 
@@ -22,27 +27,24 @@ classdef MeshCluster < handle
         end
 
         function faces = faces(obj)
-            meshCount = obj.count();
-
-            facesCell = cell(1, meshCount);
-            offset = uint32(0);
-
-            for n = 1:meshCount
-                vertices = obj.get(n).vertices();
-                faces = obj.get(n).faces();
-
-                % Offset this mesh’s face indices so they point into the global list.
-                facesCell{n} = faces + offset;
-
-                % Increase offset by how many vertices this mesh contributed.
-                offset = offset + uint32(size(vertices, 2));
-            end
-
+            facesCell = obj.facesCell();
             faces = [facesCell{:}];
+        end
+
+        function faces = facesCell(obj)
+            faces = arrayfun(@(n) obj.get(n).faces() + obj.get(n).offset(), 1:obj.count(), 'UniformOutput', false);
         end
 
         function count = count(obj)
             count = numel(obj.meshes_);
+        end
+
+        function result = isCluster(~)
+            result = true;
+        end
+
+        function offset = offset(obj)
+            offset = arrayfun(@(n) obj.get(n).offset(), 1:obj.count(), 'UniformOutput', true);
         end
     end
 end

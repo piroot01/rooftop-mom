@@ -130,10 +130,6 @@ classdef BasisFunctions < handle
     methods (Access = private)
         function [facesX, facesY] = generateBasisFunctionFaceIndices(~, mesh)
             faces = mesh.getFaces();      % 4×F uint32
-            [countX, ~] = deal( ...
-                mesh.primitive.getPatchCountX(), ...
-                mesh.primitive.getPatchCountY() ...
-            );
 
             % 1) Build the list of all edges with their owning face
             faceCount = size(faces,2);
@@ -157,8 +153,8 @@ classdef BasisFunctions < handle
 
             % 4) classify into X‐pairs or Y‐pairs
             diffs = abs(double(f2) - double(f1));
-            isX   = (diffs == 1) & (floor((double(min(f1,f2))-1)/countX) == floor((double(max(f1,f2))-1)/countX));
-            isY   = (diffs == countX);
+            isX   = (diffs == 1);
+            isY   = ~isX;
 
             facesX = uint32([min(f1(isX),f2(isX)), max(f1(isX),f2(isX))].').';
             facesY = uint32([min(f1(isY),f2(isY)), max(f1(isY),f2(isY))].').';
