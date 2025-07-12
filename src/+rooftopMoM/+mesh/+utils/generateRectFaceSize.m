@@ -17,7 +17,6 @@ function [l1, l2] = generateRectFaceSize(vertices, faces, faceIndex)
     % Retrieve principal edges.
     [e1, e2] = rooftopMoM.mesh.utils.generateRectFacePrincipalEdges(vertices, faces, faceIndex);
 
-    % Compute and return edge lengts.
     l1 = norm(e1);
     l2 = norm(e2);
 end

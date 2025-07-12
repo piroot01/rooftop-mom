@@ -15,6 +15,9 @@ classdef Mesh < handle
     end
 
     methods
+        function obj = get(obj, ~)
+        end
+
         function vertices = vertices(obj)
             vertices = obj.vertices_;
         end
