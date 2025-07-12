@@ -1,5 +1,5 @@
 function [e1, e2] = generateRectFacePrincipalEdges(vertices, faces, faceIndex)
-% extractRectEdges: Retrieve the two principal edge vectors of a quad face.
+% generateRectFacePrincipalEdges: Retrieve the two principal edge vectors of a quad face.
 %
 %   Inputs:
 %       vertices: 3×N array, each column is a 3D vertex coordinate.

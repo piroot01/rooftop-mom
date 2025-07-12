@@ -116,9 +116,15 @@
         \end{enumerate}
         \item \texttt{utils}: Namespace that bundles functions that operates with the \texttt{Mesh} and \texttt{MeshCluster} objects
         \begin{enumerate}[label=\roman*.]
-            \item \texttt{applyGenomeToMesh}: Function that takes the \texttt{Mesh} instance and applies the genome (binary array of face count), it returns new \texttt{Mesh} instance with adjusted faces, but the vertices array is the same for
-            \item \texttt{generateInnerEdges}: Function that will return a 2 x $N$ array of patch indices sorted (for better acceleration performance) from given mesh object.
-            \item \texttt{generateGridSizes}: Function that for \texttt{Mesh} and \texttt{MeshCluster} generates apropriately sized grids for each of the mesh elements. Returns it as a cell of pairs. The prerequisity is that the meshes are plannar structures.
+            \item \texttt{filterInteriorEdgesByDir}: Filter interior mesh‐edge face pairs by the edge axis direction.
+            \item \texttt{filterMeshByGenome}: Returns a new mesh containing only the faces of the original mesh indicated by the genome mask.
+            \item \texttt{generateRectLocalCoords}: Compute a local orthonormal basis for a given quadrilateral face.
+            \item \texttt{generateRectFacePrincipalEdges}: Retrieve the two principal edge vectors of a quad face.
+            \item \texttt{generateInnerEdges}: Finds all interior edges of a quad mesh.
+            \item \texttt{generateMeshGridSizes}: Compute maximal grid sizes for each planar mesh in a cluster.
+            \item \texttt{generateRectGridSize}: Determine grid counts along principal directions.
+            \item \texttt{generateRectFaceSize}: Compute the side lengths of a quadrilateral face.
+            \item \texttt{generateRectBoundary}: Compute axis-aligned bounding rectangle in local face basis.
         \end{enumerate}
     \end{enumerate}
 
