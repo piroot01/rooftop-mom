@@ -46,7 +46,7 @@ classdef UniformRect < handle
 
         function vertices = generateVertices_(obj, pointsX, pointsY)
             % Build a 2D grid of sample points in the local X–Y plane.
-            [gridX, gridY] = meshgrid(pointsY, pointsX);
+            [gridY, gridX] = meshgrid(pointsY, pointsX);
             localPoints = [gridX(:), gridY(:), zeros(numel(gridX), 1)];
 
             % Build the 3×3 rotation from the stored Euler angles.
