@@ -1,4 +1,4 @@
-classdef UniformRectDivergenceConforming < handle
+classdef RectDivergenceConforming < handle
     properties (Access = private)
         mesh_;
 
@@ -7,7 +7,7 @@ classdef UniformRectDivergenceConforming < handle
     end
 
     methods
-        function obj = UniformRectDivergenceConforming(mesh)
+        function obj = RectDivergenceConforming(mesh)
             obj.mesh_ = mesh;
         end
     end
@@ -45,13 +45,13 @@ classdef UniformRectDivergenceConforming < handle
                 shifted = true;
             end
 
-            meshCount = obj.mesh_.count();
+            meshCount = obj.mesh_.count(); 
 
             indicesX = obj.indicesX_;
             indicesY = obj.indicesY_;
 
             % If shifted==false, this is a zero vector; otherwise mesh offsets.
-            offsets = uint32(shifted) * obj.mesh_.offset();
+            offsets = uint32(shifted) * rooftopMoM.mesh.utils.generateMeshOffsets(obj.mesh_);
 
             indices = arrayfun(@(n) [indicesX{n}, indicesY{n}] + offsets(n), 1:meshCount, 'UniformOutput', false);
         end
@@ -64,7 +64,7 @@ classdef UniformRectDivergenceConforming < handle
             meshCount = obj.mesh_.count();
 
             % If shifted==false, this is a zero vector; otherwise mesh offsets.
-            offsets = uint32(shifted) * obj.mesh_.offset();
+            offsets = uint32(shifted) * rooftopMoM.mesh.utils.generateMeshOffsets(obj.mesh_);
 
             if dir == 'x'
                 indices = obj.indicesX_;

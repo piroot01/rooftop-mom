@@ -97,15 +97,19 @@
             \item \texttt{constructor}: There will be 2 types of constructor default --- the user provides only the \texttt{UniformRectPrimitive} --- and the unit determinant transformations are not used. Second will require all transformation parameters, origin and three Euler angles.
             \item \texttt{generateMesh}: Outputs the mesh of the primitive with optimal ordering of the faces.
         \end{enumerate}
-        \item \texttt{Mesh}: The central structure of the \texttt{mesh} namespace will hold the mesh structure in two arrays, so by a list of vertices and list of faces (each face will be connected to $n$ vertices). There is a small problem, if the interaction symmetry algorithm has to be optimally perfoment we will prefer some determined scheme for the face ordering because it will influence the basis function ordering. Each mesh will have its offset that is often the number of the vertices of the actual mesh.
+        \item \texttt{MeshInterface}: Has common methods for a mesh class.
         \begin{enumerate}[label=\roman*.]
+            \item \texttt{get}: Returns a handle to itself.
             \item \texttt{vertices}
             \item \texttt{faces}
-            \item \texttt{facesCell}: The same as \texttt{faces} but as a cell.
             \item \texttt{count}: Return 1, here is due to the exchange with \texttt{MeshCluster} which will has \texttt{count} implemented.
-            \item \texttt{offset}: Returns the current face-index offset of the mesh.
-            \item \texttt{setOffset}
-            \item \texttt{isCluster}
+        \end{enumerate}
+        \item \texttt{Mesh}: The central structure of the \texttt{mesh} namespace will hold the mesh structure in two arrays, so by a list of vertices and list of faces (each face will be connected to $n$ vertices). There is a small problem, if the interaction symmetry algorithm has to be optimally perfoment we will prefer some determined scheme for the face ordering because it will influence the basis function ordering.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{get}: Returns a handle to itself.
+            \item \texttt{vertices}
+            \item \texttt{faces}
+            \item \texttt{count}: Return 1, here is due to the exchange with \texttt{MeshCluster} which will has \texttt{count} implemented.
         \end{enumerate}
         \item \texttt{MeshCluster}: Multiple \texttt{Mesh} structures can be accommodate here. The reindexing of the vertices and faces is automatical. Each mesh is represented as a element of a cell. The point is that the \texttt{MeshCluster} is interchangible with the \texttt{Mesh} class.
         \begin{enumerate}[label=\roman*.]
@@ -116,8 +120,6 @@
             \item \texttt{faces}
             \item \texttt{facesCell}: Returns the same as faces but each mesh is separate cell.
             \item \texttt{count}: Returns the total number of \texttt{Mesh} instances in the cell. Useful for iterating through the cluster.
-            \item \texttt{offset}: Returns the offsets for each of the meshes.
-            \item \texttt{isCluster}
         \end{enumerate}
         \item \texttt{utils}: Namespace that bundles functions that operates with the \texttt{Mesh} and \texttt{MeshCluster} objects
         \begin{enumerate}[label=\roman*.]
@@ -125,6 +127,7 @@
             \item \texttt{filterMeshByGenome}: Returns a new mesh containing only the faces of the original mesh indicated by the genome mask.
             \item \texttt{generateRectLocalCoords}: Compute a local orthonormal basis for a given quadrilateral face.
             \item \texttt{generateRectFacePrincipalEdges}: Retrieve the two principal edge vectors of a quad face.
+            \item \texttt{generateRectFaceOrigin}: Obtain the origin(s) of a selected quad face(s).
             \item \texttt{generateInnerEdges}: Finds all interior edges of a quad mesh.
             \item \texttt{generateMeshGridSizes}: Compute maximal grid sizes for each planar mesh in a cluster.
             \item \texttt{generateRectGridSize}: Determine grid counts along principal directions.
@@ -139,7 +142,7 @@
     As described in the section of key components, here will be placed all classes that generates from the \texttt{Mesh} or \texttt{MeshCluster} the two key structures: indices list and points. The indices list will be generated for divergence conforming basis functions directly from the mesh based on the edge detection algorithm. Each inner edge of the mesh is associated with one divergence conforming basis function.
 
     \begin{enumerate}[label=\Roman*.]
-        \item \texttt{UniformRectDivergenceConforming}: This is a special case of the divergence comforming basis functions based on uniformly discretized mesh into rectangular patches, other type very popular are RWG basis functions.
+        \item \texttt{RectDivergenceConforming}: This is a special case of the divergence comforming basis functions based on uniformly discretized mesh into rectangular patches, other type very popular are RWG basis functions.
         \begin{enumerate}[label=\roman*.]
             \item \texttt{constructor}: Takes the \texttt{Mesh} or \texttt{MeshCluster} instance and saves a reference.
             \item \texttt{generate}: calls the function \texttt{generateInnerEdges} from \texttt{mesh/utils}
@@ -150,10 +153,10 @@
             \item \texttt{indicesCellDir}: Returns only specific section of the basis functions based on the direction.
             \item \texttt{mesh}: Returns a handle to the internal mesh (read-only ideally but in MATLAB it is not possible I am affraid).
         \end{enumerate}
-        \item \texttt{RooftopBasisFunctions}: This class derives from the \texttt{UniformRectDivergenceComforming} and generates the point matrix for each rooftop based on the indices of the basis functions, one by one. The class also contains the quadrature points for each of the rooftops.
+        \item \texttt{UniformRooftops}: This class derives from the \texttt{UniformRectDivergenceComforming} and generates the point matrix for each rooftop based on the indices of the basis functions, one by one. The class also contains the quadrature points for each of the rooftops.
         \begin{enumerate}[label=\roman*.]
             \item \texttt{constructor}: Requires the instance of \texttt{GaussLegendre2RectQuadrature} and \texttt{Mesh} or \texttt{MeshCluster} for the base class.
-            \item \texttt{generate}: Triggers the \texttt{generateIndices} function from the base class. Then it generates the points of the given quadrature. 
+            \item \texttt{generate}: Triggers the \texttt{generate} function from the base class. Then it generates the points of the given quadrature. 
             \item \texttt{generateQuadraturePoints}: Computes the shifted quadrature points for each of the basis functions.
             \item \texttt{generateRooftopPoints}: Computes the rooftop points for all given basis function indices.
             \item \texttt{generateRooftopDivPoints}: Computes the divergence of the rooftops.

@@ -24,7 +24,7 @@ classdef GaussLegendre2RectQuadrature < handle
 
             [w2D1, w2D2] = ndgrid(weights1D, weights1D);
             obj.weights2D_ = w2D1(:) .* w2D2(:);
-            obj.weights4D_ = weights2D * weights2D.';
+            obj.weights4D_ = obj.weights2D_ * obj.weights2D_.';
         end
 
         function [points2Du, points2Dv] = points(obj)
@@ -38,6 +38,10 @@ classdef GaussLegendre2RectQuadrature < handle
 
         function weights = weights4D(obj)
             weights = obj.weights4D_;
+        end
+
+        function order = order(obj)
+            order = obj.order_;
         end
     end
 end
