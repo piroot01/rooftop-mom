@@ -1,5 +1,4 @@
 function [x,w]=lgwt(N,a,b)
-
     % lgwt.m
     %
     % This script is for computing definite integrals using Legendre-Gauss 
