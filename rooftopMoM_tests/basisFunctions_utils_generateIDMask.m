@@ -24,7 +24,7 @@ cluster.insert(mesh1);
 cluster.insert(mesh2);
 
 % single rect
-basis = rooftopMoM.basisFunctions.UniformRectDivergenceConforming(mesh1);
+basis = rooftopMoM.basisFunctions.RectDivergenceConforming(mesh1);
 basis.generate();
 
 basis.indices()
@@ -32,7 +32,7 @@ basis.indices()
 rooftopMoM.basisFunctions.utils.generateIDMask(basis)
 
 % cluster
-basisCluster = rooftopMoM.basisFunctions.UniformRectDivergenceConforming(cluster);
+basisCluster = rooftopMoM.basisFunctions.RectDivergenceConforming(cluster);
 basisCluster.generate();
 
 basisCluster.indices()

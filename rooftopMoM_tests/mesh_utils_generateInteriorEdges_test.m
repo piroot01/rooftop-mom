@@ -15,4 +15,4 @@ rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
 
 mesh = rect.generateMesh();
 
-rooftopMoM.mesh.utils.generateInteriorEdges(mesh.faces())
+rooftopMoM.mesh.utils.generateInteriorEdges(mesh.faces{1})
