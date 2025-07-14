@@ -31,7 +31,7 @@ rooftops = rooftopMoM.basisFunctions.UniformRooftops(cluster, quad);
 rooftops.generate();
 [points, values] = rooftops.generateRooftops();
 
-[quads, roofs] = rooftopMoM.core.utils.convertRooftopPointsToArrays(points)
+[quads, roofs] = rooftopMoM.core.impedanceMatrix.utils.convertRooftopPointsToArrays(points)
 
 % genome - sloppy but should work
 %{

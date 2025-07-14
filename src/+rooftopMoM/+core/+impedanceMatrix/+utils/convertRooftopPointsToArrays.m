@@ -8,6 +8,6 @@ function [quadraturePoints, rooftopPoints] = convertRooftopPointsToArrays(points
 %       quadraturePoints: 3xNx2 array of quadrature points.
 %       rooftopPoints: 3xNx2 array of rooftop points.
 
-    quadraturePoints = rooftopMoM.core.utils.stackPositiveAndNegativeFields(points, 'quadraturePointsPositive', 'quadraturePointsNegative');
-    rooftopPoints = rooftopMoM.core.utils.stackPositiveAndNegativeFields(points, 'rooftopPointsPositive', 'rooftopPointsNegative');
+    quadraturePoints = rooftopMoM.core.impedanceMatrix.utils.stackPositiveAndNegativeFields(points, 'quadraturePointsPositive', 'quadraturePointsNegative');
+    rooftopPoints = rooftopMoM.core.impedanceMatrix.utils.stackPositiveAndNegativeFields(points, 'rooftopPointsPositive', 'rooftopPointsNegative');
 end
