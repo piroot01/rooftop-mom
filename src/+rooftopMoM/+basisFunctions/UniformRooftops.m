@@ -17,67 +17,30 @@ classdef UniformRooftops < rooftopMoM.basisFunctions.RectDivergenceConforming
             obj.quadrature_.generate();
         end
 
-        function points = generateQuadraturePoints(obj)
-            % Retrieve basis function indices for all meshes.
-            indices = obj.indicesCell(false);
-
-            % Number of quadrature points per one basis function.
-            pointCountPerBlock = obj.quadrature_.order()^2;
-
-            % Total number of points per one page from two.
-            pointCountPerPage = obj.count() * pointCountPerBlock;
-
-            [points2Du, points2Dv] = obj.quadrature_.points();
-
-            % Preallocate output.
-            points = zeros(3, pointCountPerPage, 2, 'double');
-
-            globalOffset = 1;
+        function [rooftopPoints, rooftopValues] = generateRooftops(obj)
+            indices = obj.indices();
             meshCount = obj.mesh().count();
+            rooftopPoints = cell(1, obj.count());
+            rooftopValues = cell(1, obj.count());
+            offset = uint32(0);
 
             for m = 1:meshCount
-                % Obtain basis function indices for single mesh.
                 localIndices = indices{m};
-
                 basisSize = size(localIndices, 2);
-                pointCountPerMesh = basisSize * pointCountPerBlock;
 
-                % Extract single mesh geometry.
                 vertices = obj.mesh().vertices{m};
                 faces = obj.mesh().faces{m};
 
-                % Preallocate local output.
-                localPoints = zeros(3, pointCountPerMesh, 2, 'double');
-
                 for n = 1:basisSize
-                    % Determine slice indices for current block.
-                    blockSlice = ((n - 1) * pointCountPerBlock + 1):(pointCountPerBlock * n);
+                    [points, values] = obj.generateRooftop_(vertices, faces, localIndices(:, n));
 
-                    % The rooftop faces share the same principal edges.
-                    [e1, e2] = rooftopMoM.mesh.utils.generateRectFacePrincipalEdges(vertices, faces, localIndices(1, n));
-
-                    % For each face of the rooftop compute its shift.
-                    shifts = rooftopMoM.mesh.utils.generateRectFaceOrigin(vertices, faces, localIndices(:, n));
-
-                    % Compute quadrature points for both rooftop faces simultaneously.
-                    [pointsPositive, pointsNegative] = rooftopMoM.basisFunctions.utils.generateQuadraturePointsUniformRooftop(e1, e2, shifts, points2Du, points2Dv);
-
-                    localPoints(:, blockSlice, 1) = pointsPositive;
-                    localPoints(:, blockSlice, 2) = pointsNegative;
+                    k = offset + n;
+                    rooftopPoints{k} = points;
+                    rooftopValues{k} = values;
                 end
 
-                % Determine slice indices for current mesh.
-                meshSlice = globalOffset:(globalOffset + pointCountPerMesh - 1);
-                points(:, meshSlice, :) = localPoints;
-
-                globalOffset = globalOffset + pointCountPerMesh;
+                offset = offset + basisSize;
             end
-        end
-
-        function points = generateRooftopPoints(obj)
-        end
-
-        function points = generateRooftopDivPoints(obj)
         end
 
         function quadrature = quadrature(obj)
@@ -86,5 +49,31 @@ classdef UniformRooftops < rooftopMoM.basisFunctions.RectDivergenceConforming
     end
 
     methods (Access = private)
+        function [rooftopPoints, rooftopValues] = generateRooftop_(obj, vertices, faces, facePair)
+            [pointsU, pointsV] = obj.quadrature().points();
+
+            [e1, e2] = rooftopMoM.mesh.utils.generateRectFacePrincipalEdges(vertices, faces, facePair(1));
+            shifts = rooftopMoM.mesh.utils.generateRectFaceOrigin(vertices, faces, facePair);
+            support = rooftopMoM.basisFunctions.utils.generateRooftopSupport(vertices, faces, facePair);
+
+            [qpPos, qpNeg] = rooftopMoM.basisFunctions.utils.generateQuadraturePointsUniformRooftop(e1, e2, shifts, pointsU, pointsV);
+            [rpPos, rpNeg] = rooftopMoM.basisFunctions.utils.generateRooftopPointsUniformRooftop(support, qpPos, qpNeg);
+            [len, ht] = rooftopMoM.basisFunctions.utils.generateRooftopParametersUniformRooftop(support);
+
+            % We separate the data about the rooftops into two struct due to the big memory requirements of the rooftopPoints.
+            rooftopPoints = struct( ...
+                'quadraturePointsPositive', qpPos, ...
+                'quadraturePointsNegative', qpNeg, ...
+                'rooftopPointsPositive', rpPos, ...
+                'rooftopPointsNegative', rpNeg ...
+            );
+
+            rooftopValues = struct( ...
+                'rooftopDivPositive', 1 / len, ...
+                'rooftopDivNegative', (-1) / len, ...
+                'length', len, ...
+                'height', ht ...
+            );
+        end
     end
 end

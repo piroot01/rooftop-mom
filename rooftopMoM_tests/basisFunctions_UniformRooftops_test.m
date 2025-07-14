@@ -29,7 +29,11 @@ quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
 rooftops = rooftopMoM.basisFunctions.UniformRooftops(cluster, quad);
 
 rooftops.generate();
-rooftops.generateQuadraturePoints()
+[points, values] = rooftops.generateRooftops();
+
+points{1}
+
+rooftops.indices()
 
 % genome - sloppy but should work
 %{

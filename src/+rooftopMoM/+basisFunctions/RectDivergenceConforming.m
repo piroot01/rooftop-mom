@@ -36,45 +36,26 @@ classdef RectDivergenceConforming < handle
         end
 
         function indices = indices(obj)
-            indicesCell = obj.indicesCell();
-            indices = [indicesCell{:}];
-        end
-
-        function indices = indicesCell(obj, shifted)
-            if nargin < 2 || isempty(shifted)
-                shifted = true;
-            end
-
             meshCount = obj.mesh_.count(); 
 
             indicesX = obj.indicesX_;
             indicesY = obj.indicesY_;
 
-            % If shifted==false, this is a zero vector; otherwise mesh offsets.
-            offsets = uint32(shifted) * rooftopMoM.mesh.utils.generateMeshOffsets(obj.mesh_);
-
-            indices = arrayfun(@(n) [indicesX{n}, indicesY{n}] + offsets(n), 1:meshCount, 'UniformOutput', false);
+            indices = arrayfun(@(n) [indicesX{n}, indicesY{n}], 1:meshCount, 'UniformOutput', false);
         end
 
-        function indices = indicesCellDir(obj, dir, shifted)
-            if nargin < 3 || isempty(shifted)
-                shifted = true;
-            end
-
+        function indices = indicesDir(obj, dir)
             meshCount = obj.mesh_.count();
-
-            % If shifted==false, this is a zero vector; otherwise mesh offsets.
-            offsets = uint32(shifted) * rooftopMoM.mesh.utils.generateMeshOffsets(obj.mesh_);
 
             if dir == 'x'
                 indices = obj.indicesX_;
             elseif dir == 'y'
                 indices = obj.indicesY_;
             else
-                indices = obj.indicesCell(false);
+                indices = obj.indices();
             end
 
-            indices = arrayfun(@(n) indices{n} + offsets(n), 1:meshCount, 'UniformOutput', false);
+            indices = arrayfun(@(n) indices{n}, 1:meshCount, 'UniformOutput', false);
         end
 
         function mesh = mesh(obj)
