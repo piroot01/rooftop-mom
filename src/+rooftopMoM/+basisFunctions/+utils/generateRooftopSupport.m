@@ -1,5 +1,5 @@
 function support = generateRooftopSupport(vertices, faces, facePair)
-% generateRooftopMesh: Returns array of vertices forming a single rooftop defined of a pair of quads.
+% generaterooftopmesh: Returns array of vertices forming a single rooftop defined of a pair of quads.
 %
 %   Inputs:
 %       vertices: 3×N array, each column is a 3D vertex coordinate.

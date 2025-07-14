@@ -1,5 +1,5 @@
 function points = generateQuadraturePointsRectFace(e1, e2, shift, points2Du, points2Dv)
-% generateQuadraturePointsRectFace: Function to compute quadrature points on a rectangular face
+% generateQuadraturePointsRectFace: Function to compute quadrature points on a rectangular face.
 %
 %   Inputs:
 %       e1: 3×1 vector for the first principal edge of the face.

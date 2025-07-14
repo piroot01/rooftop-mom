@@ -27,9 +27,5 @@ classdef MeshCluster < rooftopMoM.mesh.MeshInterface
         function count = count(obj)
             count = numel(obj.meshes_);
         end
-
-        function result = isCluster(~)
-            result = true;
-        end
     end
 end

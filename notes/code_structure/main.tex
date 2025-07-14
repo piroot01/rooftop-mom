@@ -118,7 +118,6 @@
             \item \texttt{remove}
             \item \texttt{vertices}
             \item \texttt{faces}
-            \item \texttt{facesCell}: Returns the same as faces but each mesh is separate cell.
             \item \texttt{count}: Returns the total number of \texttt{Mesh} instances in the cell. Useful for iterating through the cluster.
         \end{enumerate}
         \item \texttt{utils}: Namespace that bundles functions that operates with the \texttt{Mesh} and \texttt{MeshCluster} objects
@@ -149,20 +148,17 @@
             \item \texttt{count}: Returns the total number of basis funcitons.
             \item \texttt{countDir}: Returns the number of basis funcitons in given direction.
             \item \texttt{indices}: Returns sorted faces first the X direction then Y direction. Shifted for multiple meshes.
-            \item \texttt{indicesCell}: For each mesh it generates the indices (x then y direction), shifted or not.
-            \item \texttt{indicesCellDir}: Returns only specific section of the basis functions based on the direction.
+            \item \texttt{indicesDir}: Returns only specific section of the basis functions based on the direction.
             \item \texttt{mesh}: Returns a handle to the internal mesh (read-only ideally but in MATLAB it is not possible I am affraid).
         \end{enumerate}
         \item \texttt{UniformRooftops}: This class derives from the \texttt{UniformRectDivergenceComforming} and generates the point matrix for each rooftop based on the indices of the basis functions, one by one. The class also contains the quadrature points for each of the rooftops.
         \begin{enumerate}[label=\roman*.]
             \item \texttt{constructor}: Requires the instance of \texttt{GaussLegendre2RectQuadrature} and \texttt{Mesh} or \texttt{MeshCluster} for the base class.
             \item \texttt{generate}: Triggers the \texttt{generate} function from the base class. Then it generates the points of the given quadrature. 
-            \item \texttt{generateQuadraturePoints}: Computes the shifted quadrature points for each of the basis functions.
-            \item \texttt{generateRooftopPoints}: Computes the rooftop points for all given basis function indices.
-            \item \texttt{generateRooftopDivPoints}: Computes the divergence of the rooftops.
-            \item \texttt{rooftopSizes}: For each of the rooftops gives domain rectangle dimensions, each size is given an index, which will be used for construction of the jacobi mask.
-            \item \texttt{rooftopSizesUniquePerms}: Returns the vector of unique rooftop sizes, permutations of the sizes included (needed for the singularity extraction).
-            \item \texttt{rooftopSizesUniqueCombs}: Returns the vector of unique rooftop sizes, unordered, used for jacobi mask.
+            \item \texttt{generateRooftops}: Computes all points and values (length, height, ...) associated with all rooftops, the cell arrays are divided into 2 because of the large memeory requirements of the points which are transformed into arrays for future computing.
+            \item <<TMP>> \texttt{rooftopSizes}: For each of the rooftops gives domain rectangle dimensions, each size is given an index, which will be used for construction of the jacobi mask.
+            \item <<TMP>> \texttt{rooftopSizesUniquePerms}: Returns the vector of unique rooftop sizes, permutations of the sizes included (needed for the singularity extraction).
+            \item <<TMP>> \texttt{rooftopSizesUniqueCombs}: Returns the vector of unique rooftop sizes, unordered, used for jacobi mask.
         \end{enumerate}
         \item \texttt{FastRooftopBasisFunctions}: This one does not derive from the \texttt{UniformRectDivergenceComforming}, it is used for the superfast CG-FFT algorithms.
         \begin{enumerate}[label=\roman*.]
@@ -184,6 +180,12 @@
         \item \texttt{utils}: Namespace of helper functions.
         \begin{enumerate}[label=\roman*.]
             \item \texttt{generateIDMask}: Generates a mask ID mask, each of the basis functions (column of the structure), is given a number based on its mesh location. Used later for mesh size adjustment.
+            \item \texttt{generateRooftopParametersUniformRooftop}: Computes the metrics of a rooftop on specified support.
+            \item \texttt{generateQuadraturePointsRectFace}: Function to compute quadrature points on a rectangular face.
+            \item \texttt{generateRooftopPointsUniformRooftop}: Returns the rooftop points for a uniform rooftop.
+            \item \texttt{generateGaussLegendre1D}: Simple wrapper for Greg von Winckel’s lgwt.m.
+            \item \texttt{generateQuadraturePointsUniformRooftop}: Assemble quadrature points for both sides of a uniform rooftop element.
+            \item \texttt{generaterooftopmesh}: Returns array of vertices forming a single rooftop defined of a pair of quads.
         \end{enumerate}
     \end{enumerate}
 
@@ -269,6 +271,8 @@
         \begin{enumerate}[label=\roman*.]
             \item \texttt{generateIntegralKernel}: Produces the integral kernel matrix for the impedance matrix assembly.
             \item \texttt{generateDistanceMatrix}: Used for the scalar Green's function computation.
+            \item \texttt{convertRooftopPointsToArrays}: Convert rooftop point structs into 3D arrays.
+            \item \texttt{stackPositiveAndNegativeFields}: Concatenate positive and negative point fields.
         \end{enumerate}
     \end{enumerate}
 
@@ -302,5 +306,16 @@
     \subsection{operators}
 
     This namespace will contain some obligatory operators for proper \texttt{core} function, like the generation of the excitation vector. Then there will be operators that will utilize the outputs of the \texttt{core} like the impedance matrix for input impedance, or the current vector for \texttt{FarField} or \texttt{RCS} and others.
+
+     \section{\texttt{external}}
+
+    All extra pieces of code will be placed here, each function, class, module will has its own namespace.
+
+    \begin{enumerate}[label=\Roman*.]
+        \item \texttt{lgwt}:
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{lgwt}: This script is for computing definite integrals using Legendre-Gauss Quadrature. Computes the Legendre-Gauss nodes and weights on an interval [a,b] with truncation order N.
+        \end{enumerate}
+    \end{enumerate}
 
 \end{document}
