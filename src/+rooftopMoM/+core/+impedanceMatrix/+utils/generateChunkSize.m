@@ -8,23 +8,21 @@ function [rows, cols] = generateChunkSize(elementCount, order)
 %   Outputs:
 %       rows, cols: Dimensions of the chunk in blocks.
 
-    % Compute number of elements per block and total blocks per chunk
-    elementsPerBlock = order^4;
-    totalBlocks = floor(double(elementCount) / double(elementsPerBlock));
+    blockCount = rooftopMoM.core.impedanceMatrix.utils.generateBlockCountPerChunk(elementCount, order);
 
     % Handle trivial cases.
-    if totalBlocks <= 1
-        rows = totalBlocks;
+    if blockCount <= 1
+        rows = blockCount;
         cols = 1;
         return;
     end
 
-    % Start from sqrt(totalBlocks) and search downward for a divisor.
-    maxRow = floor(sqrt(totalBlocks));
+    % Start from sqrt(blockCount) and search downward for a divisor.
+    maxRow = floor(sqrt(blockCount));
     for r = maxRow:-1:1
-        if mod(totalBlocks, r) == 0
+        if mod(blockCount, r) == 0
             rows = r;
-            cols = totalBlocks / r;
+            cols = blockCount / r;
             return;
         end
     end

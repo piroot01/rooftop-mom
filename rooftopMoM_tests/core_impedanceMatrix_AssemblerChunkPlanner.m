@@ -31,12 +31,16 @@ rooftops = rooftopMoM.basisFunctions.UniformRooftops(cluster, quad);
 rooftops.generate();
 [points, values] = rooftops.generateRooftops();
 
-[quads, roofs] = rooftopMoM.core.impedanceMatrix.utils.convertRooftopPointsToArrays(points)
-
-elementCount = 2048;
+elementCount = 1024;
 
 planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
 
 chunks = planner.generateFull(rooftops, true);
 
-chunks{:}
+interactions = 1:10;
+
+count = size(rooftops.indices{1}, 2);
+
+chunksInters = planner.generateSpecified(rooftops, interactions, count);
+
+chunksInters{:}

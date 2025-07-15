@@ -39,7 +39,7 @@ classdef AssemblerChunkPlanner < handle
                 rowCount = numChunksInRows(m);
                 columnCount = numChunksInCols(m);
 
-                % Iterate over the chunk grid (p = row, q = column).
+                % Iterate over the chunk grid.
                 for p = 1:rowCount
                     for q = 1:columnCount
                         % Calculate chunk boundaries, local to the submatrix.
@@ -59,7 +59,44 @@ classdef AssemblerChunkPlanner < handle
             end
         end
 
-        function chunks = generateSpecified(obj, rooftops, interactions)
+        function chunks = generateSpecified(obj, rooftops, interactions, count)
+            blockCount = rooftopMoM.core.impedanceMatrix.utils.generateBlockCountPerChunk(obj.elementCount_, rooftops.quadrature().order());
+            groups = rooftopMoM.core.impedanceMatrix.utils.generateInteractionGroupsByColumn(interactions, count);
+
+            % Calculate the number of chunks needed for each interaction group.
+            numChunksInGroups = cellfun(@(group) ceil(numel(group) / blockCount), groups);
+            totalChunks = sum(numChunksInGroups);
+
+            % Pre-allocate the output cell array to its final size to avoid slow resizing.
+            chunks = cell(1, totalChunks);
+            chunkIndex = 1;
+
+            % Iterate through each group of interactions.
+            for m = 1:numel(groups)
+                currentGroup = groups{m};
+                groupSize = numel(currentGroup);
+
+                % Iterate through the chunks required for the current group.
+                for n = 1:numChunksInGroups(m)
+                    % Determine the slice of indices from the group for this specific chunk.
+                    startIdx = (n - 1) * blockCount + 1;
+                    endIdx   = min(n * blockCount, groupSize);
+
+                    % Get the actual linear indices of the matrix elements for this chunk.
+                    chunkIndices = currentGroup(startIdx:endIdx);
+
+                    % Convert the linear indices to subscripts.
+                    % The full matrix is assumed to be square with size [count x count].
+                    [rows, cols] = ind2sub([count, count], chunkIndices);
+
+                    % Define a rectangular chunk.
+                    chunk.rowIndices    = rows(1):rows(end);
+                    chunk.columnIndices = cols(1):cols(end);
+
+                    chunks{chunkIndex} = chunk;
+                    chunkIndex = chunkIndex + 1;
+                end
+            end
         end
     end
 end
