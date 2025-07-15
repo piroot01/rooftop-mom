@@ -10,7 +10,7 @@ function [rows, cols] = generateChunkSize(elementCount, order)
 
     % Compute number of elements per block and total blocks per chunk
     elementsPerBlock = order^4;
-    totalBlocks = floor(double(elementCount) / elementsPerBlock);
+    totalBlocks = floor(double(elementCount) / double(elementsPerBlock));
 
     % Handle trivial cases.
     if totalBlocks <= 1
