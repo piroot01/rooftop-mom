@@ -5,33 +5,23 @@ srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
 countX = 3;
-countY = 2;
-sizeX = 0.5;
+countY = 3;
+sizeX = 1;
 sizeY = 1;
 
-rectPrimitive1 = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
-rect1 = rooftopMoM.mesh.UniformRect(rectPrimitive1);
-mesh1 = rect1.generateMesh();
+rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
+rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
+mesh = rect.generateMesh();
 
-origin = [10; 20; 30];
-
-rectPrimitive2 = rooftopMoM.mesh.UniformRectPrimitive(countX * 2, countY, sizeX, sizeY);
-rect2 = rooftopMoM.mesh.UniformRect(rectPrimitive2, origin, 0, 0, 0);
-mesh2 = rect2.generateMesh();
-
-cluster = rooftopMoM.mesh.MeshCluster();
-cluster.insert(mesh1);
-cluster.insert(mesh2);
-
-order = 2;
+order = 5;
 
 quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
-rooftops = rooftopMoM.basisFunctions.UniformRooftops(cluster, quad);
+rooftops = rooftopMoM.basisFunctions.UniformRooftops(mesh, quad);
 
 rooftops.generate();
 [points, values] = rooftops.generateRooftops();
 
-elementCount = 1024;
+elementCount = 100000;
 
 planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
 
@@ -41,4 +31,7 @@ context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 
 magAssembler = rooftopMoM.core.impedanceMatrix.MagneticPartAssembler(planner);
 
-magAssembler.generate(context);
+Z = magAssembler.generateFull(context);
+
+
+disp(Z)

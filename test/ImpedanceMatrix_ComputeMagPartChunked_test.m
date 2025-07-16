@@ -9,10 +9,11 @@ countY = 3;
 sizeX = 1;
 sizeY = 1;
 origin = [0, 0, 0];
-order = 5;
+order = 2;
 
 lambda = 5;
-k = 2 * pi / lambda;
+%k = 2 * pi / lambda;
+k = 1;
 
 memoryElementwise = 10e6;
 memory_MB = memoryElementwise * 8 / 1e6;
@@ -30,12 +31,12 @@ myMeshCluster.loadMesh(myRectMesh1.getAsMesh());
 quadrature = mom.Quadrature(order);
 
 % 3. step: create BasisFunctions
-basisFuncs = mom.BasisFunctions(myMeshCluster);
+basisFuncs = mom.BasisFunctions(myRectMesh1.getAsMesh());
 
 %basisFuncs.getFaces()
 
 % 4. step: create RooftopBasisFunctions
-rooftops = mom.RooftopBasisFunctions(myMeshCluster, basisFuncs.getFaces());
+rooftops = mom.RooftopBasisFunctions(myRectMesh1.getAsMesh(), basisFuncs.getFaces());
 
 % 5. step: generate quadrature points and rooftop points
 rooftops.generatePoints(quadrature);

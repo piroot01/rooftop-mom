@@ -27,7 +27,7 @@ myRectMesh1 = mom.MeshRect(myRectMeshPrimitive1, origin, 0, 0, 0);
 myRectMesh2 = mom.MeshRect(myRectMeshPrimitive2, origin + [0, 0, 1], 0, 0, 0);
 myMeshCluster = mom.Mesh2DCluster();
 myMeshCluster.loadMesh(myRectMesh1.getAsMesh());
-myMeshCluster.loadMesh(myRectMesh2.getAsMesh());
+%myMeshCluster.loadMesh(myRectMesh2.getAsMesh());
 
 % 2. step: create Quadrature
 quadrature = mom.Quadrature(order);

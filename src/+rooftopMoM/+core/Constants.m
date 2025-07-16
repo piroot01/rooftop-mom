@@ -11,7 +11,7 @@ classdef Constants
         epsilon0 = 8.8541878128e-12;
 
         % Impedance of free space (ohms)
-        % CODATA 2018: 376.730313668 Ω
+        % CODATA 2018: 376.730313668 ohms
         Z0 = 376.730313668;
     end
 end

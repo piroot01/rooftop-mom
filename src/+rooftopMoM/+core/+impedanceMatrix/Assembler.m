@@ -1,9 +1,7 @@
 classdef Assembler < handle
-    properties (Access = private)
-        constants_ = rooftopMoM.core.Constants;
-    end
-
     methods (Abstract)
-        Z = generate(obj, context);
+        Z = generateFull(obj, context);
+
+        Z = generateSpecified(obj, context, chunks);
     end
 end

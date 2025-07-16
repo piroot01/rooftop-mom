@@ -16,16 +16,14 @@ origin = [0, 0, 0];
 order = 5;
 
 lambda = 5;
-k = 2 * pi / lambda;
+%k = 2 * pi / lambda;
+k = 1;
 
 % memory given to the mom
 memoryElementwise = 10e5;
 memory_MB = memoryElementwise * 8 / 1e6;
 
 antennaGenome = true(countX, countY);
-antennaGenome(2, 2) = false;
-
-disp(antennaGenome);
 
 % 1. step: generate a mesh
 dipolePrimitive = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, antennaGenome(:).');
