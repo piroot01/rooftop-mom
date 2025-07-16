@@ -11,24 +11,24 @@ classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
 
     methods
         function Z = generateFull(obj, context)
+            % Produce all chunks for full matrix assembly
             chunks = obj.assemblerChunkPlanner_.generateFull(context, true);
 
             Z = obj.generateSpecified(context, chunks);
         end
 
         function Z = generateSpecified(obj, context, chunks)
-            wavenumber = context.wavenumber();
+            wavenumber  = context.wavenumber();
             matrixCount = numel(wavenumber);
 
-            rooftops = context.rooftops();
+            rooftops   = context.rooftops();
             quadrature = context.quadrature();
 
             basisSize = rooftops.count();
-            order = quadrature.order();
+            order     = quadrature.order();
             blockSize = order^2;
 
-            % Generate the quadrature, rooftop, rooftopDiv points (same for every matrix).
-            [points, values] = context.rooftops().generateRooftops();
+            [points, values] = rooftops.generateRooftops();
             [quadraturePoints, rooftopPoints] = rooftopMoM.core.impedanceMatrix.utils.convertRooftopPointsToArrays(points);
 
             slices = rooftopMoM.core.impedanceMatrix.utils.generateSlicesFromChunks(chunks, order);
@@ -52,9 +52,10 @@ classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
                 'weights', weights ...
             );
 
-            % Pre-allocate the final impedance matrix (matrices).
+            % Pre-allocate full impedance tensor.
             Z = complex(zeros(basisSize, basisSize, matrixCount));
 
+            % Assemble each frequency-dependent matrix.
             for n = 1:matrixCount
                 Z(:, :, n) = obj.generateImpl_(computeContext, chunks, slices, wavenumber(n));
             end
@@ -64,30 +65,26 @@ classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
     methods (Access = private)
         function Z = generateImpl_(obj, context, chunks, slices, wavenumber)
             basisSize = context.basisSize;
-            chunkCount = numel(chunks);
-
             jacobians = context.jacobians;
-
             p1 = [1, 1, 2, 2];
             p2 = [1, 2, 1, 2];
 
+            % Initialize impedance matrix for this frequency.
             Z = complex(zeros(basisSize, basisSize));
-            for n = 1:chunkCount
-                % for debugging
+
+            % Process each chunk sequentially.
+            for n = 1:numel(chunks)
                 fprintf("Chunk ID=%d\n", n);
 
                 chunk = chunks{n};
                 slice = slices{n};
 
+                % Determine row and column index ranges for current chunk.
                 rowSlice = slice.rowIndicesStart:slice.rowIndicesEnd;
                 colSlice = slice.columnIndicesStart:slice.columnIndicesEnd;
 
-                chunkSize = [numel(chunk.rowIndices), numel(chunk.columnIndices)];
-
                 rowRooftopPoints = context.rooftopPoints(:, rowSlice, :);
                 columnRooftopPoints = context.rooftopPoints(:, colSlice, :);
-
-                singularityMask = context.singularityContext.indexMask(chunk.rowIndices, chunk.columnIndices, :);
 
                 rowQuadraturePointsPolarity = context.quadraturePoints(:, rowSlice, p1);
                 columnQuadraturePointsPolarity = context.quadraturePoints(:, colSlice, p2);
@@ -95,11 +92,16 @@ classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
                 distanceMatrix = rooftopMoM.core.impedanceMatrix.utils.generateDistanceMatrix(rowQuadraturePointsPolarity, columnQuadraturePointsPolarity);
                 integralKernel = rooftopMoM.core.impedanceMatrix.utils.generateScalarGreensFunction(wavenumber, distanceMatrix);
 
+                % Extract ID and size masks for singularity correction.
                 idMask = context.idMask(chunk.rowIndices, chunk.columnIndices);
                 sizeMask = context.singularityContext.sizeMask(chunk.rowIndices, chunk.columnIndices);
 
+                % Obtain mask of singular interactions.
+                singularityMask = context.singularityContext.indexMask(chunk.rowIndices, chunk.columnIndices, :);
+
+                % Bundle chunk-specific data for integration.
                 chunkContext = struct( ...
-                    'chunkSize', chunkSize, ...
+                    'chunkSize', [numel(chunk.rowIndices), numel(chunk.columnIndices)], ...
                     'rowRooftopPoints', rowRooftopPoints, ...
                     'columnRooftopPoints', columnRooftopPoints, ...
                     'singularityMask', singularityMask, ...
@@ -109,57 +111,78 @@ classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
                     'sizeMask', sizeMask ...
                 );
 
+                % Compute non-singular and singular contributions for this chunk.
                 [matrixChunk, singularityMaskChunkNonZeroDot] = obj.generateChunk_(context, chunkContext, wavenumber);
+                singularCorrection = obj.generateSingularities_(context.singularityContext, chunkContext, singularityMaskChunkNonZeroDot);
 
-                Z(chunk.rowIndices, chunk.columnIndices) = matrixChunk + obj.generateSingularities_(context.singularityContext, chunkContext, singularityMaskChunkNonZeroDot);
+                % Accumulate into the global Z matrix.
+                Z(chunk.rowIndices, chunk.columnIndices) = matrixChunk + singularCorrection;
             end
 
+            % Apply final scaling by free-space impedance and Jacobian factors.
             Z = 1i * wavenumber * rooftopMoM.core.Constants.Z0 / (4 * pi) .* Z .* (jacobians.' * jacobians);
         end
 
         function [chunk, singularityMaskChunkNonZeroDot] = generateChunk_(~, context, chunkContext, wavenumber)
-            blockSize = context.blockSize;
-
+            % Replicate quadrature weights over each block.
             weights = repmat(context.weights, chunkContext.chunkSize);
 
+            % Retrieve distance and kernel data.
             distanceMatrix = chunkContext.distanceMatrix;
             integralKernel = chunkContext.integralKernel;
 
+            % Define polarity index maps.
             p1 = [1, 1, 2, 2];
             p2 = [1, 2, 1, 2];
             pCount = numel(p1);
 
-            rowRooftopPointsPolarity = chunkContext.rowRooftopPoints(:, :, p1);
+            % Map rooftop points to each polarity combination.
+            rowRooftopPointsPolarity    = chunkContext.rowRooftopPoints(:, :, p1);
             columnRooftopPointsPolarity = chunkContext.columnRooftopPoints(:, :, p2);
 
-            bigSingularityMask = repelem(chunkContext.singularityMask, blockSize, blockSize);
+            % Create expanded mask identifying singular quadrature pairs.
+            bigSingularityMask = repelem(chunkContext.singularityMask, context.blockSize, context.blockSize);
 
+            % Identify zero-distance locations needing special treatment.
             distanceMatrixZero = (distanceMatrix < eps);
 
+            % Compute dot products across polarity pairs.
             rooftopPointsDot = pagemtimes(permute(rowRooftopPointsPolarity, [2, 1, 3]), columnRooftopPointsPolarity);
             rooftopPointsDotZero = (rooftopPointsDot < eps);
 
+            % Refine singularity mask to exclude perpendicular overlaps.
             bigSingularityMaskNonZeroDot = ~rooftopPointsDotZero & bigSingularityMask;
-            singularityMaskChunkNonZeroDot = bigSingularityMaskNonZeroDot(1:blockSize:end, 1:blockSize:end, :);
+            singularityMaskChunkNonZeroDot = bigSingularityMaskNonZeroDot(1:context.blockSize:end, 1:context.blockSize:end, :);
 
+            % Adjust kernel values at singular locations by subtracting 1/r term.
             integralKernel(bigSingularityMaskNonZeroDot) = integralKernel(bigSingularityMaskNonZeroDot) - 1 ./ distanceMatrix(bigSingularityMaskNonZeroDot);
 
             integrands = rooftopPointsDot .* integralKernel;
+
+            % Substitute analytical limit for zero-distances..
             integrands(distanceMatrixZero) = rooftopPointsDot(distanceMatrixZero) * (-1i) * wavenumber;
 
+            % Weight each integrand before summation.
             integrals = integrands .* weights;
-            integralsReshaped = reshape(integrals, blockSize, chunkContext.chunkSize(1), blockSize, chunkContext.chunkSize(2), pCount);
-            integralsSummed = sum(sum(integralsReshaped, 1), 3);
-            chunkPolarity = reshape(integralsSummed, [chunkContext.chunkSize, pCount]);
 
+            % Reshape to 5D for block summation over quadrature.
+            integralsReshaped = reshape(integrals, context.blockSize, chunkContext.chunkSize(1), context.blockSize, chunkContext.chunkSize(2), pCount);
+            integralsSummed   = sum(sum(integralsReshaped, 1), 3);
+
+            % Collapse polarity dimension to produce chunk matrix.
+            chunkPolarity = reshape(integralsSummed, [chunkContext.chunkSize, pCount]);
             chunk = sum(chunkPolarity, 3);
         end
 
         function singularityContext = generateSingularityContext_(~, indices, values, count)
+            % Generate mask identifying singular interactions between rooftops.
             indexMask = rooftopMoM.core.impedanceMatrix.utils.generateSingularityMask(indices);
-            [sizes, indices] = rooftopMoM.core.impedanceMatrix.utils.generateRooftopSizesUniquePerms(values);
 
-            sizeMask = repmat(indices, 1, count);
+            % Compute unique rooftop size permutations and replicate over basis.
+            [sizes, indicesPerm] = rooftopMoM.core.impedanceMatrix.utils.generateRooftopSizesUniquePerms(values);
+            sizeMask = repmat(indicesPerm, 1, count);
+
+            % Evaluate singular integral constants for each size case.
             type1Values = rooftopMoM.core.impedanceMatrix.singularIntegrals.type1(sizes(:, 1), sizes(:, 2));
             type2Values = rooftopMoM.core.impedanceMatrix.singularIntegrals.type2(sizes(:, 1), sizes(:, 2));
 
@@ -172,22 +195,25 @@ classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
         end
 
         function singularities = generateSingularities_(~, singularityContext, chunkContext, singularityMask)
+            % Define polarity groupings for same and opposite polarities.
             samePolarities = [1, 4];
             differentPolarities = [2, 3];
             pCount = numel(samePolarities) + numel(differentPolarities);
 
-            sizeMask = chunkContext.sizeMask;
-            type1Values = singularityContext.type1Values(sizeMask);
-            type2Values = singularityContext.type2Values(sizeMask);
+            % Distribute singular integral values according to rooftop sizes.
+            type1Values = singularityContext.type1Values(chunkContext.sizeMask);
+            type2Values = singularityContext.type2Values(chunkContext.sizeMask);
 
+            % Identify valid self-interactions from ID mask.
             validIndices = (chunkContext.idMask > 0);
             combinedMask = bsxfun(@and, singularityMask, validIndices);
 
+            % Allocate polarity-resolved singular contributions.
             singularitiesPolarity = zeros([chunkContext.chunkSize, pCount]);
-
-            singularitiesPolarity(:, :, samePolarities) = combinedMask(:, :, samePolarities) .* repmat(type1Values, [1, 1, 2]);
+            singularitiesPolarity(:, :, samePolarities)      = combinedMask(:, :, samePolarities) .* repmat(type1Values, [1, 1, 2]);
             singularitiesPolarity(:, :, differentPolarities) = combinedMask(:, :, differentPolarities) .* repmat(type2Values, [1, 1, 2]);
 
+            % Sum contributions across all polarities.
             singularities = sum(singularitiesPolarity, 3);
         end
     end
