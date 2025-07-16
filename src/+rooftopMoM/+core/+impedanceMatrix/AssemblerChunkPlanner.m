@@ -10,10 +10,10 @@ classdef AssemblerChunkPlanner < handle
     end
 
     methods
-        function chunks = generateFull(obj, rooftops, includeDiagonalBlocks)
-            [k, l] = rooftopMoM.core.impedanceMatrix.utils.generateChunkSize(obj.elementCount_, rooftops.quadrature().order());
+        function chunks = generateFull(obj, context, includeDiagonalBlocks)
+            [k, l] = rooftopMoM.core.impedanceMatrix.utils.generateChunkSize(obj.elementCount_, context.quadrature().order());
 
-            rooftopIndices = rooftops.indices();
+            rooftopIndices = context.rooftops().indices();
 
             [offsets, sizes] = rooftopMoM.core.impedanceMatrix.utils.generateSubmatrixOffsetsAndSizes(rooftopIndices);
             indices = rooftopMoM.core.impedanceMatrix.utils.generateSubmatrixIndices(rooftopIndices, includeDiagonalBlocks);
@@ -59,8 +59,8 @@ classdef AssemblerChunkPlanner < handle
             end
         end
 
-        function chunks = generateSpecified(obj, rooftops, interactions, count)
-            blockCount = rooftopMoM.core.impedanceMatrix.utils.generateBlockCountPerChunk(obj.elementCount_, rooftops.quadrature().order());
+        function chunks = generateSpecified(obj, context, interactions, count)
+            blockCount = rooftopMoM.core.impedanceMatrix.utils.generateBlockCountPerChunk(obj.elementCount_, context.quadrature().order());
             groups = rooftopMoM.core.impedanceMatrix.utils.generateInteractionGroupsByColumn(interactions, count);
 
             % Calculate the number of chunks needed for each interaction group.

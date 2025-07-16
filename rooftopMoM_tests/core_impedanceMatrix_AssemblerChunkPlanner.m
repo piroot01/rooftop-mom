@@ -35,12 +35,14 @@ elementCount = 1024;
 
 planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
 
-chunks = planner.generateFull(rooftops, true);
+context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, []);
+
+chunks = planner.generateFull(context, true)
 
 interactions = 1:10;
 
 count = size(rooftops.indices{1}, 2);
 
-chunksInters = planner.generateSpecified(rooftops, interactions, count);
+chunksInters = planner.generateSpecified(context, interactions, count);
 
 chunksInters{:}

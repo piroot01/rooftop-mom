@@ -33,18 +33,4 @@ rooftops.generate();
 
 [quads, roofs] = rooftopMoM.core.impedanceMatrix.utils.convertRooftopPointsToArrays(points)
 
-% genome - sloppy but should work
-%{
-genome = true(1, rectPrimitive2.count());
-genome(3) = false;
-
-mesh2Genome = rooftopMoM.mesh.utils.filterMeshByGenome(mesh2, genome);
-
-cluster.remove(2);
-cluster.insert(mesh2Genome)
-
-rooftopsGenome = rooftopMoM.basisFunctions.UniformRooftops(cluster, quad);
-
-rooftops.generate();
-rooftops.generateQuadraturePoints()
-%}
+celldisp(values)
