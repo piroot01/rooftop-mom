@@ -133,6 +133,9 @@
             \item \texttt{generateRectFaceSize}: Compute the side lengths of a quadrilateral face.
             \item \texttt{generateRectBoundary}: Compute axis-aligned bounding rectangle in local face basis.
             \item \texttt{generateMeshInteriorEdges}: Compute all interior edges of a mesh (mesh cluster).
+            \item \texttt{generateRectFaceSize}: Compute the side lengths of a quadrilateral face.
+            \item \texttt{generateRectFaceArea}: Returns an area of rectangular face.
+            \item \texttt{generateMeshSizes}: Compute maximal sizes for each planar mesh in a cluster.
         \end{enumerate}
     \end{enumerate}
 
@@ -141,7 +144,14 @@
     As described in the section of key components, here will be placed all classes that generates from the \texttt{Mesh} or \texttt{MeshCluster} the two key structures: indices list and points. The indices list will be generated for divergence conforming basis functions directly from the mesh based on the edge detection algorithm. Each inner edge of the mesh is associated with one divergence conforming basis function.
 
     \begin{enumerate}[label=\Roman*.]
-        \item \texttt{RectDivergenceConforming}: This is a special case of the divergence comforming basis functions based on uniformly discretized mesh into rectangular patches, other type very popular are RWG basis functions.
+        \item \texttt{BasisFunctionsInterface}: Common interface for all basis functions, so they can be intercepted by operators and several other classes.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{generate}: Generates the basis function indices (identifiers).
+            \item \texttt{count}: Returns the basis size.
+            \item \texttt{indices}: Returns the generated identifiers.
+            \item \texttt{mesh}: Gives a reference to an internal mesh.
+        \end{enumerate}
+    \item \texttt{RectDivergenceConforming}: This is a special case of the divergence comforming basis functions based on uniformly discretized mesh into rectangular patches, other type very popular are RWG basis functions. Derives from the \texttt{BasisFunctionsInterface}.
         \begin{enumerate}[label=\roman*.]
             \item \texttt{constructor}: Takes the \texttt{Mesh} or \texttt{MeshCluster} instance and saves a reference.
             \item \texttt{generate}: calls the function \texttt{generateInnerEdges} from \texttt{mesh/utils}
@@ -156,9 +166,6 @@
             \item \texttt{constructor}: Requires the instance of \texttt{GaussLegendre2RectQuadrature} and \texttt{Mesh} or \texttt{MeshCluster} for the base class.
             \item \texttt{generate}: Triggers the \texttt{generate} function from the base class. Then it generates the points of the given quadrature. 
             \item \texttt{generateRooftops}: Computes all points and values (length, height, ...) associated with all rooftops, the cell arrays are divided into 2 because of the large memeory requirements of the points which are transformed into arrays for future computing.
-            \item <<TMP>> \texttt{rooftopSizes}: For each of the rooftops gives domain rectangle dimensions, each size is given an index, which will be used for construction of the jacobi mask.
-            \item <<TMP>> \texttt{rooftopSizesUniquePerms}: Returns the vector of unique rooftop sizes, permutations of the sizes included (needed for the singularity extraction).
-            \item <<TMP>> \texttt{rooftopSizesUniqueCombs}: Returns the vector of unique rooftop sizes, unordered, used for jacobi mask.
         \end{enumerate}
         \item \texttt{FastRooftopBasisFunctions}: This one does not derive from the \texttt{UniformRectDivergenceComforming}, it is used for the superfast CG-FFT algorithms.
         \begin{enumerate}[label=\roman*.]
@@ -185,7 +192,7 @@
             \item \texttt{generateRooftopPointsUniformRooftop}: Returns the rooftop points for a uniform rooftop.
             \item \texttt{generateGaussLegendre1D}: Simple wrapper for Greg von Winckel’s lgwt.m.
             \item \texttt{generateQuadraturePointsUniformRooftop}: Assemble quadrature points for both sides of a uniform rooftop element.
-            \item \texttt{generaterooftopmesh}: Returns array of vertices forming a single rooftop defined of a pair of quads.
+            \item \texttt{generateRooftopSupport}: Returns array of vertices forming a single rooftop defined of a pair of quads.
         \end{enumerate}
     \end{enumerate}
 
@@ -226,53 +233,65 @@
         \end{enumerate}
         \item \texttt{Assembler}: Base class for impedance matrix assembly classes. It will also host necessary functions for the common matrix assembly process - singularity mask generator etc. It will also has common constants saved in it (polarity mask, ...).
         \begin{enumerate}[label=\roman*.]
-            \item \texttt{generate}: An abstract method that must be implemented by all derived classes.
-            \item \texttt{generateSingularityMask}
-            \item \texttt{generateIDMask}
-            \item \texttt{generateJacobianMask}
+            \item \texttt{generateFull}: Assemble the whole matrix, all of its chunks.
+            \item \texttt{generateSpecified}: Requires cell of chunks that will be computed.
         \end{enumerate}
         \item \texttt{AssemblerChunkPlanner}: Plans the chunk scheme for the Assembler. It can generate the chunk scheme for all chunks in the matrix, or based on the given interaction scheme, used for selective matrix rendering. It will be initialized with the \texttt{Assembler}, therefore its methods accesible to all derived classes.
         \begin{enumerate}[label=\roman*.]
             \item \texttt{constructor}: Needs only the double count (block size) for the subsequent calculations.
-            \item \texttt{generate}: Based on the given double count in one block it will produce the chunk scheme for the whole impedance matrix.
-            \item \texttt{generateSelected}: It will return the chunk scheme based on the given interaction matrix.
-            \item \texttt{chunksToSlices}: Converts the chunks into slices for the distance matrix computation.
+            \item \texttt{generateFull}: Based on the given double count in one block it will produce the chunk scheme for the whole impedance matrix.
+            \item \texttt{generateSpecified}: It will return the chunk scheme based on the given interaction matrix.
         \end{enumerate}
         \item \texttt{AssemblerContext}: All necessary classes for the actual computation will be placed here.
         \begin{enumerate}[label=\roman*.]
             \item \texttt{quadrature}: Returns the internal quadrature reference.
             \item \texttt{basisFunctions}: Returns handle to the basisFunctions.
-            \item \texttt{constants}
+            \item \texttt{wavenumber}: Returns an array of wavenumbers for which the impedance matrix will be calculated.
         \end{enumerate}
         \item \texttt{MagneticPartAssembler}: Assembles only the magnetic part of the impedance matrix.
         \begin{enumerate}[label=\roman*.]
-            \item \texttt{constructor}: The input is the memory requirements.
-            \item \texttt{generate}: Implements the base class abstraction. Input will be only the \texttt{AssemblerContext}, so in the future we can call on one instance of the assembler multiple antenna wavenumbers or electrical sizes.
-            \item \texttt{generateImpl}: Implementation of the assembly, but the additional parameter of the method it the interaction matrix for selected parts of the impedance matrix calculations.
-            \item \texttt{generateChunk}: Private method implementing the chunk computation.
-            \item \texttt{prepareSingularityContext}: Computes the necessary arrays for singularity evaluation.
-            \item \texttt{computeSingularities}: Computes the values of the extracted singular integrals using the functions in the \texttt{singularIntegrals} namespace.
+            \item \texttt{constructor}: The input is the planner (potentially we can disponate multiple planners).
+            \item \texttt{generateFull}: Implements the base class abstraction. Input will be only the \texttt{AssemblerContext}, so in the future we can call on one instance of the assembler multiple antenna wavenumbers or electrical sizes.
+            \item \texttt{generateSpecified}: Implementation of the assembly, but the additional parameter of the method it the interaction matrix for selected parts of the impedance matrix calculations.
+            \item \texttt{generateImpl\_}: Computes single matrix. It is an internal function.
+            \item \texttt{generateChunk}: Static method implementing the chunk computation.
+            \item \texttt{generateSingularityContext}: Static method that computes the necessary arrays for singularity evaluation.
+            \item \texttt{generateSingularities}: Static method, computes the values of the extracted singular integrals using the functions in the \texttt{singularIntegrals} namespace.
         \end{enumerate}
         \item \texttt{ElectricPartAssembler}: Assembles only the electric part of the impedance matrix.
         \begin{enumerate}[label=\roman*.]
             \item \texttt{constructor}
-            \item \texttt{generate}
-            \item \texttt{generateImpl}
+            \item \texttt{generateFull}
+            \item \texttt{generateSpecified}
+            \item \texttt{generateImpl\_}
             \item \texttt{generateChunk}
-            \item \texttt{computeSingularities}
+            \item \texttt{generateSingularityContext}
+            \item \texttt{generateSingularities}
         \end{enumerate}
         \item \texttt{FullAssembler}: Assembles full impedance matrix.
         \begin{enumerate}[label=\roman*.]
             \item \texttt{constructor}
-            \item \texttt{generate}
-            \item \texttt{generateImpl}
+            \item \texttt{generateFull}
+            \item \texttt{generateSpecified}
+            \item \texttt{generateImpl\_}: Uses the static generateChunk method of \texttt{MagneticPartAssembler} and \texttt{ElectricPartAssembler} to compute the impedance matrix with less memory requirements that separate calculations of the magnetic and electric parts.
+            \item \texttt{generateSingularityContext}
         \end{enumerate}
         \item \texttt{utils}: Namespace that governs any utility functions for the \texttt{impedanceMatrix} namespace.
         \begin{enumerate}[label=\roman*.]
-            \item \texttt{generateIntegralKernel}: Produces the integral kernel matrix for the impedance matrix assembly.
             \item \texttt{generateDistanceMatrix}: Used for the scalar Green's function computation.
             \item \texttt{convertRooftopPointsToArrays}: Convert rooftop point structs into 3D arrays.
             \item \texttt{stackPositiveAndNegativeFields}: Concatenate positive and negative point fields.
+            \item \texttt{generate2DJacobians} Returns a 1D array of Jacobians for all uniform rooftops.
+            \item \texttt{generateBlockCountPerChunk}: Determines the number of blocks (elementary units) per chunk.
+            \item \texttt{generateChunkSize}: Computes a nearly square chunk size in blocks.
+            \item \texttt{generateIDMask}: Generate an ID‑match mask weighted by the matching ID.
+            \item \texttt{generateInteractionGroupsByColumn}: Groups interaction indices by column of the impedance matrix.
+            \item \texttt{generateRooftopSizesUniquePerms}: Compute unique rooftop size permutations.
+            \item \texttt{generateScalarGreensFunction}: Computes the scalar free-space Green's function.
+            \item \texttt{generateSingularityMask}: Build a binary mask of singularity occurrences.
+            \item \texttt{generateSlicesFromChunks}: Converts block indices (chunks) to linear indices (slices).
+            \item \texttt{generateSubmatrixIndices}: Returns an array of submatrix indices to include in future computations.
+            \item \texttt{generateSubmatrixOffsetsAndSizes}: Precompute submatrix offsets and sizes.
         \end{enumerate}
     \end{enumerate}
 
@@ -297,7 +316,10 @@
     Here will be placed all the solvers, ie. the algorithms that will compute the current vector.
 
     \begin{enumerate}[label=\Roman*.]
-        \item \texttt{Inversion}
+        \item \texttt{Inversion}: Solves the matrix equation using the MATLAB's build in solver.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{solve}: Finds the solution current for a given impedance matrix and excitation vector.
+        \end{enumerate}
         \item \texttt{ConjugateGradient}
         \item \texttt{ConjugateGradientSpectralPreconditioner}
         \item \texttt{GeneralizedMinimalResidual}
@@ -307,7 +329,26 @@
 
     This namespace will contain some obligatory operators for proper \texttt{core} function, like the generation of the excitation vector. Then there will be operators that will utilize the outputs of the \texttt{core} like the impedance matrix for input impedance, or the current vector for \texttt{FarField} or \texttt{RCS} and others.
 
-     \section{\texttt{external}}
+    \begin{enumerate}[label=\Roman*.]
+        \item \texttt{OperatorInterface}: Serves as a common interaface for all operators.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{generate}: Triggers the operator evaluation.
+        \end{enumerate}
+        \item \texttt{DeltaGapFeederExcitation}: Build a voltage vector excitation from a binary mode mask.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{generate}
+        \end{enumerate}
+        \item \texttt{InputImpedance}: Comutes the input impedance of the radiator at specified radiator port.
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{generate}
+        \end{enumerate}
+        \item \texttt{utils}:
+        \begin{enumerate}[label=\roman*.]
+            \item \texttt{generateMiddlePortMode}: Generates a binary vector selecting the middle port.
+        \end{enumerate}
+    \end{enumerate}
+
+    \section{\texttt{external}}
 
     All extra pieces of code will be placed here, each function, class, module will has its own namespace.
 
