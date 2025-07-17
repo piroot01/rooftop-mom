@@ -7,7 +7,7 @@ addpath(srcDir);
 
 % dipole dimensions
 countX = 1;
-countY = 5000;
+countY = 100;
 sizeX = 1;
 sizeY = 1;
 

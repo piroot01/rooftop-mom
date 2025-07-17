@@ -1,4 +1,4 @@
-classdef RectDivergenceConforming < handle
+classdef RectDivergenceConforming < rooftopMoM.basisFunctions.BasisFunctionsInterface
     properties (Access = private)
         mesh_;
 

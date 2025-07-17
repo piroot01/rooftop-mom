@@ -14,23 +14,13 @@ function [c1, c2] = generateRectGridSize(vertices, faces, faceIndex)
         faceIndex = 1;
     end
 
-    % Compute local basis vectors.
-    [u, v] = rooftopMoM.mesh.utils.generateRectLocalCoords(vertices, faces, faceIndex);
-
-    % Project vertices onto local axes.
-    us = u.' * vertices;
-    vs = v.' * vertices;
-
-    % Determine extents along each axis.
-    uMin = min(us);
-    uMax = max(us);
-    vMin = min(vs);
-    vMax = max(vs);
+    % Compute plate boundary sizes.
+    [s1, s2] = rooftopMoM.mesh.utils.generateRectSize(vertices, faces, faceIndex);
 
     % Get face edge lengths.
     [l1, l2] = rooftopMoM.mesh.utils.generateRectFaceSize(vertices, faces, faceIndex);
 
     % Compute subdivision counts and convert to uint32.
-    c1 = uint32(round((uMax - uMin) / l1));
-    c2 = uint32(round((vMax - vMin) / l2));
+    c1 = uint32(round(s1 / l1));
+    c2 = uint32(round(s2 / l2));
 end

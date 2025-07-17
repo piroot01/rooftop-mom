@@ -17,4 +17,4 @@ rect = rooftopMoM.mesh.UniformRect(rectPrimitive, origin, pi/3, 0, 0);
 
 mesh = rect.generateMesh();
 
-[c1, c2] = rooftopMoM.mesh.utils.generateRectGridSize(mesh.vertices(), mesh.faces())
+[c1, c2] = rooftopMoM.mesh.utils.generateRectGridSize(mesh.vertices{1}, mesh.faces{1})

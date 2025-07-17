@@ -15,7 +15,7 @@ function [u, v] = generateRectLocalCoords(vertices, faces, faceIndex)
     end
 
     % Retrieve principal edges.
-    [e1, e2] = rooftopMoM.mesh.utils.generateRectPrincipalEdges(vertices, faces, faceIndex);
+    [e1, e2] = rooftopMoM.mesh.utils.generateRectFacePrincipalEdges(vertices, faces, faceIndex);
 
     % First basis vector: normalized e1.
     u = e1 / norm(e1);
