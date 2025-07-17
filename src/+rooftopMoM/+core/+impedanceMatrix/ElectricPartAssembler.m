@@ -18,14 +18,14 @@ classdef ElectricPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
         end
 
         function Z = generateSpecified(obj, context, chunks)
-            wavenumber  = context.wavenumber();
+            wavenumber = context.wavenumber();
             matrixCount = numel(wavenumber);
 
-            rooftops   = context.rooftops();
+            rooftops = context.rooftops();
             quadrature = context.quadrature();
 
             basisSize = rooftops.count();
-            order     = quadrature.order();
+            order = quadrature.order();
             blockSize = order^2;
 
             [points, values] = rooftops.generateRooftops();
@@ -38,9 +38,9 @@ classdef ElectricPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
             idMask = rooftopMoM.core.impedanceMatrix.utils.generateIDMask(ids);
             jacobians = rooftopMoM.core.impedanceMatrix.utils.generate2DJacobians(rooftops.mesh(), ids);
 
-            singularityContext = obj.generateSingularityContext_(rooftops.indices(), values, basisSize);
+            singularityContext = rooftopMoM.core.impedanceMatrix.ElectricPartAssembler.generateSingularityContext(rooftops.indices(), values, basisSize);
 
-            singularities = obj.generateSingularities_(singularityContext, idMask);
+            singularities = rooftopMoM.core.impedanceMatrix.ElectricPartAssembler.generateSingularities(singularityContext, idMask);
 
             weights = quadrature.weights4D();
 
@@ -67,7 +67,7 @@ classdef ElectricPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
     end
 
     methods (Access = private)
-        function Z = generateImpl_(obj, context, chunks, slices, wavenumber)
+        function Z = generateImpl_(~, context, chunks, slices, wavenumber)
             basisSize = context.basisSize;
             jacobians = context.jacobians;
             p1 = [1, 1, 2, 2];
@@ -106,20 +106,22 @@ classdef ElectricPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
                     'rowRooftopDivPoints', rowRooftopDivPoints, ...
                     'columnRooftopDivPoints', columnRooftopDivPoints, ...
                     'singularityMask', singularityMask, ...
-                    'singularities', singularities, ...
+                    'electricSingularities', singularities, ...
                     'distanceMatrix', distanceMatrix, ...
                     'integralKernel', integralKernel ...
                 );
 
                 % Compute contributions for this chunk.
-                Z(chunk.rowIndices, chunk.columnIndices) = obj.generateChunk_(context, chunkContext, wavenumber);
+                Z(chunk.rowIndices, chunk.columnIndices) = rooftopMoM.core.impedanceMatrix.ElectricPartAssembler.generateChunk(context, chunkContext, wavenumber);
             end
 
             % Apply final scaling by free-space impedance and Jacobian factors.
             Z = 1i * rooftopMoM.core.Constants.Z0 / (4 * pi * wavenumber) .* Z .* (jacobians.' * jacobians);
         end
+    end
 
-        function chunk = generateChunk_(~, context, chunkContext, wavenumber)
+    methods (Static)
+        function chunk = generateChunk(context, chunkContext, wavenumber)
             % Replicate quadrature weights over each block.
             weights = repmat(context.weights, chunkContext.chunkSize);
 
@@ -162,7 +164,7 @@ classdef ElectricPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
             chunkPolarity = reshape(integralsSummed, [chunkContext.chunkSize, pCount]);
 
             % Apply the singular contributions.
-            chunkPolarity = chunkPolarity + chunkContext.singularities;
+            chunkPolarity = chunkPolarity + chunkContext.electricSingularities;
 
             % Scale by the rooftop divergences.
             chunkPolarity = chunkPolarity .* rooftopDivDot;
@@ -170,7 +172,7 @@ classdef ElectricPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
             chunk = sum(chunkPolarity, 3);
         end
 
-        function singularityContext = generateSingularityContext_(~, indices, values, count)
+        function singularityContext = generateSingularityContext(indices, values, count)
             % Generate mask identifying singular interactions between rooftops.
             indexMask = rooftopMoM.core.impedanceMatrix.utils.generateSingularityMask(indices);
 
@@ -188,7 +190,7 @@ classdef ElectricPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
             );
         end
 
-        function singularities = generateSingularities_(~, singularityContext, idMask)
+        function singularities = generateSingularities(singularityContext, idMask)
             % Define polarity groupings for same and opposite polarities.
             p1 = [1, 2, 3, 4];
             pCount = numel(p1);

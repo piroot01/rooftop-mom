@@ -26,7 +26,7 @@ memory_MB = memoryElementwise * 8 / 1e6;
 antennaGenome = true(countX, countY);
 
 % 1. step: generate a mesh
-dipolePrimitive = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, antennaGenome(:).');
+dipolePrimitive = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
 dipolePrimitiveTransformed = mom.MeshRect(dipolePrimitive, origin, 0, 0, 0);
 dipoleMesh = dipolePrimitiveTransformed.getAsMesh();
 

@@ -18,14 +18,14 @@ classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
         end
 
         function Z = generateSpecified(obj, context, chunks)
-            wavenumber  = context.wavenumber();
+            wavenumber = context.wavenumber();
             matrixCount = numel(wavenumber);
 
-            rooftops   = context.rooftops();
+            rooftops = context.rooftops();
             quadrature = context.quadrature();
 
             basisSize = rooftops.count();
-            order     = quadrature.order();
+            order = quadrature.order();
             blockSize = order^2;
 
             [points, values] = rooftops.generateRooftops();
@@ -37,7 +37,7 @@ classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
             idMask = rooftopMoM.core.impedanceMatrix.utils.generateIDMask(ids);
             jacobians = rooftopMoM.core.impedanceMatrix.utils.generate2DJacobians(rooftops.mesh(), ids);
 
-            singularityContext = obj.generateSingularityContext_(rooftops.indices(), values, basisSize);
+            singularityContext = rooftopMoM.core.impedanceMatrix.MagneticPartAssembler.generateSingularityContext(rooftops.indices(), values, basisSize);
 
             weights = quadrature.weights4D();
 
@@ -63,7 +63,7 @@ classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
     end
 
     methods (Access = private)
-        function Z = generateImpl_(obj, context, chunks, slices, wavenumber)
+        function Z = generateImpl_(~, context, chunks, slices, wavenumber)
             basisSize = context.basisSize;
             jacobians = context.jacobians;
             p1 = [1, 1, 2, 2];
@@ -112,8 +112,8 @@ classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
                 );
 
                 % Compute non-singular and singular contributions for this chunk.
-                [matrixChunk, singularityMaskChunkNonZeroDot] = obj.generateChunk_(context, chunkContext, wavenumber);
-                singularCorrection = obj.generateSingularities_(context.singularityContext, chunkContext, singularityMaskChunkNonZeroDot);
+                [matrixChunk, singularityMaskChunkNonZeroDot] = rooftopMoM.core.impedanceMatrix.MagneticPartAssembler.generateChunk(context, chunkContext, wavenumber);
+                singularCorrection = rooftopMoM.core.impedanceMatrix.MagneticPartAssembler.generateSingularities(context.singularityContext, chunkContext, singularityMaskChunkNonZeroDot);
 
                 % Accumulate into the global Z matrix.
                 Z(chunk.rowIndices, chunk.columnIndices) = matrixChunk + singularCorrection;
@@ -122,8 +122,10 @@ classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
             % Apply final scaling by free-space impedance and Jacobian factors.
             Z = 1i * wavenumber * rooftopMoM.core.Constants.Z0 / (4 * pi) .* Z .* (jacobians.' * jacobians);
         end
+    end
 
-        function [chunk, singularityMaskChunkNonZeroDot] = generateChunk_(~, context, chunkContext, wavenumber)
+    methods (Static)
+        function [chunk, singularityMaskChunkNonZeroDot] = generateChunk(context, chunkContext, wavenumber)
             % Replicate quadrature weights over each block.
             weights = repmat(context.weights, chunkContext.chunkSize);
 
@@ -174,7 +176,7 @@ classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
             chunk = sum(chunkPolarity, 3);
         end
 
-        function singularityContext = generateSingularityContext_(~, indices, values, count)
+        function singularityContext = generateSingularityContext(indices, values, count)
             % Generate mask identifying singular interactions between rooftops.
             indexMask = rooftopMoM.core.impedanceMatrix.utils.generateSingularityMask(indices);
 
@@ -194,7 +196,7 @@ classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
             );
         end
 
-        function singularities = generateSingularities_(~, singularityContext, chunkContext, singularityMask)
+        function singularities = generateSingularities(singularityContext, chunkContext, singularityMask)
             % Define polarity groupings for same and opposite polarities.
             samePolarities = [1, 4];
             differentPolarities = [2, 3];

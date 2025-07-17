@@ -28,9 +28,9 @@ k = 1;
 
 context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 
-magAssembler = rooftopMoM.core.impedanceMatrix.ElectricPartAssembler(planner);
+elAssembler = rooftopMoM.core.impedanceMatrix.ElectricPartAssembler(planner);
 
-Z = magAssembler.generateFull(context);
+Z = elAssembler.generateFull(context);
 
 
 disp(Z)
