@@ -167,7 +167,7 @@ classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
 
             % Reshape to 5D for block summation over quadrature.
             integralsReshaped = reshape(integrals, context.blockSize, chunkContext.chunkSize(1), context.blockSize, chunkContext.chunkSize(2), pCount);
-            integralsSummed   = sum(sum(integralsReshaped, 1), 3);
+            integralsSummed = sum(sum(integralsReshaped, 1), 3);
 
             % Collapse polarity dimension to produce chunk matrix.
             chunkPolarity = reshape(integralsSummed, [chunkContext.chunkSize, pCount]);

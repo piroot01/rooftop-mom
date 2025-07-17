@@ -19,7 +19,6 @@ quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
 rooftops = rooftopMoM.basisFunctions.UniformRooftops(mesh, quad);
 
 rooftops.generate();
-[points, values] = rooftops.generateRooftops();
 
 elementCount = 100000;
 
