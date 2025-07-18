@@ -14,8 +14,10 @@ function [c1, c2] = generateRectGridSize(vertices, faces, faceIndex)
         faceIndex = 1;
     end
 
+    [u, v] = rooftopMoM.mesh.utils.generateRectLocalCoords(vertices, faces);
+
     % Compute plate boundary sizes.
-    [s1, s2] = rooftopMoM.mesh.utils.generateRectSize(vertices, faces, faceIndex);
+    [s1, s2] = rooftopMoM.mesh.utils.generateRectSize(vertices, u, v);
 
     % Get face edge lengths.
     [l1, l2] = rooftopMoM.mesh.utils.generateRectFaceSize(vertices, faces, faceIndex);

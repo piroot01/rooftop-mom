@@ -1,0 +1,80 @@
+clc; clearvars;
+
+currentDir = fileparts(mfilename('fullpath'));
+srcDir = fullfile(currentDir, '..', 'src');
+addpath(srcDir);
+
+% First mesh
+countX = 3;
+countY = 3;
+sizeX = 2;
+sizeY = 1;
+
+rectPrimitive1 = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
+rect1 = rooftopMoM.mesh.UniformRect(rectPrimitive1);
+mesh1 = rect1.generateMesh();
+
+% Obtain the 3x(4*N) array
+function rects = filterRects(vertices, faces, faceIndices)
+    % NOTE: the vertices can be 2D or 3D it does not matter
+    %rects = arrayfun(@(idx) vertices(:, faces(:, idx)), faceIndices, 'UniformOutput', false);
+    vertexIndices = faces(:, faceIndices(:));
+    rects = vertices(:, vertexIndices(:));
+end
+
+% TODO: The function generateRectSize uses the same internal commands so we extract them into separate function
+function points = projectVerticesToLocalCoords(vertices, faces, faceIndex)
+    if nargin < 3 || isempty(faceIndex)
+        faceIndex = 1;
+    end
+
+    % Compute local basis vectors.
+    [u, v] = rooftopMoM.mesh.utils.generateRectLocalCoords(vertices, faces, faceIndex);
+
+    points = zeros(2, size(vertices, 2));
+    % Project vertices onto local axes.
+    points(1, :) = u.' * vertices;
+    points(2, :) = v.' * vertices;
+end
+
+function area = generateRectIntersectionArea(faceVertices)
+    %RECTINTERSECTIONAREA  Area of the common intersection of N axis‑aligned rects
+    %
+    %   area = rectIntersectionArea(FV) returns the area of the
+    %   intersection of N rectangles whose vertices are packed
+    %   column‑wise in FV (3×(4·N)):
+    %      FV(:,1 + 4*(i-1)) = [u_min; v_min; _]   (bottom‑left)
+    %      FV(:,2 + 4*(i-1)) = [u_max; v_min; _]   (bottom‑right)
+    %      FV(:,3 + 4*(i-1)) = [u_max; v_max; _]   (top‑right)
+    %      FV(:,4 + 4*(i-1)) = [u_min; v_max; _]   (top‑left)
+    %
+    %   Only the first two rows (U, V) are used; the third row
+    %   is ignored.  If there is no overlap, returns 0.
+    %
+
+    % NOTE: The indices of the faces must be coplanar
+    % grab all U and V coords:
+    U = faceVertices(1, :);
+    V = faceVertices(2, :);
+
+    % each rect contributes 4 cols: [BL, BR, TR, TL]
+    lefts   = U(1:4:end);  % bottom‑left  u
+    rights  = U(2:4:end);  % bottom‑right u
+    bottoms = V(1:4:end);  % bottom‑left  v
+    tops    = V(4:4:end);  % top‑left     v
+
+    % compute overlap lengths
+    w = min(rights) - max(lefts);
+    h = min(tops)   - max(bottoms);
+
+    % if either is negative, no overlap
+    area = max(w, 0) * max(h, 0);
+end
+
+points2D = projectVerticesToLocalCoords(mesh1.vertices{1}, mesh1.faces{1})
+
+indices = [1, 2];
+
+rects = filterRects(points2D, mesh1.faces{1}, indices)
+
+generateRectIntersectionArea(rects)
