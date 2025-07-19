@@ -11,8 +11,12 @@ classdef UniformRooftops < rooftopMoM.basisFunctions.RectDivergenceConforming
     end
 
     methods
-        function generate(obj)
-            generate@rooftopMoM.basisFunctions.RectDivergenceConforming(obj);
+        function generate(obj, genome)
+            if nargin < 2
+                genome = [];
+            end
+
+            generate@rooftopMoM.basisFunctions.RectDivergenceConforming(obj, genome);
 
             obj.quadrature_.generate();
         end

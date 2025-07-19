@@ -34,40 +34,55 @@ Z = fullAssembler.generateFull(context);
 
 Y = inv(Z);
 
-pertAdmittanceMatrix = PerturbedMatrix(Y)
+% test setup: we remove and add selected basis function
+selectedBasisFunction = 4;
 
-N     = 100000000;
-a     = sort(randi(1e6, 1, N));
-k     = randi([0, N], 1, 1);
+% Determine the current active indices
+allIndices = 1:rooftops.count();
 
-tic;
+% remove basis function
+Yu = rank1Removal(Y, selectedBasisFunction);
+allIndices(selectedBasisFunction) = [];
 
-[~, retrace] = sort([a, k]);
+Yu = Yu(allIndices, allIndices);
 
-toc;
+% Check if the Yu is correct
+genome{1} = true(size(Z, 2), 1);
+genome{1}(selectedBasisFunction) = false;
 
-tic;
+rooftops.generate(genome);
 
-fastestRetrace = shiftAndInsert(a, k);
+Zu = fullAssembler.generateFull(context);
 
-toc;
+Yu_ = inv(Zu);
 
-all(retrace == fastestRetrace)
-
-function perturbedMatrix = rank1Removal(matrix, index)
-    matrixColumn = matrix(:, index);
-    matrixDiagElement = matrix(index, index);
-
-    perturbedMatrix = matrix - (matrixColumn / matrixDiagElement) * matrixColumn.';
+if all(Yu - Yu_ < 10 * eps, 'all')
+    fprintf("The matrices Yu and Yu_ are identical.\n");
 end
 
-function Y_updated = rank1Add(Y, Z_original, indices, n)
+% Now we add the basis function back.
+reorderIndices = shiftAndInsert(allIndices, selectedBasisFunction);
 
+Yuu = rank1Add(Yu, Z, allIndices, reorderIndices, selectedBasisFunction)
+
+if all(Yuu - Y < 10 * eps, 'all')
+    fprintf("The matrices Yuu and Y are identical.\n");
+end
+
+function Y_updated = rank1Removal(Y, n)
+    yn = Y(:, n);
+    Ynn = Y(n, n);
+
+    Y_updated = Y - (yn / Ynn) * yn.';
+end
+
+function Y_updated = rank1Add(Y, Z_original, indices, reorderIndices, n)
     Znn = Z_original(n, n);
     zn = Z_original(indices, n);
     xn = Y * zn;
     cn = 1 / (Znn - zn.' * xn);
     cn_xn = cn .* xn;
     Y_updated = [ Y + cn_xn * xn.', (-1) * cn_xn; ...
-                  (-1) * xn_xn.', cn ];
+                  (-1) * cn_xn.', cn ];
+    Y_updated = Y_updated(reorderIndices, reorderIndices);
 end

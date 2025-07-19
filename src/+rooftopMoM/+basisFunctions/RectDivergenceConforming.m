@@ -13,8 +13,13 @@ classdef RectDivergenceConforming < rooftopMoM.basisFunctions.BasisFunctionsInte
     end
 
     methods
-        function generate(obj)
+        function generate(obj, genome)
             indices = rooftopMoM.mesh.utils.generateMeshInteriorEdges(obj.mesh_);
+
+            % Apply the genome mask if available.
+            if ~(nargin < 2 || isempty(genome))
+                indices = cellfun(@(indices, genome) indices(:, genome(:)), indices, genome, 'UniformOutput', false);
+            end
 
             obj.indicesX_ = cellfun(@(xs) rooftopMoM.mesh.utils.filterInteriorEdgesByDir(xs, 'x'), indices, 'UniformOutput', false);
             obj.indicesY_ = cellfun(@(xs) rooftopMoM.mesh.utils.filterInteriorEdgesByDir(xs, 'y'), indices, 'UniformOutput', false);

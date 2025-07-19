@@ -1,6 +1,6 @@
 classdef BasisFunctionsInterface < handle
     methods (Abstract)
-        generate(obj);
+        generate(obj, genome);
 
         count = count(obj);
 
