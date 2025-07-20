@@ -45,7 +45,8 @@ function mesh = generateAlignedMeshCounts(masterMesh, c1, c2, meshIndex)
 
     selectedMesh = masterMesh.get(meshIndex);
 
-    [s1, s2] = rooftopMoM.mesh.utils.generateRectSize(selectedMesh.vertices{1}, selectedMesh.faces{1});
+    [u, v] = rooftopMoM.mesh.utils.generateRectLocalCoords(selectedMesh.vertices{1}, selectedMesh.faces{1});
+    [s1, s2] = rooftopMoM.mesh.utils.generateRectSize(selectedMesh.vertices{1}, u, v);
 
     newSizeX = s1 / double(c1)
     newSizeY = s2 / double(c2)

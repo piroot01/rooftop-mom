@@ -1,5 +1,5 @@
 % will be used in construction of the reordered impedance matrix in the rank 1 DOF add
-    function idxList = shiftAndInsert(a, key)
+function idxList = shiftAndInsert(a, key)
 % shiftAndInsert: Find spot for key in sorted a, then insert N+1 there
 %   idxList = shiftAndInsert(a,key) returns a 1×(N+1) vector
 %     [1,2,…,k, N+1, k+1,…,N]

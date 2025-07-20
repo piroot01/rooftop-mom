@@ -33,7 +33,9 @@ mesh2 = rect2.generateMesh();
 
 load('genome.mat');
 
-genome = logical(ceil(newGenome.'));
+threshold = 0.01;
+
+genome = logical(newGenome.' > threshold);
 
 localVertices = projectVerticesToLocalCoords(mesh2.vertices{1}, mesh2.faces{1});
 

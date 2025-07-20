@@ -13,7 +13,7 @@ rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, size
 rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
 mesh = rect.generateMesh();
 
-order = 5;
+order = 10;
 
 quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
 rooftops = rooftopMoM.basisFunctions.UniformRooftops(mesh, quad);
@@ -61,10 +61,12 @@ if all(Yu_cut - Yu_ < 10 * eps, 'all')
     fprintf("The matrices Yu_cut and Yu_ are identical.\n");
 end
 
+tic;
 % Now we add the basis function back.
 reorderIndices = shiftAndInsert(allIndices_, selectedBasisFunction);
 
 Yuu = rank1Add(Yu_cut, Z, allIndices_, reorderIndices, selectedBasisFunction);
+classical = toc
 
 if all(Yuu - Y < 100 * eps, 'all')
     fprintf("The matrices Yuu and Y are identical.\n");
@@ -74,13 +76,61 @@ end
 another = 6;
 Yu = rank1Removal(Yu, another);
 
-% and now we will bring back both.
-Yuu_zero = rank1Add_zero(Yu, Z, [selectedBasisFunction, another], selectedBasisFunction);
-Yuu_zero = rank1Add_zero(Yuu_zero, Z, another, another);
+activeIdx = 1:(countY - 1);
+activeIdx([selectedBasisFunction, another]) = [];
 
-if all(Yuu_zero - Yuu < 100 * eps, 'all')
-    fprintf("The matrices Yuu_zero and Yuu are identical.\n");
+% and now we will bring back both.
+tic;
+[Yuu_zero, activeIdx] = rank1AdditionInverseMatrix(Yu, Z, activeIdx, selectedBasisFunction);
+newVersion = toc
+
+[Yuu_zero, activeIdx] = rank1AdditionInverseMatrix(Yuu_zero, Z, activeIdx, another);
+
+if all(Yuu_zero - Y < 100 * eps, 'all')
+    fprintf("The matrices Yuu_zero and Y are identical.\n");
 end
+
+% now let us test the speed of each rank1Add
+tries = 40;
+
+count = 5000;
+M = diag(rand(count, 1));
+Minv = inv(M);
+bf = 1;
+
+allIdx = 1:count;
+
+% the original variant
+tic;
+
+for n = 1:tries
+
+MinvR = rank1Removal(Minv, bf);
+allIdx(bf) = [];
+MinvR = MinvR(allIdx, allIdx);
+
+reorderIndices = shiftAndInsert(allIdx, bf);
+
+MinvRA = rank1Add(MinvR, M, allIdx, reorderIndices, bf);
+
+end
+
+original = toc
+
+allIdx = 1:count;
+
+% new version
+
+tic;
+
+for n = 1:tries
+
+[MinvR, allIdx] = rank1RemovalInverseMatrix(Minv, allIdx, bf);
+[MinvRA, allIdx] = rank1AdditionInverseMatrix(MinvR, M, allIdx, bf);
+
+end
+
+newVersion = toc
 
 function Y_updated = rank1Removal(Y, n)
     yn = Y(:, n);
@@ -98,42 +148,4 @@ function Y_updated = rank1Add(Y, Z_original, indices, reorderIndices, n)
     Y_updated = [ Y + cn_xn * xn.', (-1) * cn_xn; ...
                   (-1) * cn_xn.', cn ];
     Y_updated = Y_updated(reorderIndices, reorderIndices);
-end
-
-function Y = rank1Add_zero(Y, Z, zeroIdx, n)
-% Y         (N×N) current inverse with zeros on rows/cols in zeroIdx
-% Z         (N×N) original matrix
-% zeroIdx   list of indices where Y is currently empty
-% n         the specific index in zeroIdx to “fill in” now
-%
-% After this call, row n and col n of Y will have been updated
-% by the Woodbury rank‑1 formula, and n is removed from zeroIdx.
-
-    % build the list of the “old” active indices
-    activeIdx = setdiff(1:size(Y,1), zeroIdx);
-
-    %--- 1) compute scalar and cross‐vector from Z
-    Znn = Z(n,n);
-    zn  = Z(activeIdx, n);               % (m×1) cross‐columns
-
-    %--- 2) x_n = Y(active,active) * z_n
-    xn  = Y(activeIdx, activeIdx) * zn;  % (m×1)
-
-    %--- 3) compute Woodbury factor
-    cn  = 1 / (Znn - zn.' * xn);         % scalar
-
-    %--- 4) update the active‐active block in place
-    Y(activeIdx, activeIdx) = ...
-        Y(activeIdx, activeIdx) + cn * (xn * xn.');
-
-    %--- 5) fill in the new off‐diagonals
-    Y(activeIdx, n) = -cn * xn;
-    Y(n, activeIdx) =  Y(activeIdx, n).';
-
-    %--- 6) set the new diagonal
-    Y(n, n) =  cn;
-
-    % (Optionally) if you need to keep track of which indices remain empty,
-    % you’d remove n from zeroIdx here, e.g.
-    % zeroIdx(zeroIdx==n) = [];
 end
