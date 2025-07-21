@@ -91,9 +91,9 @@ if all(Yuu_zero - Y < 100 * eps, 'all')
 end
 
 % now let us test the speed of each rank1Add
-tries = 40;
+tries = 10;
 
-count = 5000;
+count = 10000;
 M = diag(rand(count, 1));
 Minv = inv(M);
 bf = 1;
@@ -131,6 +131,19 @@ for n = 1:tries
 end
 
 newVersion = toc
+
+genome = true(1, count);
+
+tic;
+
+for n = 1:tries
+
+[MinvR, genome] = rank1RemovalInverseMatrixGenome(Minv, genome, bf);
+[MinvRA, genome] = rank1AdditionInverseMatrixGenome(MinvR, M, genome, bf);
+
+end
+
+newVersionGenome = toc
 
 function Y_updated = rank1Removal(Y, n)
     yn = Y(:, n);
