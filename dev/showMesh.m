@@ -5,8 +5,8 @@ srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
 % First mesh
-countX = 3;
-countY = 3;
+countX = 6;
+countY = 6;
 sizeX = 1;
 sizeY = 1;
 
@@ -14,8 +14,7 @@ rectPrimitive1 = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, siz
 rect1 = rooftopMoM.mesh.UniformRect(rectPrimitive1);
 mesh1 = rect1.generateMesh();
 
-genome = true(countX * countY, 1);
-genome([2, 4, 8, 6]) = false;
+genome = logical(repmat(eye(2), 3, 3));
 
 localVertices = projectVerticesToLocalCoords(mesh1.vertices{1}, mesh1.faces{1});
 
@@ -33,7 +32,7 @@ mesh2 = rect2.generateMesh();
 
 load('genome.mat');
 
-threshold = 0.01;
+threshold = 0.05;
 
 genome = logical(newGenome.' > threshold);
 

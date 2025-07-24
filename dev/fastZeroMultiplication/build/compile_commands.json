@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/home/piroot/Documents/piroot/git/rooftop-mom/dev/fastZeroMultiplication/build",
+  "command": "/usr/bin/c++ -DfastZeroMaskMult_EXPORTS -I/home/piroot/.local/share/matlab/extern/include -std=gnu++11 -fPIC -o CMakeFiles/fastZeroMaskMult.dir/fastZeroMaskMult.c.o -c /home/piroot/Documents/piroot/git/rooftop-mom/dev/fastZeroMultiplication/fastZeroMaskMult.c",
+  "file": "/home/piroot/Documents/piroot/git/rooftop-mom/dev/fastZeroMultiplication/fastZeroMaskMult.c",
+  "output": "CMakeFiles/fastZeroMaskMult.dir/fastZeroMaskMult.c.o"
+}
+]

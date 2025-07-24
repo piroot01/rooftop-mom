@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC -Wl,--dependency-file=CMakeFiles/fastZeroMaskMult.dir/link.d -shared -Wl,-soname,fastZeroMaskMult.mexa64 -o fastZeroMaskMult.mexa64 CMakeFiles/fastZeroMaskMult.dir/fastZeroMaskMult.c.o   -L/home/piroot/.local/share/matlab/bin/glnxa64  -Wl,-rpath,/home/piroot/.local/share/matlab/bin/glnxa64: -lmex -lmx -lmat -lut

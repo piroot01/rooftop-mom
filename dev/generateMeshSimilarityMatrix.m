@@ -5,8 +5,8 @@ srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
 % First mesh
-countX = 3;
-countY = 3;
+countX = 6;
+countY = 6;
 sizeX = 1;
 sizeY = 1;
 
@@ -151,9 +151,9 @@ end
 meshAligned = generateAlignedMesh(mesh1, mesh2);
 matrix = generateMeshSimilarityMatrixTMP(mesh1, meshAligned);
 
-prevGenome = ones(9, 1);
-prevGenome([2, 4, 6, 8]) = 0;
+prevGenome = logical(repmat(eye(2), 3, 3));
 
-newGenome = matrix * prevGenome;
+
+newGenome = matrix * prevGenome(:);
 
 save('genome.mat', 'newGenome');

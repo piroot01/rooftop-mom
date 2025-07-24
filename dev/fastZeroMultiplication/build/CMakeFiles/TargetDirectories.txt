@@ -1,0 +1,7 @@
+/home/piroot/Documents/piroot/git/rooftop-mom/dev/fastZeroMultiplication/build/CMakeFiles/fastZeroMaskMult.dir
+/home/piroot/Documents/piroot/git/rooftop-mom/dev/fastZeroMultiplication/build/CMakeFiles/edit_cache.dir
+/home/piroot/Documents/piroot/git/rooftop-mom/dev/fastZeroMultiplication/build/CMakeFiles/rebuild_cache.dir
+/home/piroot/Documents/piroot/git/rooftop-mom/dev/fastZeroMultiplication/build/CMakeFiles/list_install_components.dir
+/home/piroot/Documents/piroot/git/rooftop-mom/dev/fastZeroMultiplication/build/CMakeFiles/install.dir
+/home/piroot/Documents/piroot/git/rooftop-mom/dev/fastZeroMultiplication/build/CMakeFiles/install/local.dir
+/home/piroot/Documents/piroot/git/rooftop-mom/dev/fastZeroMultiplication/build/CMakeFiles/install/strip.dir
