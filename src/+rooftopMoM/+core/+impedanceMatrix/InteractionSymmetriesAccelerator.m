@@ -12,7 +12,9 @@ classdef InteractionSymmetriesAccelerator < rooftopMoM.core.impedanceMatrix.Inte
     methods
         function Z = generateFull(obj, context)
             % TODO: Add support of multiple meshes.
-            [mask, interactionIndices] = obj.generateInteractions(context)
+            [mask, interactionIndices] = obj.generateInteractions(context);
+
+            Z = [];
         end
     end
 end
