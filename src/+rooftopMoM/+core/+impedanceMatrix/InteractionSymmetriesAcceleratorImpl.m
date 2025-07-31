@@ -3,7 +3,8 @@ classdef InteractionSymmetriesAcceleratorImpl < handle
         function [mask, interactionIndices] = generateInteractions(obj, context)
             rooftops = context.rooftops();
             mesh = rooftops.mesh();
-            indices = rooftops.indices();
+            indicesX = rooftops.indicesDir('x');
+            indicesY = rooftops.indicesDir('y');
 
             gridSizes = rooftopMoM.mesh.utils.generateMeshGridSizes(mesh);
 
@@ -15,12 +16,13 @@ classdef InteractionSymmetriesAcceleratorImpl < handle
             interactionIndices = cell(1, meshCount);
 
             for n = 1:meshCount
-                [mask{n}, interactionIndices{n}] = obj.generateInteractionsSingle(indices{n}, gridSizes{n}, squareGrid(n));
+                [mask{n}, interactionIndices{n}] = obj.generateInteractionsSingle(indicesX{n}, indicesY{n}, gridSizes{n}, squareGrid(n));
             end
         end
 
-        function [mask, interactionIndices] = generateInteractionsSingle(obj, indices, gridSizes, squareGrid)
-            indices
+        function [mask, interactionIndices] = generateInteractionsSingle(obj, indicesX, indicesY, gridSizes, squareGrid)
+            indicesX
+            indicesY
             gridSizes
             squareGrid
 
