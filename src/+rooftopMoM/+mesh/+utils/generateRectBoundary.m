@@ -1,19 +1,18 @@
-function [bMin, bMax] = generateRectBoundary(vertices, faces)
+function [bMin, bMax] = generateRectBoundary(vertices, u, v)
 % generateRectBoundary: Compute axis-aligned bounding rectangle in local face basis.
 %
 %   Inputs:
 %       vertices: 3×N array, each column is a 3D vertex coordinate.
-%       faces: 4×F integer array, each column lists vertex indices of a quad face.
+%       u, v: 3×1 vectors that serve as the local projection axes.
 %
 %   Output:
 %       bMin, bMax: two 3d vectors, first one is the minimum corner and the second one is the maximum corner of the face's boundary expressed in global coordinates.
 
-    % Compute local basis for the face.
-    [u, v] = rooftopMoM.mesh.utils.generateRectLocalCoords(vertices, faces);
-
     % Project all vertices onto the local axes.
-    us = u.' * vertices;
-    vs = v.' * vertices;
+    localVertices = rooftopMoM.mesh.utils.generateRectLocalVertices(vertices, u, v);
+
+    us = localVertices(1, :);
+    vs = localVertices(2, :);
 
     % Determine min and max along each axis.
     uMin = min(us);
