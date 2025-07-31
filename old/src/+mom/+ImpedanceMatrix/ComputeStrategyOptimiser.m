@@ -16,6 +16,7 @@ classdef ComputeStrategyOptimiser < handle
     end
 
     methods
+        % for each mesh of the cluster evaluate the masks and interactions
         function [masks, interactions] = getAllMasksAndInteractions(obj)
             meshCount = obj.basisFunctions_.getIDCount();
             facesX = obj.basisFunctions_.getFacesXAsCell();
@@ -30,6 +31,7 @@ classdef ComputeStrategyOptimiser < handle
             end
         end
 
+        % single mesh
         function [mask, interactions] = getMaskAndInteractions(obj, facesX, facesY, gridSize, sameSize)
             if any(gridSize == 1)
                 [mask, interactions] = obj.generateToeplitzMask(size(facesX, 2) + size(facesY, 2));
@@ -46,6 +48,7 @@ classdef ComputeStrategyOptimiser < handle
             end
         end
 
+        % apply the mask and generate the full mask
         function matrix = applyMask(~, matrixUniqueValues, mask, interactions)
             interactionValues = matrixUniqueValues(interactions);
             matrix = zeros(size(mask), 'like', interactionValues);
