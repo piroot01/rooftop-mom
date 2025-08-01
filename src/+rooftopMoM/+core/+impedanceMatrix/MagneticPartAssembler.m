@@ -60,6 +60,10 @@ classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
                 Z(:, :, n) = obj.generateImpl_(computeContext, chunks, slices, wavenumber(n));
             end
         end
+
+        function chunkPlanner = chunkPlanner(obj)
+            chunkPlanner = obj.assemblerChunkPlanner_;
+        end
     end
 
     methods (Access = private)

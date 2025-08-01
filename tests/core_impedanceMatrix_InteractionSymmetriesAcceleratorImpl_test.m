@@ -20,7 +20,7 @@ rooftops = rooftopMoM.basisFunctions.UniformRooftops(mesh, quad);
 
 rooftops.generate();
 
-elementCount = 100000;
+elementCount = 1e6;
 
 planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
 
@@ -30,6 +30,11 @@ context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 
 fullAssembler = rooftopMoM.core.impedanceMatrix.FullAssembler(planner);
 
+Z_non = fullAssembler.generateFull(context);
+
+% Compute using the accelerator.
 accelerator = rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAccelerator(fullAssembler);
 
-Z = accelerator.generateFull(context);
+Z_acc = accelerator.generateFull(context);
+
+Z_non - Z_acc < 100 * eps

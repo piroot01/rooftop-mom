@@ -20,7 +20,7 @@ classdef InteractionSymmetriesAcceleratorImpl < handle
             end
         end
 
-        function [mask, interactionIndices] = generateInteractionsSingle(obj, indicesX, indicesY, gridSize, squareGrid)
+        function [mask, interactionIndices] = generateInteractionsSingle(~, indicesX, indicesY, gridSize, squareGrid)
             basisSize = size(indicesX, 2) + size(indicesY, 2);
 
             if any(gridSize == 1)
@@ -29,15 +29,22 @@ classdef InteractionSymmetriesAcceleratorImpl < handle
                 [mask, interactionIndices] = rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAcceleratorImpl.generateToeplitz_(basisSize);
             else
                 % Because the XY block of the impedance matrix is transpose of YX we generate it once
-                [maskXY, interactionIndicesXY] = rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAcceleratorImpl.generateXY_(indicesX, indicesY, gridSize);
+                [maskXY, interactionIndicesXY] = rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAcceleratorImpl.generateXY_( ...
+                    indicesX, indicesY, gridSize);
 
                 if squareGrid
-                    [maskXX, maskYY, interactionIndicesXX, interactionIndicesYY] = rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAcceleratorImpl.generateSameDirSquareGrid_(indicesX, indicesY, gridSize);
+                    [maskXX, maskYY, interactionIndicesXX, interactionIndicesYY] = ...
+                        rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAcceleratorImpl.generateSameDirSquareGrid_( ...
+                            indicesX, indicesY, gridSize)
                 else
-                    [maskXX, maskYY, interactionIndicesXX, interactionIndicesYY] = rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAcceleratorImpl.generateSameDir_(indicesX, indicesY, gridSize);
+                    [maskXX, maskYY, interactionIndicesXX, interactionIndicesYY] = ...
+                        rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAcceleratorImpl.generateSameDir_( ...
+                            indicesX, indicesY, gridSize);
                 end
 
-                [mask, interactionIndices] = rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAcceleratorImpl.generateFull_(maskXX, maskXY, maskYY, interactionIndicesXX, interactionIndicesXY, interactionIndicesYY, squareGrid);
+                [mask, interactionIndices] = ...
+                    rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAcceleratorImpl.generateFull_( ...
+                        maskXX, maskXY, maskYY, interactionIndicesXX, interactionIndicesXY, interactionIndicesYY, squareGrid);
             end
         end
     end
@@ -56,6 +63,8 @@ classdef InteractionSymmetriesAcceleratorImpl < handle
             end
 
             mask = rooftopMoM.core.impedanceMatrix.utils.mergeMasks(maskXX, maskXY, maskYY);
+
+            mask
 
             interactionIndices = rooftopMoM.core.impedanceMatrix.utils.mergeInteractionIndices( ...
                 interactionIndicesXX, ...

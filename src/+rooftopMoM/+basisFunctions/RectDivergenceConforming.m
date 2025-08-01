@@ -25,6 +25,10 @@ classdef RectDivergenceConforming < rooftopMoM.basisFunctions.BasisFunctionsInte
                     sum(cellfun(@(xs) size(xs, 2), obj.indicesY_));
         end
 
+        function counts = counts(obj)
+            counts = cellfun(@(xs, ys) size(xs, 2) + size(ys, 2), obj.indicesX_, obj.indicesY_);
+        end
+
         function count = countDir(obj, dir)
             if dir == 'x'
                 count = sum(cellfun(@(xs) size(xs, 2), obj.indicesX_));

@@ -12,10 +12,10 @@ function composed = mergeMasks(maskXX, maskXY, maskYY)
 %       composed: The resulting composite 2x2 block mask.
 
     % Determine the required shift from the maximum index in the XX mask.
-    maxXX = max(maskXX(:));
+    shift = max([maskXX(:); maskYY(:)]);
 
     % Shift the XY mask to ensure its indices sequentially follow the XX indices.
-    maskXYShifted = rooftopMoM.core.impedanceMatrix.utils.shiftIndices(maskXY, maxXX);
+    maskXYShifted = rooftopMoM.core.impedanceMatrix.utils.shiftIndices(maskXY, shift);
 
     % Assemble the final block matrix using the original and shifted masks.
     composed = [maskXX, maskXYShifted; ...

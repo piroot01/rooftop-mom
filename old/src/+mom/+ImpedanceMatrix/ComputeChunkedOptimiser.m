@@ -55,12 +55,7 @@ classdef ComputeChunkedOptimiser < handle
                     chunks{k}.columnIndices = chunks{k}.columnIndices + chunkOffset;
                 end
                 chunksDiagonalSubmatrices{n} = chunks;
-%{
-                dummyMatrix = zeros(basisFunctionCounts(n));
-                dummyMatrix(interactionsCell{n}) = 88;
-                disp(masksCell{n});
-                disp(dummyMatrix);
-%}
+
                 translatedInteractions = obj.translateLinearIndices(size(mask), [basisFunctionCounts(n), basisFunctionCounts(n)], interactionsCell{n}, chunkOffset, chunkOffset);
 
                 startIndex = interactionOffsets(n) + 1;
