@@ -29,11 +29,16 @@ classdef InteractionSymmetriesAcceleratorImpl < handle
                 [mask, interactionIndices] = rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAcceleratorImpl.generateToeplitz_(basisSize);
             else
                 % Because the XY block of the impedance matrix is transpose of YX we generate it once
-                [maskXY, interactionIndicesXY] = rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAcceleratorImpl.generateXY_(indicesX, indicesY, gridSize)
-            end
+                [maskXY, interactionIndicesXY] = rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAcceleratorImpl.generateXY_(indicesX, indicesY, gridSize);
 
-            mask = [];
-            interactionIndices = [];
+                if squareGrid
+                    [maskXX, maskYY, interactionIndicesXX, interactionIndicesYY] = rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAcceleratorImpl.generateSameDirSquareGrid_(indicesX, indicesY, gridSize);
+                else
+                    [maskXX, maskYY, interactionIndicesXX, interactionIndicesYY] = rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAcceleratorImpl.generateSameDir_(indicesX, indicesY, gridSize);
+                end
+
+                [mask, interactionIndices] = rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAcceleratorImpl.generateFull_(maskXX, maskXY, maskYY, interactionIndicesXX, interactionIndicesXY, interactionIndicesYY, squareGrid);
+            end
         end
     end
 
@@ -43,23 +48,137 @@ classdef InteractionSymmetriesAcceleratorImpl < handle
             mask = toeplitz(interactionIndices);
         end
 
-        function [mask, indices] = generateXY_(indicesX, indicesY, gridSize)
+        function [mask, interactionIndices] = generateFull_(maskXX, maskXY, maskYY, interactionIndicesXX, interactionIndicesXY, interactionIndicesYY, squareGrid)
+            if ~squareGrid
+                maskYY = rooftopMoM.core.impedanceMatrix.utils.shiftMask(maskYY, max(maskXX(:)));
+            end
+
+            [mask, shifts] = rooftopMoM.core.impedanceMatrix.utils.mergeMasks(maskXX, maskYY, maskYY);
+
+            mask = [];
+            interactionIndices = [];
+        end
+
+        function [maskXX, maskYY, interactionIndicesXX, interactionIndicesYY] = generateSameDir_(indicesX, indicesY, gridSize)
+            [maskXX, interactionIndicesXX] = rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAcceleratorImpl.generateSameDirSingle_(indicesX, gridSize);
+            [maskYY, interactionIndicesYY] = rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAcceleratorImpl.generateSameDirSingle_(indicesY, gridSize);
+        end
+
+        function [mask, interactionIndices] = generateSameDirSingle_(indices, gridSize)
+        % generateSameDirSingle_: Build interaction mask and indices for same-directional basis functions.
+        %
+        %   Inputs:
+        %       indices: 2xN array of grid linear indices for the basis function face indices.
+        %       gridSize: [nX, nY] specifying the size of the full rectangular grid.
+        %
+        %   Outputs:
+        %     mask: N x M uint32 matrix labeling unique same-directional interactions.
+        %     interactionIndices: Kx2 array of patch-pair indices corresponding to nonzero mask entries.
+        
+            % Extract the 'positive faces' indices.
+            indicesPos = indices(1, :);
+
+            % Convert linear indices to subscripts.
+            [xs, ys] = ind2sub(gridSize, indicesPos);
+
+            % Pairwise distances in X and Y.
+            dx = abs(xs - xs.');
+            dy = abs(ys - ys.');
+
+            % Combine and find unique distance‐pairs, preserving order.
+            distances = [dx(:), dy(:)];
+            [~, ~, indices] = unique(distances, 'rows', 'stable');
+
+            % Reshape back into a mask.
+            n = size(indices, 2);
+            mask = reshape(indices, n, n);
+
+            % Cast to uint32.
+            mask = uint32(mask);
+
+            % Interactions are just the 1…n labels.
+            interactionIndices = uint32((1:n).');
+        end
+
+        function [maskXX, maskYY, interactionIndicesXX, interactionIndicesYY] = generateSameDirSquareGrid_(indicesX, indicesY, gridSize)
+        % generateSameDirSquareGrid_: Build interaction mask and indices for same-directional basis functions on a square-face grid.
+        %
+        %   Inputs:
+        %     indicesX: 2xN array of grid linear indices for horizontal faces.
+        %     indicesY: 2xM array of grid linear indices for vertical faces.
+        %     gridSize: [nX, nY] specifying the size of the full rectangular grid.
+        %
+        %   Outputs:
+        %     maskXX: N x M uint32 matrix labeling unique same-directional interactions aligned with X.
+        %     maskYY: N x M uint32 matrix labeling unique same-directional interactions aligned with Y.
+        %     interactionIndicesXX: Kx2 array of patch-pair indices corresponding to nonzero maskXX entries.
+        %     interactionIndicesYY: Kx2 array of patch-pair indices corresponding to nonzero maskYY entries.
+
+            % Extract positive-side face indices.
+            posX = indicesX(1, :);
+            posY = indicesY(1, :);
+
+            countX = size(indicesX, 2);
+            countY = size(indicesY, 2);
+
+            % Convert linear indices to subscripts.
+            [xsX, ysX] = ind2sub(gridSize, posX);
+            [xsY, ysY] = ind2sub(gridSize, posY);
+
+            % Compute the pairwise distances.
+            dxX = abs(xsX - xsX.');
+            dyX = abs(ysX - ysX.');
+
+            dxY = abs(xsY - xsY.');
+            dyY = abs(ysY - ysY.');
+
+            % Stack all distances.
+            dX = [dxX(:), dyX(:)];
+            dY = [dxY(:), dyY(:)];
+            allD = [dX; dY];
+
+            % Unique indices over combined set.
+            [~, ~, allIdx] = unique(allD, 'rows', 'stable');
+
+            % Split back
+            dXCount = numel(dxX);
+            idxX = allIdx(1:dXCount);
+            idxY = allIdx((dXCount + 1):end);
+
+            % Reshape to masks
+            maskXX = reshape(idxX, countX, countX);
+            maskYY = reshape(idxY, countY, countY);
+
+            % Cast to uint32.
+            maskXX = uint32(maskXX);
+            maskYY = uint32(maskYY);
+
+            % Unique interaction labels (first column of each mask).
+            interactionIndicesXX = maskXX(:, 1);
+            interactionIndicesYY_all = maskYY(:, 1);
+
+            % Determine Y interactions not already in X.
+            maskShared = ismember(interactionIndicesYY_all, interactionIndicesXX);
+            interactionIndicesYY = find(~maskShared);
+        end
+
+        function [mask, interactionIndices] = generateXY_(indicesX, indicesY, gridSize)
         % generateCrossDir_: Build interaction mask and indices for cross-directional basis functions.
         %
         %   Inputs:
         %     indicesX: 2xN array of grid linear indices for horizontal faces.
         %     indicesY: 2xM array of grid linear indices for vertical faces.
-        %     gridSize: [nRows, nCols] specifying the size of the full rectangular grid.
+        %     gridSize: [nX, nY] specifying the size of the full rectangular grid.
         %
         %   Outputs:
         %     mask: N x M uint32 matrix labeling unique cross-directional interactions.
-        %     indices: Kx2 array of patch-pair indices corresponding to nonzero mask entries.
+        %     interactionIndices: Kx2 array of patch-pair indices corresponding to nonzero mask entries.
 
             % Convert linear indices to 2D subscripts for every cell in the grid.
             numCells = prod(gridSize);
             [allXs, allYs] = ind2sub(gridSize, 1:numCells);
 
-            % Extract positive-side face indices for horizontal (X) and vertical (Y) faces
+            % Extract positive-side face indices for horizontal (X) and vertical (Y) faces.
             posX = indicesX(1, :);
             posY = indicesY(1, :);
 
@@ -121,7 +240,7 @@ classdef InteractionSymmetriesAcceleratorImpl < handle
             mask = uint32(reshape(labelVec, countX, countY));
 
             % Generate full interaction index list for nonzero mask entries.
-            indices = rooftopMoM.core.impedanceMatrix.utils.generateInteractionIndicesFromMask(mask);
+            interactionIndices = rooftopMoM.core.impedanceMatrix.utils.generateInteractionIndicesFromMask(mask);
         end
     end
 end
