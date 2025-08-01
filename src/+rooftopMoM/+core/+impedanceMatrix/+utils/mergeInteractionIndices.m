@@ -1,0 +1,39 @@
+function interactionIndices = mergeInteractionIndices(interactionIndicesXX, interactionIndicesXY, interactionIndicesYY, fullMaskSize, maskXYSize, maskYYSize, basisSizeX)
+% combineInteractionIndices: Merges and transforms interaction lists into a global list.
+%   This function takes interaction lists for sub-blocks.
+%   Then maps their local indices to global indices based on their position in a larger block matrix.
+%   And finally oncatenates them into a single master list.
+%
+%   Inputs:
+%       interactionIndicesXX: Interaction list for the top-left (XX) block.
+%       interactionIndicesXY: Interaction list for the top-right (XY) block.
+%       interactionIndicesYY: Interaction list for the bottom-right (YY) block.
+%       fullMaskSize: Global composite mask, used for its dimensions.
+%       maskXYSize: Size of the XY sub-block.
+%       maskYYSize: Size of the YY sub-block.
+%       basisSizeX: Count of the basis function in the X direction.
+%
+%   Output:
+%       interactionIndices: A single list containing all transformed interactions.
+
+    % Map the local XY interaction indices to their global position in the top-right block.
+    interactionIndicesXY = rooftopMoM.core.impedanceMatrix.utils.transformIndices( ...
+        interactionIndicesXY,  ...
+        fullMaskSize, ...
+        maskXYSize, ...
+        0, ...
+        basisSizeX ...
+    );
+
+    % Map the local YY interaction indices to their global position in the bottom-right block.
+    interactionIndicesYY = rooftopMoM.core.impedanceMatrix.utils.transformIndices( ...
+        interactionIndicesYY, ...
+        fullMaskSize, ...
+        maskYYSize, ...
+        basisSizeX, ...
+        basisSizeX ...
+    );
+
+    % Vertically concatenate the block interactions into a single list.
+    interactionIndices = [interactionIndicesXX; interactionIndicesXY; interactionIndicesYY];
+end

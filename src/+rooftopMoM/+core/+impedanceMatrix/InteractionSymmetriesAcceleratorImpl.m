@@ -49,14 +49,23 @@ classdef InteractionSymmetriesAcceleratorImpl < handle
         end
 
         function [mask, interactionIndices] = generateFull_(maskXX, maskXY, maskYY, interactionIndicesXX, interactionIndicesXY, interactionIndicesYY, squareGrid)
+
+            % Shift the indices if the maskXX and maskYY does not share any indices.
             if ~squareGrid
-                maskYY = rooftopMoM.core.impedanceMatrix.utils.shiftMask(maskYY, max(maskXX(:)));
+                maskYY = rooftopMoM.core.impedanceMatrix.utils.shiftIndices(maskYY, max(maskXX(:)));
             end
 
-            [mask, shifts] = rooftopMoM.core.impedanceMatrix.utils.mergeMasks(maskXX, maskYY, maskYY);
+            mask = rooftopMoM.core.impedanceMatrix.utils.mergeMasks(maskXX, maskXY, maskYY);
 
-            mask = [];
-            interactionIndices = [];
+            interactionIndices = rooftopMoM.core.impedanceMatrix.utils.mergeInteractionIndices( ...
+                interactionIndicesXX, ...
+                interactionIndicesXY, ...
+                interactionIndicesYY, ...
+                size(mask), ...
+                size(maskXY), ...
+                size(maskYY), ...
+                size(maskXX, 1) ...
+            );
         end
 
         function [maskXX, maskYY, interactionIndicesXX, interactionIndicesYY] = generateSameDir_(indicesX, indicesY, gridSize)
