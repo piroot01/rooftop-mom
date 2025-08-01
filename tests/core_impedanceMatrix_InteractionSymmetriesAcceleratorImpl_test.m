@@ -37,4 +37,4 @@ accelerator = rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAccelerator(f
 
 Z_acc = accelerator.generateFull(context);
 
-Z_non - Z_acc < 100 * eps
+Z_non - Z_acc > 100 * eps

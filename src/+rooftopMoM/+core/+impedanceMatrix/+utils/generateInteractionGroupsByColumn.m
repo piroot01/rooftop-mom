@@ -1,24 +1,25 @@
-function groups = generateInteractionGroupsByColumn(interactions, N)
-% generateInteractionGroupsByColumn: Groups interaction indices by column of the impedance matrix.
+function groups = generateInteractionGroupsByColumn(interactionIndices, count)
+% generateInteractionGroupsByColumn: Groups linear indices into contiguous runs per column of an N×N impedance matrix.
 %
 %   Inputs:
-%       interactions: 1×K array of linear indices specifying elements to compute.
-%       N: Size of the square matrix (N×N).
+%       interactions: 1×K vector of linear indices specifying elements to compute.
+%       count: Scalar size of the square matrix (N×N).
 %
-%   Output:
-%       groups: 1×M cell array of index vectors, each corresponding to one column.
+%   Outputs:
+%       groups: 1×M cell array; each cell contains a vector of indices that are contiguous (difference of 1) and within the same column.
 
-    sortedInteractions = sort(interactions(:).');
+    % Sort indices and compute corresponding columns.
+    idx = sort(interactionIndices(:));
+    cols = floor((idx - 1) / count) + 1;
 
-    % Determine column number for each index.
-    columnNumbers = floor(double(sortedInteractions - 1) / N) + 1;
+    % Identify boundaries: new column or non-consecutive index.
+    boundaries = [true; diff(cols) ~= 0 | diff(idx) ~= 1];
 
-    % Find boundaries where the column changes.
-    boundaries = [diff(columnNumbers) ~= 0, true];
-    boundaryIndices = find(boundaries);
+    % Determine group start/end positions.
+    starts = find(boundaries);
+    ends   = [starts(2:end)-1; numel(idx)];
+    sizes  = ends - starts + 1;
 
-    groupSizes = diff([0, boundaryIndices]);
-
-    % Split sorted indices into groups by column.
-    groups = mat2cell(sortedInteractions(:), groupSizes);
+    % Split into cell array of contiguous runs.
+    groups = mat2cell(idx, sizes);
 end

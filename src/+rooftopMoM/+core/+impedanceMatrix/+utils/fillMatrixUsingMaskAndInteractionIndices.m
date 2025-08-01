@@ -1,24 +1,21 @@
 function values = fillMatrixUsingMaskAndInteractionIndices(values, mask, interactionIndices)
-% fillMatrixUsingMaskAndInteractionIndices: In-place distribution of interaction values across the matrix using a mask.
+% fillMatrixUsingMaskAndInteractionIndices: Vectorized in-place distribution of interaction values across the matrix.
 %
 %   Inputs:
-%       values: NxN matrix with initial values at interactionIndices.
-%       mask: NxN uint32 mask: non-zero entries index into interaction values.
-%       interactionIndices: Linear indices specifying unique values in 'values'.
+%       values: N×N matrix, with “source” values sitting at interactionIndices.
+%       mask: N×N uint32 mask; nonzero entries index into interaction values.
+%       interactionIndices: :inear indices into values that pick out one entry per mask-ID.
 %
 %   Output:
-%       values: Fully populated matrix (modified in-place).
+%       values: N×N matrix with every position filled according to mask.
 
-    % Extract unique interaction values.
-    uv = values(interactionIndices);
+    % Pull out the mask IDs and the corresponding “source” values.
+    maskIDs = mask(interactionIndices);
+    sourceValues = values(interactionIndices);
 
-    % Identify masked positions.
-    nz = (mask ~= 0);
+    % Build a lookup so that lookup(k) == the value for mask==k.
+    lookup = accumarray(maskIDs, sourceValues);
 
-    % Distribute values for non-zero mask entries.
-    values(nz)  = uv(mask(nz));
-
-    % Distribute values for zero mask entries.
-    values(~nz) = uv(~nz);
+    % now index into that lookup with the whole mask matrix.
+    values = lookup(mask);
 end
-

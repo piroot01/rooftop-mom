@@ -13,9 +13,6 @@ classdef InteractionSymmetriesAccelerator < rooftopMoM.core.impedanceMatrix.Inte
         function Z = generateFull(obj, context)
             [maskCell, interactionIndicesCell] = obj.generateInteractions(context);
 
-            maskCell{1}
-            interactionIndicesCell{1}
-
             [mask, interactionIndices, chunks] = obj.generateGlobal_(context, maskCell, interactionIndicesCell);
 
             values = obj.strategy_.generateSpecified(context, chunks);
