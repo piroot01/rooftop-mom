@@ -36,5 +36,26 @@ function result = runTest(countX, countY, sizeX, sizeY)
     result = max(Z_non - Z_acc, [], 'all');
 end
 
-% 1. test: Square qrid square radiator.
-test1Verdict = runTest(2, 3, 1, 1)
+% 1. test: Square radiator square grid.
+test1Verdict = runTest(3, 3, 1, 1)
+
+% 2. test: Rect Y longer square grid.
+test2Verdict = runTest(3, 4, 1, 1)
+
+% 3. test: Rect X longer square grid.
+test3Verdict = runTest(4, 3, 1, 1)
+
+% 4. test: Square radiator rect grid.
+test4Verdict = runTest(3, 3, 1.2, 1)
+
+% 5. test: Rect Y longer rect grid.
+test5Verdict = runTest(3, 4, 1.2, 1)
+
+% 6. test: Rect X longer rect grid.
+test6Verdict = runTest(4, 3, 1.2, 1)
+
+% 7. test: Dipole X
+test7Verdict = runTest(10, 1, 1, 1)
+
+% 8. test: Dipole Y
+test8Verdict = runTest(1, 10, 1, 1)
