@@ -102,11 +102,11 @@ classdef InteractionSymmetriesAcceleratorImpl < handle
 
             % Combine and find unique distance‐pairs, preserving order.
             distances = [dx(:), dy(:)];
-            [~, ~, indices] = unique(distances, 'rows', 'stable');
+            [~, ~, idx] = unique(distances, 'rows', 'stable');
 
             % Reshape back into a mask.
             n = size(indices, 2);
-            mask = reshape(indices, n, n);
+            mask = reshape(idx, n, n);
 
             % Cast to uint32.
             mask = uint32(mask);
@@ -129,51 +129,69 @@ classdef InteractionSymmetriesAcceleratorImpl < handle
         %     interactionIndicesXX: Kx2 array of patch-pair indices corresponding to nonzero maskXX entries.
         %     interactionIndicesYY: Kx2 array of patch-pair indices corresponding to nonzero maskYY entries.
 
-            % Extract positive-side face indices.
-            posX = indicesX(1, :);
-            posY = indicesY(1, :);
+            % We use the first row of indices as the reference position for each face.
+            positiveFaceIndicesX = indicesX(1, :);
+            positiveFaceIndicesY = indicesY(1, :);
 
             countX = size(indicesX, 2);
             countY = size(indicesY, 2);
 
-            % Convert linear indices to subscripts.
-            [xsX, ysX] = ind2sub(gridSize, posX);
-            [xsY, ysY] = ind2sub(gridSize, posY);
+            [rowsX, colsX] = ind2sub(gridSize, positiveFaceIndicesX);
+            [rowsY, colsY] = ind2sub(gridSize, positiveFaceIndicesY);
 
-            % Compute the pairwise distances.
-            dxX = abs(xsX - xsX.');
-            dyX = abs(ysX - ysX.');
+            % Compute pairwise separation distances for each orientation.
+            % This creates a matrix of separations for all pairs of faces.
+            deltaColsX = abs(colsX - colsX.');
+            deltaRowsX = abs(rowsX - rowsX.');
 
-            dxY = abs(xsY - xsY.');
-            dyY = abs(ysY - ysY.');
+            deltaColsY = abs(colsY - colsY.');
+            deltaRowsY = abs(rowsY - rowsY.');
 
-            % Stack all distances.
-            dX = [dxX(:), dyX(:)];
-            dY = [dxY(:), dyY(:)];
-            allD = [dX; dY];
+            % Identify unique distance vectors for each orientation.
+            % Each row in distanceVectorsX/Y is a unique [deltaCol, deltaRow] pair.
+            % 'toUniqueMapX' maps each of the N*N pairs to an integer index.
+            distanceVectorsX = [deltaColsX(:), deltaRowsX(:)];
+            distanceVectorsY = [deltaColsY(:), deltaRowsY(:)];
 
-            % Unique indices over combined set.
-            [~, ~, allIdx] = unique(allD, 'rows', 'stable');
+            [uniqueDistancesX, ~, toUniqueMapX] = unique(distanceVectorsX, 'rows', 'stable');
+            [uniqueDistancesY, ~, toUniqueMapY] = unique(distanceVectorsY, 'rows', 'stable');
 
-            % Split back
-            dXCount = numel(dxX);
-            idxX = allIdx(1:dXCount);
-            idxY = allIdx((dXCount + 1):end);
+            % Unify interaction types from both orientations.
+            % By grid symmetry, a [dx, dy] separation for an X-pair is equivalent
+            % to a [dy, dx] separation for a Y-pair. We swap columns for Y to
+            % normalize them and then find the globally unique set of interactions.
+            uniqueDistancesY_normalized = uniqueDistancesY(:, [2, 1]);
 
-            % Reshape to masks
-            maskXX = reshape(idxX, countX, countX);
-            maskYY = reshape(idxY, countY, countY);
+            % Combine the unique distances from both sets.
+            numUniqueDistancesX = size(uniqueDistancesX, 1);
+            combinedUniqueDistances = [uniqueDistancesX; uniqueDistancesY_normalized];
 
-            % Cast to uint32.
+            % Find the final, globally unique set of interactions and get the map 'toUnifiedMap'.
+            [~, ~, toUnifiedMap] = unique(combinedUniqueDistances, 'rows', 'stable');
+
+            % Create new index maps based on the unified set.
+            % Split the unified map back to correspond to the original X and Y sets.
+            unifiedMapForX = toUnifiedMap(1:numUniqueDistancesX);
+            unifiedMapForY = toUnifiedMap(numUniqueDistancesX+1:end);
+
+            % Remap the original per-pair indices to the new, unified interaction indices.
+            finalInteractionIDsX = unifiedMapForX(toUniqueMapX);
+            finalInteractionIDsY = unifiedMapForY(toUniqueMapY);
+
+            % Produce the masks.
+            maskXX = reshape(finalInteractionIDsX, countX, countX);
+            maskYY = reshape(finalInteractionIDsY, countY, countY);
             maskXX = uint32(maskXX);
             maskYY = uint32(maskYY);
 
-            % Unique interaction labels (first column of each mask).
+            % Extract lists of unique, non-redundant interaction IDs.
+            % The first column of the mask contains all unique interactions for a
+            % basis function relative to all others.
             interactionIndicesXX = maskXX(:, 1);
-            interactionIndicesYY_all = maskYY(:, 1);
+            allInteractionIndicesYY = maskYY(:, 1);
 
-            % Determine Y interactions not already in X.
-            maskShared = ismember(interactionIndicesYY_all, interactionIndicesXX);
+            % Find Y-based interactions that are not already covered by the X-set.
+            maskShared = ismember(allInteractionIndicesYY, interactionIndicesXX);
             interactionIndicesYY = find(~maskShared);
         end
 
