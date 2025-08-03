@@ -2,7 +2,7 @@ function count = generateBlockCountPerChunk(elementCount, order)
 % generateBlockCountPerChunk: Determines the number of blocks (elementary units) per chunk.
 %
 %   Inputs:
-%       elementCount: Total number of finite elements (positive integer).
+%       elementCount: Total number of finite elements (positive integer) in one chunk.
 %       order:        Quadrature order (positive integer); block size = order^4.
 %
 %   Output:
