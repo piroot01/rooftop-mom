@@ -27,5 +27,9 @@ classdef MeshCluster < rooftopMoM.mesh.MeshInterface
         function count = count(obj)
             count = numel(obj.meshes_);
         end
+
+        function memory = memory(obj)
+            memory = sum(cellfun(@(mesh) mesh.memory(), obj.meshes_));
+        end
     end
 end

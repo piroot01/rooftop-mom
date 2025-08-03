@@ -23,5 +23,7 @@ cluster = rooftopMoM.mesh.MeshCluster();
 cluster.insert(mesh1);
 cluster.insert(mesh2);
 
+cluster.memory()
+
 celldisp(cluster.vertices())
 celldisp(cluster.faces())
