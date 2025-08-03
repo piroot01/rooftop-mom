@@ -24,18 +24,7 @@ cluster.insert(mesh1);
 cluster.insert(mesh2);
 
 % single rect
-basis = rooftopMoM.basisFunctions.RectDivergenceConforming(mesh1);
+basis = rooftopMoM.basisFunctions.RectDivergenceConforming(cluster);
 basis.generate();
-celldisp(basis.indicesCell());
-celldisp(basis.indicesCell(false));
 
-% cluster
-basisCluster = rooftopMoM.basisFunctions.RectDivergenceConforming(cluster);
-basisCluster.generate();
-basisCluster.count();
-basisCluster.countDir('x');
-celldisp(basisCluster.indicesCell())
-celldisp(basisCluster.indicesCell(false));
-celldisp(basisCluster.indicesCellDir('x', false));
-celldisp(basisCluster.indicesCellDir('x', true));
-basisCluster.indices()
+basis.memory().bytes()

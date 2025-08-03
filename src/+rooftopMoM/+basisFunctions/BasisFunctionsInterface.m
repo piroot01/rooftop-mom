@@ -7,5 +7,7 @@ classdef BasisFunctionsInterface < handle
         indices = indices(obj);
 
         mesh = mesh(obj);
+
+        memory = memory(obj);
     end
 end

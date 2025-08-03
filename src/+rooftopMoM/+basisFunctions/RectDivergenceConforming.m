@@ -65,5 +65,12 @@ classdef RectDivergenceConforming < rooftopMoM.basisFunctions.BasisFunctionsInte
         function mesh = mesh(obj)
             mesh = obj.mesh_;
         end
+
+        function memory = memory(obj)
+            indicesXCount = sum(cellfun(@numel, obj.indicesX_));
+            indicesYCount = sum(cellfun(@numel, obj.indicesY_));
+
+            memory = (indicesXCount + indicesYCount) * rooftopMoM.DataTypeMemory.memory(rooftopMoM.DataTypeMemory.UInt32);
+        end
     end
 end
