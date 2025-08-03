@@ -43,5 +43,10 @@ classdef GaussLegendre2RectQuadrature < handle
         function order = order(obj)
             order = obj.order_;
         end
+
+        function memory = memory(obj)
+            memory = (numel(obj.points2Du_) + numel(obj.points2Dv_) + numel(obj.weights2D_) + numel(obj.weights4D_)) ...
+                * rooftopMoM.DataTypeMemory.memory(rooftopMoM.DataTypeMemory.Double);
+        end
     end
 end

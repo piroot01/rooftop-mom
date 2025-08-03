@@ -17,3 +17,5 @@ order = 3;
 
 quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
 quad.generate()
+
+quad.memory().bytes()
