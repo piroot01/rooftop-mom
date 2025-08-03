@@ -41,4 +41,30 @@ classdef Memory < handle
             bytes = obj.value_ * factor;
         end
     end
+
+    methods
+        function memory = plus(lhs, rhs)
+            assert(isa(lhs,'Memory') && isa(rhs,'Memory'), ...
+                'Both operands must be Memory objects.');
+
+            value = rhs.bytes + lhs.bytes;
+            memory = Memory(value, 'B');
+        end
+
+        function memory = minus(lhs, rhs)
+            assert(isa(lhs,'Memory') && isa(rhs,'Memory'), ...
+                'Both operands must be Memory objects.');
+
+            value = lhs.bytes - rhs.bytes;
+            memory = Memory(value, 'B');
+        end
+
+        function memory = mtimes(lhs, rhs)
+            assert(isa(lhs,'Memory') && isa(rhs,'Memory'), ...
+                'Both operands must be Memory objects.');
+
+            value = lhs.bytes * rhs.bytes;
+            memory = Memory(value, 'B');
+        end
+    end
 end
