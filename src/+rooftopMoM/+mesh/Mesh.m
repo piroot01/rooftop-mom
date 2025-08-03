@@ -31,10 +31,10 @@ classdef Mesh < rooftopMoM.mesh.MeshInterface
         end
 
         function memory = memory(obj)
-            vertexMemory = numel(obj.vertices_);
-            facesMemory = numel(obj.faces_);
+            vertexMemory = numel(obj.vertices_) * rooftopMoM.DataTypeMemory.memory(rooftopMoM.DataTypeMemory.Double);
+            facesMemory = numel(obj.faces_) * rooftopMoM.DataTypeMemory.memory(rooftopMoM.DataTypeMemory.UInt32);
 
-            memoryBytes = vertexMemory *  + facesMemory;
+            memory = vertexMemory + facesMemory;
         end
     end
 end

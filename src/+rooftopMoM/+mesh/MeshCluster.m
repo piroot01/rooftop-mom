@@ -29,7 +29,8 @@ classdef MeshCluster < rooftopMoM.mesh.MeshInterface
         end
 
         function memory = memory(obj)
-            memory = sum(cellfun(@(mesh) mesh.memory(), obj.meshes_));
+            bytes = sum(cellfun(@(mesh) mesh.memory().bytes(), obj.meshes_));
+            memory = rooftopMoM.Memory(bytes, 'B');
         end
     end
 end
