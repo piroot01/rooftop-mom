@@ -23,17 +23,21 @@ cluster = rooftopMoM.mesh.MeshCluster();
 cluster.insert(mesh1);
 cluster.insert(mesh2);
 
-order = 2;
+order = 5;
 
 quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
 rooftops = rooftopMoM.basisFunctions.UniformRooftops(cluster, quad);
 
 rooftops.generate();
-[points, values] = rooftops.generateRooftops();
+[points, values] = rooftops.generateRooftops()
 
 points{1}
 
-rooftops.indices()
+rooftops.memory().bytes()
+
+mem = rooftopMoM.basisFunctions.utils.memoryForRooftopPoints(rooftops, quad);
+
+mem.bytes()
 
 % genome - sloppy but should work
 %{
