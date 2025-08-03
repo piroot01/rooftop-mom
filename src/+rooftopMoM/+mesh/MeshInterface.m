@@ -7,5 +7,7 @@ classdef MeshInterface < handle
         faces = faces(obj);
 
         count = count(obj);
+
+        memory = memory(obj);
     end
 end

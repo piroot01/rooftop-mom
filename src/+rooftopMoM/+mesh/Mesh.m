@@ -29,5 +29,12 @@ classdef Mesh < rooftopMoM.mesh.MeshInterface
         function count = count(~)
             count = uint32(1);
         end
+
+        function memory = memory(obj)
+            vertexMemory = numel(obj.vertices_);
+            facesMemory = numel(obj.faces_);
+
+            memory = vertexMemory + facesMemory;
+        end
     end
 end
