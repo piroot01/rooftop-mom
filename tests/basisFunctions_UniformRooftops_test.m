@@ -35,7 +35,7 @@ points{1}
 
 rooftops.memory().bytes()
 
-mem = rooftopMoM.basisFunctions.utils.memoryForRooftopPoints(rooftops, quad);
+mem = rooftopMoM.basisFunctions.utils.memoryForRooftopPoints(rooftops);
 
 mem.bytes()
 

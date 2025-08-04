@@ -1,18 +1,26 @@
-function memory = memoryForRooftopPoints(basisFunctions, quadrature)
-% memoryForRooftopPoints: Returns the memory occupied by the rooftopPoints structure
+function memory = memoryForRooftopPoints(rooftops)
+% memoryForRooftopPoints: Returns the memory footprint of rooftop point data.
 %
-%   Input:
-%       basisFunctions: Instance of the rooftopMoM.basisFunctions.BasisFunctionsInterface
-%       quadrature: Instance of the rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature
+%   INPUT:
+%       rooftops: Instance of rooftopMoM.basisFunctions.UniformRooftops.
 %
-%   Output:
-%       memory: Calculates the memory required for the rooftop points storage.
+%   OUTPUT:
+%       memory: Total memory in bytes needed for storing both positive and negative rooftopPoints and quadraturePoints arrays.
+%
+%   NOTE: The memory does not include the cell memory overhead.
 
-    % One rooftop double count, each point is 3d.
-    singleRooftopCount = quadrature.order()^2 * 3;
+    % Compute number of 3D points per rooftop: order^2 nodes times 3 coordinates.
+    singleRooftopCount = rooftops.quadrature().order()^2 * 3;
 
-    count = basisFunctions.count();
+    % Total number of rooftop elements.
+    count = rooftops.count();
 
-    % 2 for positive and negative rooftopPoints and 2 for positive and negative quadraturePoints
-    memory = (4 * count * singleRooftopCount) * rooftopMoM.DataTypeMemory.memory(rooftopMoM.DataTypeMemory.Double);
+    % There are 4 arrays: rooftopPointsPositive, rooftopPointsNegative, quadraturePointsPositive, quadraturePointsNegative.
+    numArrays = 4;
+
+    % Memory per double in bytes.
+    bytesPerDouble = rooftopMoM.DataTypeMemory.memory(rooftopMoM.DataTypeMemory.Double);
+
+    % Total memory footprint.
+    memory = numArrays * count * singleRooftopCount * bytesPerDouble;
 end
