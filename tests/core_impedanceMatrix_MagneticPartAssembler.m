@@ -1,3 +1,4 @@
+
 clc; clearvars;
 
 currentDir = fileparts(mfilename('fullpath'));
@@ -31,6 +32,3 @@ context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 magAssembler = rooftopMoM.core.impedanceMatrix.MagneticPartAssembler(planner);
 
 Z = magAssembler.generateFull(context);
-
-
-disp(Z)

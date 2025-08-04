@@ -19,4 +19,7 @@ function [sizes, indices] = generateRooftopSizesUniquePerms(values, precision)
 
     % Find unique permutations.
     [sizes, ~, indices] = unique(round(allSizes.', precision), 'rows', 'stable');
+
+    % Cast to uint32.
+    indices = uint32(indices);
 end
