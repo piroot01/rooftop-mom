@@ -22,6 +22,11 @@ classdef MemoryManager < handle
         end
 
         function memory = memoryForAssemblerGenerateMethod(context)
+            % Basically compute the remaining memory for the matrix computation.
+            % Then reduce the memory by the numel(k) * size(Z).
+            % Subsequently reduce the memory by extra large arrays (potentially the masks, extracted arrays, etc.)
+            % From the remaining memory compute the largest distance matrix that is possible to fit.
+            % Keep in mind that the distace matrix is calculated by 4 copies at once.
         end
     end
 end
