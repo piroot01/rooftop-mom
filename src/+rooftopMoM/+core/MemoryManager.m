@@ -1,24 +1,27 @@
 classdef MemoryManager < handle
     properties (Access = private)
-        maxMemoryBytes_;
+        maxMemory_ rooftopMoM.Memory;
 
-        classHandler_ cell;
+        classHandlers_ cell;
     end
 
     methods
-        function obj = MemoryManager(maxMemory, unit)
-            obj.maxMemoryBytes_ = rooftopMoM.core.utils.convertToBytes(maxMemory, unit);
+        function obj = MemoryManager(memory)
+            obj.maxMemory_ = memory;
         end
     end
 
     methods
         function register(obj, classHandle)
             % Check if the provided class has memory method implemented.
-            if ismethod(classHandle, 'memory')
+            if ~ismethod(classHandle, 'memory')
                 error('Provided class does not have `memory` method implemented.\n');
             end
 
-            obj.classHandler_{end + 1} = classHandle;
+            obj.classHandlers_{end + 1} = classHandle;
+        end
+
+        function memory = memoryForAssemblerGenerateMethod(context)
         end
     end
 end

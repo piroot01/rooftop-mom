@@ -6,4 +6,12 @@ addpath(srcDir);
 
 memoryMB = 10;
 
-manager = rooftopMoM.core.MemoryManager(memoryMB, 'MB');
+maxMem = rooftopMoM.Memory(memoryMB, 'MB');
+
+order = 4;
+
+quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
+
+manager = rooftopMoM.core.MemoryManager(maxMem);
+
+manager.register(quad);
