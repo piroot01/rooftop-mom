@@ -40,5 +40,10 @@ classdef UniformRectPrimitive < handle
             rectSizeX = obj.countX_ * obj.sizeX_;
             rectSizeY = obj.countY_ * obj.sizeY_;
         end
+
+        function [cX, cY] = gridSize(obj)
+            cX = obj.countX_;
+            cY = obj.countY_;
+        end
     end
 end

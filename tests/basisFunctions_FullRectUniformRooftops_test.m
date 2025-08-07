@@ -4,8 +4,8 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 1;
-countY = 2;
+countX = 4;
+countY = 3;
 sizeX = 1.2;
 sizeY = 0.8;
 
@@ -25,4 +25,7 @@ rooftopsFull = rooftopMoM.basisFunctions.FullRectUniformRooftops(rectPrimitive, 
 
 rooftopsFull.generate();
 
-rooftopsFull.generateRooftops();
+[points, values] = rooftopsFull.generateRooftopsDirection('y')
+
+points{1}.quadraturePointsPositive
+points{2}.quadraturePointsPositive

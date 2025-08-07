@@ -50,14 +50,14 @@ classdef UniformRooftops < rooftopMoM.basisFunctions.RectDivergenceConforming
 
     methods (Access = private)
         function [rooftopPoints, rooftopValues] = generateRooftop_(obj, vertices, faces, facePair)
-            [pointsU, pointsV] = obj.quadrature().points()
+            [pointsU, pointsV] = obj.quadrature().points();
 
             [e1, e2] = rooftopMoM.mesh.utils.generateRectFacePrincipalEdges(vertices, faces, facePair(1));
-            shifts = rooftopMoM.mesh.utils.generateRectFaceOrigin(vertices, faces, facePair)
+            shifts = rooftopMoM.mesh.utils.generateRectFaceOrigin(vertices, faces, facePair);
             support = rooftopMoM.basisFunctions.utils.generateRooftopSupport(vertices, faces, facePair);
 
-            [qpPos, qpNeg] = rooftopMoM.basisFunctions.utils.generateQuadraturePointsUniformRooftop(e1, e2, shifts, pointsU, pointsV)
-            [rpPos, rpNeg] = rooftopMoM.basisFunctions.utils.generateRooftopPointsUniformRooftop(support, qpPos, qpNeg)
+            [qpPos, qpNeg] = rooftopMoM.basisFunctions.utils.generateQuadraturePointsUniformRooftop(e1, e2, shifts, pointsU, pointsV);
+            [rpPos, rpNeg] = rooftopMoM.basisFunctions.utils.generateRooftopPointsUniformRooftop(support, qpPos, qpNeg);
             [len, ht] = rooftopMoM.basisFunctions.utils.generateRooftopParametersUniformRooftop(support);
 
             % We separate the data about the rooftops into two struct due to the big memory requirements of the rooftopPoints.
