@@ -53,7 +53,7 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
 
             jacobians = rooftopMoM.core.greensMatrix.utils.generate2DJacobians(rooftops.primitive(), basisSize);
 
-            singularityContext = rooftopMoM.core.greensMatrix.MagneticPartAssembler.generateSingularityContext(values, basisSize);
+            singularityContext = rooftopMoM.core.greensMatrix.MagneticPartAssembler.generateSingularityContext(indices, values, basisSize);
 
             weights = quadrature.weights4D();
             G = [];
@@ -61,11 +61,9 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
     end
 
     methods (Static)
-        function singularityContext = generateSingularityContext(values, count)
-            indices = 1:count
-
+        function singularityContext = generateSingularityContext(indices, values, count)
             % Generate mask identifying singular interactions between rooftops.
-            indexMask = rooftopMoM.core.impedanceMatrix.utils.generateSingularityMask(indices);
+            indexMask = rooftopMoM.core.greensMatrix.utils.generateSingularityMask(indices);
 
             % Compute unique rooftop size permutations and replicate over basis.
             [sizes, indicesPerm] = rooftopMoM.core.impedanceMatrix.utils.generateRooftopSizesUniquePerms(values);
