@@ -53,55 +53,47 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
 
             jacobians = rooftopMoM.core.greensMatrix.utils.generate2DJacobians(rooftops.primitive(), basisSize);
 
-            singularityContext = rooftopMoM.core.greensMatrix.MagneticPartAssembler.generateSingularityContext(indices, values, basisSize);
+            singularityContext = rooftopMoM.core.greensMatrix.MagneticPartAssembler.generateSingularityContext(rooftops.indicesDirection(direction), values);
 
             weights = quadrature.weights4D();
-            G = [];
+
+            computeContext = struct( ...
+                'basisSize', basisSize, ...
+                'blockSize', blockSize, ...
+                'quadraturePoints', quadraturePoints, ...
+                'rooftopPoints', rooftopPoints, ...
+                'jacobians', jacobians, ...
+                'singularityContext', singularityContext, ...
+                'weights', weights ...
+            );
+
+            % Pre-allocate full greens matrix.
+            G = complex(zeros(basisSize, 1));
+
+            % TODO: Call the generateImplCore_
+        end
+
+        function G = generateImplCore_(obj, context, chunks, slices, wavenumber)
         end
     end
 
     methods (Static)
-        function singularityContext = generateSingularityContext(indices, values, count)
+        function singularityContext = generateSingularityContext(indices, values)
             % Generate mask identifying singular interactions between rooftops.
             indexMask = rooftopMoM.core.greensMatrix.utils.generateSingularityMask(indices);
 
-            % Compute unique rooftop size permutations and replicate over basis.
-            [sizes, indicesPerm] = rooftopMoM.core.impedanceMatrix.utils.generateRooftopSizesUniquePerms(values);
-            sizeMask = repmat(indicesPerm, 1, count);
+            length = values.length;
+            height = values.height;
 
             % Evaluate singular integral constants for each size case.
-            type1Values = rooftopMoM.core.impedanceMatrix.singularIntegrals.type1(sizes(:, 1), sizes(:, 2));
-            type2Values = rooftopMoM.core.impedanceMatrix.singularIntegrals.type2(sizes(:, 1), sizes(:, 2));
+            type1Values = rooftopMoM.core.impedanceMatrix.singularIntegrals.type1(length, height);
+            type2Values = rooftopMoM.core.impedanceMatrix.singularIntegrals.type2(length, height);
 
             singularityContext = struct( ...
                 'indexMask', indexMask, ...
-                'sizeMask', sizeMask, ...
                 'type1Values', type1Values, ...
                 'type2Values', type2Values ...
             );
-        end
-
-        function singularities = generateSingularities(singularityContext, chunkContext, singularityMask)
-            % Define polarity groupings for same and opposite polarities.
-            samePolarities = [1, 4];
-            differentPolarities = [2, 3];
-            pCount = numel(samePolarities) + numel(differentPolarities);
-
-            % Distribute singular integral values according to rooftop sizes.
-            type1Values = singularityContext.type1Values(chunkContext.sizeMask);
-            type2Values = singularityContext.type2Values(chunkContext.sizeMask);
-
-            % Identify valid self-interactions from ID mask.
-            validIndices = (chunkContext.idMask > 0);
-            combinedMask = bsxfun(@and, singularityMask, validIndices);
-
-            % Allocate polarity-resolved singular contributions.
-            singularitiesPolarity = zeros([chunkContext.chunkSize, pCount]);
-            singularitiesPolarity(:, :, samePolarities)      = combinedMask(:, :, samePolarities) .* repmat(type1Values, [1, 1, 2]);
-            singularitiesPolarity(:, :, differentPolarities) = combinedMask(:, :, differentPolarities) .* repmat(type2Values, [1, 1, 2]);
-
-            % Sum contributions across all polarities.
-            singularities = sum(singularitiesPolarity, 3);
         end
     end
 end
