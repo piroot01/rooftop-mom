@@ -10,10 +10,12 @@ function groups = generateInteractionGroupsByColumn(interactionIndices, count)
 
     % Sort indices and compute corresponding columns.
     idx = sort(interactionIndices(:));
-    cols = floor((idx - 1) / count) + 1;
+
+    rows = mod(idx - 1, count) + 1;
+    cols = floor(double(idx - 1) / double(count)) + 1;
 
     % Identify boundaries: new column or non-consecutive index.
-    boundaries = [true; diff(cols) ~= 0 | diff(idx) ~= 1];
+    boundaries = [true; (diff(cols) ~= 0) | (diff(rows) ~= 1)];
 
     % Determine group start/end positions.
     starts = find(boundaries);

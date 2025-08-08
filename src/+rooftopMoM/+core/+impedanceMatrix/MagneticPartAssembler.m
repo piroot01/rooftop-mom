@@ -1,6 +1,6 @@
 classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
     properties (Access = private)
-        assemblerChunkPlanner_ rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner;
+        assemblerChunkPlanner_;
     end
 
     methods

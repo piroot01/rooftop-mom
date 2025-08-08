@@ -63,6 +63,19 @@ classdef FullRectUniformRooftops < handle
             rooftopValues = singleValues;
         end
 
+        function count = countDir(obj, direction)
+            [cX, cY] = obj.primitive_.gridSize();
+
+            switch direction
+                case 'x'
+                    count = (cX - 1) * cY;
+                case 'y'
+                    count = (cY - 1) * cX;
+                otherwise
+                    error("Unknown direction '%s'. Use 'x' or 'y'.", direction);
+            end
+        end
+
         function quadrature = quadrature(obj)
             quadrature = obj.quadrature_;
         end
