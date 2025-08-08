@@ -14,7 +14,7 @@ rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, size
 rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
 mesh = rect.generateMesh();
 
-order = 5;
+order = 2;
 
 quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
 rooftops = rooftopMoM.basisFunctions.UniformRooftops(mesh, quad);

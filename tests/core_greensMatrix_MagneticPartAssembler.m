@@ -21,7 +21,7 @@ rooftops.generate();
 
 elementCount = 100000;
 
-planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
+planner = rooftopMoM.core.greensMatrix.AssemblerChunkPlanner(elementCount);
 
 k = 1;
 
@@ -29,4 +29,4 @@ context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 
 magAssembler = rooftopMoM.core.greensMatrix.MagneticPartAssembler(planner);
 
-[Gxx, Gyy] = magAssembler.generateFull(context);
+Gxx = magAssembler.generateFullDirection(context, 'x');

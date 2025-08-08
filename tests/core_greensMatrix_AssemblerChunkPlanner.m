@@ -19,7 +19,7 @@ rooftops = rooftopMoM.basisFunctions.FullRectUniformRooftops(rectPrimitive, quad
 
 rooftops.generate();
 
-elementCount = 2000;
+elementCount = 10000;
 
 planner = rooftopMoM.core.greensMatrix.AssemblerChunkPlanner(elementCount);
 

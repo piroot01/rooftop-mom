@@ -31,3 +31,6 @@ points{1}.quadraturePointsPositive
 points{2}.quadraturePointsPositive
 
 [quadraturePoints, rooftopPoints] = rooftopMoM.core.impedanceMatrix.utils.convertRooftopPointsToArrays(points);
+
+indicesX = rooftopsFull.indicesDirection('x')
+indicesY = rooftopsFull.indicesDirection('y')
