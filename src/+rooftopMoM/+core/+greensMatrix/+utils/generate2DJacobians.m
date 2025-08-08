@@ -12,5 +12,5 @@ function jacobians = generate2DJacobians(primitive, count)
     area = primitive.sizeX() * primitive.sizeY();
 
     % Then just look up each mask‐entry in that vector.
-    jacobians = repmat(area, 1, count);
+    jacobians = repmat(area, count, 1);
 end

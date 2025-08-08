@@ -29,4 +29,19 @@ context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 
 magAssembler = rooftopMoM.core.greensMatrix.MagneticPartAssembler(planner);
 
-Gxx = magAssembler.generateFullDirection(context, 'x');
+Gxx = magAssembler.generateFullDirection(context, 'x')
+
+% Test comparing to the impedance matrix
+rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
+mesh = rect.generateMesh();
+
+rooftops = rooftopMoM.basisFunctions.UniformRooftops(mesh, quad);
+rooftops.generate();
+
+context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
+
+planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
+
+magAssembler = rooftopMoM.core.impedanceMatrix.MagneticPartAssembler(planner);
+
+Z = magAssembler.generateFull(context)
