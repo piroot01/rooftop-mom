@@ -1,5 +1,4 @@
-
-clc; clearvars;
+cc; clearvars;
 
 currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
