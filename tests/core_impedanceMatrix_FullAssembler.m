@@ -30,16 +30,6 @@ context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 
 fullAssembler = rooftopMoM.core.impedanceMatrix.FullAssembler(planner);
 
-Z = fullAssembler.generateFull(context);
+Z = fullAssembler.generateFull(context)
 
-disp(Z)
-
-elAssembler = rooftopMoM.core.impedanceMatrix.ElectricPartAssembler(planner);
-
-Ze = elAssembler.generateFull(context)
-
-magAssembler = rooftopMoM.core.impedanceMatrix.MagneticPartAssembler(planner);
-
-Zm = magAssembler.generateFull(context)
-
-Zm - Ze
+Z.value()

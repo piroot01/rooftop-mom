@@ -10,14 +10,14 @@ classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
     end
 
     methods
-        function Z = generateFull(obj, context)
+        function output = generateFull(obj, context)
             % Produce all chunks for full matrix assembly
             chunks = obj.assemblerChunkPlanner_.generateFull(context, true);
 
-            Z = obj.generateSpecified(context, chunks);
+            output = obj.generateSpecified(context, chunks);
         end
 
-        function Z = generateSpecified(obj, context, chunks)
+        function output = generateSpecified(obj, context, chunks)
             wavenumber = context.wavenumber();
             matrixCount = numel(wavenumber);
 
@@ -59,6 +59,8 @@ classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
             for n = 1:matrixCount
                 Z(:, :, n) = obj.generateImpl_(computeContext, chunks, slices, wavenumber(n));
             end
+
+            output = rooftopMoM.core.impedanceMatrix.AssemblerOutput(Z);
         end
 
         function chunkPlanner = chunkPlanner(obj)
