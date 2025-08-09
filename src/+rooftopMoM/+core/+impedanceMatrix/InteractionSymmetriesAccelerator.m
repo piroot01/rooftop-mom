@@ -10,14 +10,16 @@ classdef InteractionSymmetriesAccelerator < rooftopMoM.core.impedanceMatrix.Inte
     end
 
     methods
-        function Z = generateFull(obj, context)
+        function output = generateFull(obj, context)
             [maskCell, interactionIndicesCell] = obj.generateInteractions(context);
 
             [mask, interactionIndices, chunks] = obj.generateGlobal_(context, maskCell, interactionIndicesCell);
 
-            values = obj.strategy_.generateSpecified(context, chunks);
+            output = obj.strategy_.generateSpecified(context, chunks);
 
-            Z = rooftopMoM.core.impedanceMatrix.utils.fillMatrixUsingMaskAndInteractionIndices(values, mask, interactionIndices);
+            Z = rooftopMoM.core.impedanceMatrix.utils.fillMatrixUsingMaskAndInteractionIndices(output.value(), mask, interactionIndices);
+
+            output.setValue(Z);
         end
     end
 

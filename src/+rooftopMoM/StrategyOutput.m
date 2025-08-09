@@ -10,6 +10,12 @@ classdef StrategyOutput < handle
     end
 
     methods
+        function setValue(obj, value)
+            obj.value_ = value;
+        end
+    end
+
+    methods
         function value = value(obj)
             value = obj.value_;
         end

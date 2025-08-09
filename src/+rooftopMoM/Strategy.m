@@ -20,6 +20,12 @@ classdef Strategy < handle
                     output = rooftopMoM.core.impedanceMatrix.Strategy.generateImpedanceMatrixMagneticPart(mesh, obj.strategySettings_);
                 case rooftopMoM.StrategyOptions.IMPEDANCE_MATRIX_ELECTRIC_PART
                     output = rooftopMoM.core.impedanceMatrix.Strategy.generateImpedanceMatrixElectricPart(mesh, obj.strategySettings_);
+                case rooftopMoM.StrategyOptions.IMPEDANCE_MATRIX_ACCELERATED
+                    output = rooftopMoM.core.impedanceMatrix.Strategy.generateImpedanceMatrixAccelerated(mesh, obj.strategySettings_);
+                case rooftopMoM.StrategyOptions.IMPEDANCE_MATRIX_MAGNETIC_PART_ACCELERATED
+                    output = rooftopMoM.core.impedanceMatrix.Strategy.generateImpedanceMatrixMagneticPartAccelerated(mesh, obj.strategySettings_);
+                case rooftopMoM.StrategyOptions.IMPEDANCE_MATRIX_ELECTRIC_PART_ACCELERATED
+                    output = rooftopMoM.core.impedanceMatrix.Strategy.generateImpedanceMatrixElectricPartAccelerated(mesh, obj.strategySettings_);
                 otherwise
                     error("Unknown strategy option '%s'.", option);
             end 
