@@ -1,4 +1,4 @@
-classdef RectDivergenceConforming < rooftopMoM.basisFunctions.BasisFunctionsInterface
+classdef MeshDivergenceConforming < rooftopMoM.basisFunctions.MeshBasisFunctionsInterface
     properties (Access = private)
         mesh_;
 
@@ -7,7 +7,7 @@ classdef RectDivergenceConforming < rooftopMoM.basisFunctions.BasisFunctionsInte
     end
 
     methods
-        function obj = RectDivergenceConforming(mesh)
+        function obj = MeshDivergenceConforming(mesh)
             obj.mesh_ = mesh;
         end
     end

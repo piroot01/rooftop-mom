@@ -12,26 +12,26 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
     methods
         function [Gxx, Gyy] = generateFull(obj, context)
             % Produce all chunks for full matrix assembly
-            chunksX = obj.assemblerChunkPlanner_.generateFullDirection(context, 'x');
-            chunksY = obj.assemblerChunkPlanner_.generateFullDirection(context, 'y');
+            chunksX = obj.assemblerChunkPlanner_.generateFullDir(context, 'x');
+            chunksY = obj.assemblerChunkPlanner_.generateFullDir(context, 'y');
 
             [Gxx, Gyy] = obj.generateSpecified(context, chunksX, chunksY);
         end
 
         function [Gxx, Gyy] = generateSpecified(obj, context, chunksX, chunksY)
-            Gxx = obj.generateDirectionSpecified(context, chunksX, 'x');
-            Gyy = obj.generateDirectionSpecified(context, chunksY, 'y');
+            Gxx = obj.generateDirSpecified(context, chunksX, 'x');
+            Gyy = obj.generateDirSpecified(context, chunksY, 'y');
         end
 
-        function G = generateFullDirection(obj, context, direction)
+        function G = generateFullDir(obj, context, dir)
             % Produce all chunks for full matrix assembly
-            chunks = obj.assemblerChunkPlanner_.generateFullDirection(context, direction);
+            chunks = obj.assemblerChunkPlanner_.generateFullDir(context, dir);
 
-            G = obj.generateImpl_(context, chunks, direction);
+            G = obj.generateImpl_(context, chunks, dir);
         end
 
-        function G = generateSpecifiedDirection(obj, context, chunks, direction)
-            G = obj.generateImpl_(context, chunks, direction);
+        function G = generateSpecifiedDir(obj, context, chunks, dir)
+            G = obj.generateImpl_(context, chunks, dir);
         end
 
         function chunkPlanner = chunkPlanner(obj)
@@ -40,25 +40,24 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
     end
 
     methods (Access = private)
-        function G = generateImpl_(obj, context, chunks, direction)
+        function G = generateImpl_(obj, context, chunks, dir)
             wavenumber = context.wavenumber();
 
             rooftops = context.rooftops();
             quadrature = context.quadrature();
 
-            basisSize = rooftops.countDirection(direction);
+            basisSize = rooftops.countDir(dir);
             order = quadrature.order();
             blockSize = order^2;
 
-
-            [points, values] = rooftops.generateRooftopsDirection(direction);
+            [points, values] = rooftops.generateRooftopsDir(dir);
             [quadraturePoints, rooftopPoints] = rooftopMoM.core.impedanceMatrix.utils.convertRooftopPointsToArrays(points);
 
             slices = rooftopMoM.core.impedanceMatrix.utils.generateSlicesFromChunks(chunks, order);
 
             jacobians = rooftopMoM.core.greensMatrix.utils.generate2DJacobians(rooftops.primitive(), basisSize);
 
-            singularityContext = rooftopMoM.core.greensMatrix.MagneticPartAssembler.generateSingularityContext(rooftops.indicesDirection(direction), values);
+            singularityContext = rooftopMoM.core.greensMatrix.MagneticPartAssembler.generateSingularityContext(rooftops.indicesDir(dir), values);
 
             weights = quadrature.weights4D();
 
@@ -76,7 +75,7 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
             G = obj.generateImplCore_(computeContext, chunks, slices, wavenumber)
 
             % Reshape according to the primitive shape.
-            [cX, cY] = rooftopMoM.core.greensMatrix.utils.generateGreensMatrixShape(rooftops.primitive(), direction);
+            [cX, cY] = rooftopMoM.core.greensMatrix.utils.generateGreensMatrixShape(rooftops.primitive(), dir);
 
             % NOTE: the cY is aligned with columns and the cX with the rows
             G = reshape(G, cX, cY);

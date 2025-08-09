@@ -2,7 +2,7 @@ function [quadraturePoints, rooftopPoints] = convertRooftopPointsToArrays(points
 % convertRooftopPointsToArrays: Convert rooftop point structs into 3D arrays.
 %
 %   Input:
-%       points: 1×M cell array of structs from UniformRooftops.
+%       points: 1×M cell array of structs from (Mesh/UniformRectPrimitive)UniformRooftops.
 %
 %   Outputs:
 %       quadraturePoints: 3xNx2 array of quadrature points.

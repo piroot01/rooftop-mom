@@ -1,4 +1,4 @@
-classdef FullRectUniformRooftops < handle
+classdef UniformRectPrimitiveUniformRooftops < rooftopMoM.basisFunctions.UniformRectPrimitiveDivergenceConforming
     properties (Access = private, Constant)
         origin_ = [0; 0; 0];
         ex_ = [1; 0; 0];
@@ -6,69 +6,32 @@ classdef FullRectUniformRooftops < handle
     end
 
     properties (Access = private)
-        primitive_ rooftopMoM.mesh.UniformRectPrimitive;
-
         quadrature_ rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature;
     end
 
     methods
-        function obj = FullRectUniformRooftops(primitive, quadrature)
-            obj.primitive_ = primitive;
+        function obj = UniformRectPrimitiveUniformRooftops(primitive, quadrature)
+            obj@rooftopMoM.basisFunctions.UniformRectPrimitiveDivergenceConforming(primitive);
             obj.quadrature_ = quadrature;
         end
     end
 
     methods
         function generate(obj)
+            generate@rooftopMoM.basisFunctions.UniformRectPrimitiveDivergenceConforming(obj);
             obj.quadrature_.generate();
         end
 
-        function indices = indicesDirection(obj, direction)
-        % indicesDirection: Return face-index pairs for grid edges in a given direction.
-        %
-        %   Inputs:
-        %       direction: 'x' or 'y' (string) specifying which edge direction to produce.
-        %
-        %   Output:
-        %       indices: 2-by-N array. Each column is a pair of linear face indices
-        %           [faceA; faceB] that share an edge. The pair ordering follows the adjacency along the requested grid dimension.
-        %
-        %   Indexing convention:
-        %       Linear face indices are arranged columnwise into a cX-by-cY matrix.
-
-            [cX, cY] = obj.primitive_.gridSize();
-
-            % Build grid of linear face indices.
-            idx = reshape(1:(cX*cY), cX, cY);
-
-            switch direction
-                case 'x'
-                    % Face pairs adjacent along the first grid dimension (x).
-                    % For each column, pair index (r, c) with (r+1, c).
-                    leftIdx  = idx(1:(end - 1), :);
-                    rightIdx = idx(2:end, :);
-                    indices = [leftIdx(:).'; rightIdx(:).'];
-                case 'y'
-                    % Face pairs adjacent along the second grid dimension (y).
-                    % For each row, pair index (r, c) with (r, c+1).
-                    bottomIdx = idx(:, 1:(end - 1));
-                    topIdx    = idx(:, 2:end);
-                    indices = [bottomIdx(:).'; topIdx(:).'];
-                otherwise
-                    error("Unknown direction '%s'. Use 'x' or 'y'.", direction);
-            end
-        end
-
-        function [rooftopPoints, rooftopValues] = generateRooftopsDirection(obj, direction)
+        function [rooftopPoints, rooftopValues] = generateRooftopsDir(obj, dir)
         % generateRooftopsDirection: Generate rooftop basis for given axis direction.
 
             % Fetch primitive dimensions and grid size.
-            sX = obj.primitive_.sizeX();
-            sY = obj.primitive_.sizeY();
-            [cX, cY] = obj.primitive_.gridSize();
+            sX = obj.primitive().sizeX();
+            sY = obj.primitive().sizeY();
+            [cX, cY] = obj.primitive().gridSize();
 
             % Determine count and shifts for the requested direction.
-            switch direction
+            switch dir
                 case 'x'
                     % Number of rooftops along x-directed edges.
                     count = (cX - 1) * cY;
@@ -82,38 +45,15 @@ classdef FullRectUniformRooftops < handle
             end
 
             % Generate a single rooftop's geometry and values.
-            [singlePoints, singleValues] = obj.generateRooftop_(direction);
+            [singlePoints, rooftopValues] = obj.generateRooftop_(dir);
 
-            % Replicate and shift the rooftop points into a cell array.
-            rooftopPoints = cell(1, count);
+            % Preallocate and fill rooftop points
+            rooftopPoints = repmat({singlePoints}, 1, count);
             for n = 1:count
                 shift = shifts(:, n);
-
                 rooftopPoints{n}.quadraturePointsPositive = singlePoints.quadraturePointsPositive + shift;
                 rooftopPoints{n}.quadraturePointsNegative = singlePoints.quadraturePointsNegative + shift;
-                rooftopPoints{n}.rooftopPointsPositive = singlePoints.rooftopPointsPositive;
-                rooftopPoints{n}.rooftopPointsNegative = singlePoints.rooftopPointsNegative;
             end
-
-            % Return the same rooftop values for all elements.
-            rooftopValues = singleValues;
-        end
-
-        function count = countDirection(obj, direction)
-            [cX, cY] = obj.primitive_.gridSize();
-
-            switch direction
-                case 'x'
-                    count = (cX - 1) * cY;
-                case 'y'
-                    count = (cY - 1) * cX;
-                otherwise
-                    error("Unknown direction '%s'. Use 'x' or 'y'.", direction);
-            end
-        end
-
-        function primitive = primitive(obj)
-            primitive = obj.primitive_;
         end
 
         function quadrature = quadrature(obj)
@@ -126,12 +66,12 @@ classdef FullRectUniformRooftops < handle
             switch direction
                 case 'x'
                     e = obj.ex_;
-                    len = obj.primitive_.sizeX();
-                    ht = obj.primitive_.sizeY();
+                    len = obj.primitive().sizeX();
+                    ht = obj.primitive().sizeY();
                 case 'y'
                     e = obj.ey_;
-                    len = obj.primitive_.sizeY();
-                    ht = obj.primitive_.sizeX();
+                    len = obj.primitive().sizeY();
+                    ht = obj.primitive().sizeX();
                 otherwise
                     error("Unknown direction '%s'. Use 'x' or 'y'.", direction);
             end
@@ -142,8 +82,8 @@ classdef FullRectUniformRooftops < handle
             shifts = cat(2, shiftPos, shiftNeg);
 
             % Generate the quadrature points.
-            e1 = obj.primitive_.sizeX() * obj.ex_;
-            e2 = obj.primitive_.sizeY() * obj.ey_;
+            e1 = obj.primitive().sizeX() * obj.ex_;
+            e2 = obj.primitive().sizeY() * obj.ey_;
             [pointsU, pointsV] = obj.quadrature().points();
             [qpPos, qpNeg] = rooftopMoM.basisFunctions.utils.generateQuadraturePointsUniformRooftop(e1, e2, shifts, pointsU, pointsV);
 

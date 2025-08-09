@@ -17,20 +17,20 @@ order = 2;
 
 quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
 
-rooftops = rooftopMoM.basisFunctions.UniformRooftops(mesh, quad);
+rooftops = rooftopMoM.basisFunctions.MeshUniformRooftops(mesh, quad);
 rooftops.generate();
 rooftops.generateRooftops();
 
-rooftopsFull = rooftopMoM.basisFunctions.FullRectUniformRooftops(rectPrimitive, quad);
+rooftopsFull = rooftopMoM.basisFunctions.UniformRectPrimitiveUniformRooftops(rectPrimitive, quad);
 
 rooftopsFull.generate();
 
-[points, values] = rooftopsFull.generateRooftopsDirection('y')
+[points, values] = rooftopsFull.generateRooftopsDir('y')
 
 points{1}.quadraturePointsPositive
 points{2}.quadraturePointsPositive
 
 [quadraturePoints, rooftopPoints] = rooftopMoM.core.impedanceMatrix.utils.convertRooftopPointsToArrays(points);
 
-indicesX = rooftopsFull.indicesDirection('x')
-indicesY = rooftopsFull.indicesDirection('y')
+indicesX = rooftopsFull.indicesDir('x')
+indicesY = rooftopsFull.indicesDir('y')

@@ -2,7 +2,7 @@ function [sizes, indices] = generateRooftopSizesUniquePerms(values, precision)
 % generateRooftopSizesUniquePerms: Compute unique rooftop size permutations.
 %
 %   Inputs:
-%       values: 1×N cell array of structs from UniformRooftops.
+%       values: 1×N cell array of structs from (Mesh/UniformRectPrimitive)UniformRooftops.
 %       precision: Error of determining the size equality.
 %
 %   Output:

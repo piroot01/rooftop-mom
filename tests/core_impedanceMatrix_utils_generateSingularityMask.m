@@ -26,7 +26,7 @@ cluster.insert(mesh2);
 order = 2;
 
 quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
-rooftops = rooftopMoM.basisFunctions.UniformRooftops(cluster, quad);
+rooftops = rooftopMoM.basisFunctions.MeshUniformRooftops(cluster, quad);
 
 rooftops.generate();
 

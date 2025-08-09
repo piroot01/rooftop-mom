@@ -14,7 +14,7 @@ rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, size
 order = 5;
 
 quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
-rooftops = rooftopMoM.basisFunctions.FullRectUniformRooftops(rectPrimitive, quad);
+rooftops = rooftopMoM.basisFunctions.UniformRectPrimitiveUniformRooftops(rectPrimitive, quad);
 
 rooftops.generate();
 
@@ -29,7 +29,7 @@ context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 magAssembler = rooftopMoM.core.greensMatrix.MagneticPartAssembler(planner);
 
 %Gxx = magAssembler.generateFullDirection(context, 'x')
-Gyy = magAssembler.generateFullDirection(context, 'y')
+Gyy = magAssembler.generateFullDir(context, 'y')
 
 % Test comparing to the impedance matrix
 %{

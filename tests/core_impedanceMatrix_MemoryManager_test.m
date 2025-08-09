@@ -17,7 +17,7 @@ order = 5;
 k = 1;
 
 quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
-rooftops = rooftopMoM.basisFunctions.UniformRooftops(mesh, quad);
+rooftops = rooftopMoM.basisFunctions.MeshUniformRooftops(mesh, quad);
 
 rooftops.generate();
 

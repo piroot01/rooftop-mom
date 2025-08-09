@@ -10,10 +10,10 @@ classdef AssemblerChunkPlanner < handle
     end
 
     methods
-        function chunks = generateFullDirection(obj, context, direction)
+        function chunks = generateFullDir(obj, context, direction)
         % generateFull: Returns the chunks for greens operator. Basically it utilizes the impedance matrix chunk planner because the greens matrix has the same size as the impedance matrix column.
 
-            count = context.rooftops().countDirection(direction);
+            count = context.rooftops().countDir(direction);
             interactions = (1:count).';
 
             internalChunkPlanner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(obj.elementCount_);

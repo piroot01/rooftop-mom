@@ -2,7 +2,7 @@ function memory = memoryForRooftopPoints(rooftops)
 % memoryForRooftopPoints: Returns the memory footprint of rooftop point data.
 %
 %   INPUT:
-%       rooftops: Instance of rooftopMoM.basisFunctions.UniformRooftops.
+%       rooftops: Instance of rooftopMoM.basisFunctions.(Mesh/UniformRectPrimitive)UniformRooftops.
 %
 %   OUTPUT:
 %       memory: Total memory in bytes needed for storing both positive and negative rooftopPoints and quadraturePoints arrays.

@@ -1,19 +1,18 @@
-classdef UniformRooftops < rooftopMoM.basisFunctions.RectDivergenceConforming
+classdef MeshUniformRooftops < rooftopMoM.basisFunctions.MeshDivergenceConforming
     properties (Access = private)
         quadrature_ rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature;
     end
 
     methods
-        function obj = UniformRooftops(mesh, quadrature)
-            obj@rooftopMoM.basisFunctions.RectDivergenceConforming(mesh);
+        function obj = MeshUniformRooftops(mesh, quadrature)
+            obj@rooftopMoM.basisFunctions.MeshDivergenceConforming(mesh);
             obj.quadrature_ = quadrature;
         end
     end
 
     methods
         function generate(obj)
-            generate@rooftopMoM.basisFunctions.RectDivergenceConforming(obj);
-
+            generate@rooftopMoM.basisFunctions.MeshDivergenceConforming(obj);
             obj.quadrature_.generate();
         end
 
