@@ -73,13 +73,13 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
             );
 
             % TODO: Include the multi-wavenumber output
-            G = obj.generateImplCore_(computeContext, chunks, slices, wavenumber);
+            G = obj.generateImplCore_(computeContext, chunks, slices, wavenumber)
 
             % Reshape according to the primitive shape.
             [cX, cY] = rooftopMoM.core.greensMatrix.utils.generateGreensMatrixShape(rooftops.primitive(), direction);
 
-            % NOTE: the cX is aligned with columns and the cY with the rows
-            G = reshape(G, cY, cX);
+            % NOTE: the cY is aligned with columns and the cX with the rows
+            G = reshape(G, cX, cY);
         end
 
         function G = generateImplCore_(~, context, chunks, slices, wavenumber)

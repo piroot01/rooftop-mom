@@ -1,4 +1,4 @@
-clc; clearvars; format long;
+clc; clearvars;
 
 currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
@@ -11,12 +11,13 @@ sizeY = 1;
 gridSize = [countX, countY];
 origin = [0, 0, 0];
 
-order = 2;
+order = 5;
 
 lambda = 5;
-k = 2 * pi / lambda;
+% k = 2 * pi / lambda;
+k = 1;
 
-memoryElementwise = 32;
+memoryElementwise = 10000;
 memory_MB = memoryElementwise * 8 / 1e6;
 
 myRectMeshPrimitive1 = mom.MeshRectPrimitive(countX, countY, sizeX, sizeY, []);
@@ -29,7 +30,6 @@ quadrature = mom.Quadrature(order);
 basisFunctions = mom.BasisFunctions(myMeshCluster);
 
 rooftopBasisFunctions = mom.FastImpedanceMatrix.RooftopBasisFunctions(quadrature, gridSize);
-rooftopBasisFunctions.generatePoints();
 
 strategyCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFunctions, rooftopBasisFunctions, k);
 strategy = mom.FastImpedanceMatrix.ComputeMagPart();

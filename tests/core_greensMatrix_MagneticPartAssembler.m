@@ -1,4 +1,3 @@
-
 clc; clearvars;
 
 currentDir = fileparts(mfilename('fullpath'));
@@ -19,7 +18,7 @@ rooftops = rooftopMoM.basisFunctions.FullRectUniformRooftops(rectPrimitive, quad
 
 rooftops.generate();
 
-elementCount = 100000;
+elementCount = 100 * order^4;
 
 planner = rooftopMoM.core.greensMatrix.AssemblerChunkPlanner(elementCount);
 
@@ -29,9 +28,11 @@ context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 
 magAssembler = rooftopMoM.core.greensMatrix.MagneticPartAssembler(planner);
 
-Gxx = magAssembler.generateFullDirection(context, 'x')
+%Gxx = magAssembler.generateFullDirection(context, 'x')
+Gyy = magAssembler.generateFullDirection(context, 'y')
 
 % Test comparing to the impedance matrix
+%{
 rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
 mesh = rect.generateMesh();
 
@@ -44,4 +45,5 @@ planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
 
 magAssembler = rooftopMoM.core.impedanceMatrix.MagneticPartAssembler(planner);
 
-Z = magAssembler.generateFull(context)
+Z = magAssembler.generateFull(context);
+%}
