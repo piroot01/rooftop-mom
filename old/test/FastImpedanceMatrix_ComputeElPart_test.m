@@ -29,7 +29,6 @@ quadrature = mom.Quadrature(order);
 basisFunctions = mom.BasisFunctions(myMeshCluster);
 
 rooftopBasisFunctions = mom.FastImpedanceMatrix.RooftopBasisFunctions(quadrature, gridSize);
-rooftopBasisFunctions.generatePoints();
 
 strategyCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFunctions, rooftopBasisFunctions, k);
 strategy = mom.FastImpedanceMatrix.ComputeElPart();
