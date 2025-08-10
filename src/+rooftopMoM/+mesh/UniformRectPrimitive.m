@@ -45,5 +45,10 @@ classdef UniformRectPrimitive < handle
             cX = obj.countX_;
             cY = obj.countY_;
         end
+
+        function [sX, sY] = faceSize(obj)
+            sX = obj.sizeX_;
+            sY = obj.sizeY_;
+        end
     end
 end

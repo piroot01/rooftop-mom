@@ -1,8 +1,8 @@
 classdef UniformRectPrimitiveUniformRooftops < rooftopMoM.basisFunctions.UniformRectPrimitiveDivergenceConforming
     properties (Access = private, Constant)
         origin_ = [0; 0; 0];
-        ex_ = [1; 0; 0];
-        ey_ = [0; 1; 0];
+        eX_ = [1; 0; 0];
+        eY_ = [0; 1; 0];
     end
 
     properties (Access = private)
@@ -65,11 +65,11 @@ classdef UniformRectPrimitiveUniformRooftops < rooftopMoM.basisFunctions.Uniform
         function [rooftopPoints, rooftopValues] = generateRooftop_(obj, direction)
             switch direction
                 case 'x'
-                    e = obj.ex_;
+                    e = obj.eX_;
                     len = obj.primitive().sizeX();
                     ht = obj.primitive().sizeY();
                 case 'y'
-                    e = obj.ey_;
+                    e = obj.eY_;
                     len = obj.primitive().sizeY();
                     ht = obj.primitive().sizeX();
                 otherwise
@@ -82,8 +82,8 @@ classdef UniformRectPrimitiveUniformRooftops < rooftopMoM.basisFunctions.Uniform
             shifts = cat(2, shiftPos, shiftNeg);
 
             % Generate the quadrature points.
-            e1 = obj.primitive().sizeX() * obj.ex_;
-            e2 = obj.primitive().sizeY() * obj.ey_;
+            e1 = obj.primitive().sizeX() * obj.eX_;
+            e2 = obj.primitive().sizeY() * obj.eY_;
             [pointsU, pointsV] = obj.quadrature().points();
             [qpPos, qpNeg] = rooftopMoM.basisFunctions.utils.generateQuadraturePointsUniformRooftop(e1, e2, shifts, pointsU, pointsV);
 
