@@ -19,8 +19,8 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
         end
 
         function [Gxx, Gyy] = generateSpecified(obj, context, chunksX, chunksY)
-            Gxx = obj.generateDirSpecified(context, chunksX, 'x');
-            Gyy = obj.generateDirSpecified(context, chunksY, 'y');
+            Gxx = obj.generateSpecifiedDir(context, chunksX, 'x');
+            Gyy = obj.generateSpecifiedDir(context, chunksY, 'y');
         end
 
         function G = generateFullDir(obj, context, dir)
@@ -72,7 +72,7 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
             );
 
             % TODO: Include the multi-wavenumber output
-            G = obj.generateImplCore_(computeContext, chunks, slices, wavenumber)
+            G = obj.generateImplCore_(computeContext, chunks, slices, wavenumber);
 
             % Reshape according to the primitive shape.
             [cX, cY] = rooftopMoM.core.greensMatrix.utils.generateGreensMatrixShape(rooftops.primitive(), dir);
@@ -154,6 +154,20 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
                 'type2Values', type2Values ...
             );
         end
- 
+
+        function singularities = generateSingularities(singularityContext, chunkContext, singularityMask)
+            % Define polarity groupings for same and opposite polarities.
+            samePolarities = [1, 4];
+            differentPolarities = [2, 3];
+            pCount = numel(samePolarities) + numel(differentPolarities);
+
+            % Allocate polarity-resolved singular contributions.
+            singularitiesPolarity = zeros([chunkContext.chunkSize, pCount]);
+            singularitiesPolarity(:, :, samePolarities)      = singularityMask(:, :, samePolarities) .* singularityContext.type1Values;
+            singularitiesPolarity(:, :, differentPolarities) = singularityMask(:, :, differentPolarities) .* singularityContext.type2Values;
+
+            % Sum contributions across all polarities.
+            singularities = sum(singularitiesPolarity, 3);
+        end 
     end
 end

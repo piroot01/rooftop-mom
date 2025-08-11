@@ -11,7 +11,7 @@ origin = [0, 0, 0];
 
 order = 5;
 
-sizes = 100:100:5000;
+sizes = 100;
 times = zeros(3, numel(sizes));
 
 n = 1;
@@ -30,7 +30,6 @@ for countY = sizes
     basisFunctions = mom.BasisFunctions(myMeshCluster);
 
     rooftopBasisFunctions = mom.FastImpedanceMatrix.RooftopBasisFunctions(quadrature, gridSize);
-    rooftopBasisFunctions.generatePoints();
 
     strategyCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFunctions, rooftopBasisFunctions, k);
 

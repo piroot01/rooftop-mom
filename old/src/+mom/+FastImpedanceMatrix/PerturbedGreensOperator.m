@@ -21,7 +21,6 @@ classdef PerturbedGreensOperator < handle
 
             [magPartX, magPartY] = magPartStrategy.compute(obj.strategyContext_, chunkMemoryMB);
             elPart = elPartStrategy.compute(obj.strategyContext_, chunkMemoryMB);
-
             gridSize = double(obj.strategyContext_.rooftopBasisFunctions.getGridSize())
 
             % determine the rooftop counts in each direction
