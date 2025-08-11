@@ -141,7 +141,7 @@ classdef ElectricPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
             pCount = numel(p1);
 
             % Map rooftop points to each polarity combination.
-            rowRooftopDivPointsPolarity    = chunkContext.rowRooftopDivPoints(:, :, p1);
+            rowRooftopDivPointsPolarity = chunkContext.rowRooftopDivPoints(:, :, p1);
             columnRooftopDivPointsPolarity = chunkContext.columnRooftopDivPoints(:, :, p2);
 
             % Create expanded mask identifying singular quadrature pairs.

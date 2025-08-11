@@ -144,7 +144,7 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
             length = values.length;
             height = values.height;
 
-            % Evaluate singular integral constants for each size case.
+            % Evaluate the singular integral constants for the given size.
             type1Values = rooftopMoM.core.impedanceMatrix.singularIntegrals.type1(length, height);
             type2Values = rooftopMoM.core.impedanceMatrix.singularIntegrals.type2(length, height);
 
@@ -155,19 +155,5 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
             );
         end
  
-        function singularities = generateSingularities(singularityContext, chunkContext, singularityMask)
-            % Define polarity groupings for same and opposite polarities.
-            samePolarities = [1, 4];
-            differentPolarities = [2, 3];
-            pCount = numel(samePolarities) + numel(differentPolarities);
-
-            % Allocate polarity-resolved singular contributions.
-            singularitiesPolarity = zeros([chunkContext.chunkSize, pCount]);
-            singularitiesPolarity(:, :, samePolarities)      = singularityMask(:, :, samePolarities) .* singularityContext.type1Values;
-            singularitiesPolarity(:, :, differentPolarities) = singularityMask(:, :, differentPolarities) .* singularityContext.type2Values;
-
-            % Sum contributions across all polarities.
-            singularities = sum(singularitiesPolarity, 3);
-        end
     end
 end

@@ -1,4 +1,4 @@
-clc; clearvars; format long;
+clc; clearvars;
 
 currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
@@ -14,7 +14,8 @@ origin = [0, 0, 0];
 order = 5;
 
 lambda = 5;
-k = 2 * pi / lambda;
+%k = 2 * pi / lambda;
+k = 1;
 
 memoryElementwise = 4096;
 memory_MB = memoryElementwise * 8 / 1e6;
@@ -35,6 +36,6 @@ strategy = mom.FastImpedanceMatrix.ComputeElPart();
 
 tic;
 
-strategy.compute(strategyCtx, memory_MB)
+-1 * strategy.compute(strategyCtx, memory_MB)
 
 toc;

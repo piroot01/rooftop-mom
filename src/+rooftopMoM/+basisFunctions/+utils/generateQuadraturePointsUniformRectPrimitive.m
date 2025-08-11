@@ -46,7 +46,7 @@ function points = generateQuadraturePointsUniformRectPrimitive(quadrature, primi
     % reshape to 3 x blockSize x 1 and 3 x 1 x nCells then add
     singlePointsReshaped = reshape(singlePoints, 3, blockSize, 1); % 3 x blockSize x 1
     shiftsReshaped = reshape(shifts, 3, 1, faceCount);  % 3 x 1 x faceCount
-    allPoints3  = singlePointsReshaped + shiftsReshaped; % implicit expansion: 3 x blockSize x nCells
+    points  = singlePointsReshaped + shiftsReshaped; % implicit expansion: 3 x blockSize x faceCount
 
-    points = reshape(allPoints3, 3, []); % 3 x (blockSize * faceCount)
+    points = reshape(points, 3, []); % 3 x (blockSize * faceCount)
 end

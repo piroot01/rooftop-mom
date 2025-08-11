@@ -12,7 +12,8 @@ classdef AssemblerChunkPlanner < handle
     methods
         function chunks = generateFull(obj, context)
         % generateFull: Returns the chunks for the chunks for electric part greens operator matrix assembly process.
-            count = context.rooftops().count();
+
+            count = context.rooftops().primitive().count();
 
             chunks = obj.generateImpl_(context, count);
         end
