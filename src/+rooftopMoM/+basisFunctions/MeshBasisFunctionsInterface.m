@@ -1,4 +1,4 @@
-classdef MeshBasisFunctionsInterface < handle
+classdef (Abstract) MeshBasisFunctionsInterface < handle
     methods (Abstract)
         generate(obj);
 

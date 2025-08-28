@@ -1,5 +1,5 @@
 classdef MeshDivergenceConforming < rooftopMoM.basisFunctions.MeshBasisFunctionsInterface
-    properties (Access = private)
+    properties (Access = protected)
         mesh_;
 
         indicesX_;

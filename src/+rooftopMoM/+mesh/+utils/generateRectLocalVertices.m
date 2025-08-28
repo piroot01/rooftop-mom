@@ -11,4 +11,3 @@ function localVertices = generateRectLocalVertices(vertices, u, v)
     projectors = [u(:), v(:)];
     localVertices = rooftopMoM.mesh.utils.generateProjectedVertices(vertices, projectors);
 end
-

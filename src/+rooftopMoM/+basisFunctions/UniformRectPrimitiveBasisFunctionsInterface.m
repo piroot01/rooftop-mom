@@ -1,4 +1,4 @@
-classdef UniformRectPrimitiveBasisFunctionsInterface < handle
+classdef (Abstract) UniformRectPrimitiveBasisFunctionsInterface < handle
     methods (Abstract)
         generate(obj);
 

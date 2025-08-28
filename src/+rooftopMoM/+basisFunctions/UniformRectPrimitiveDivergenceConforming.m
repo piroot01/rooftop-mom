@@ -1,5 +1,5 @@
 classdef UniformRectPrimitiveDivergenceConforming < rooftopMoM.basisFunctions.UniformRectPrimitiveBasisFunctionsInterface
-    properties (Access = private)
+    properties (Access = protected)
         primitive_;
 
         indicesX_;
