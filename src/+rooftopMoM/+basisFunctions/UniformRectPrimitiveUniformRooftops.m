@@ -26,8 +26,7 @@ classdef UniformRectPrimitiveUniformRooftops < rooftopMoM.basisFunctions.Uniform
         % generateRooftopsDirection: Generate rooftop basis for given axis direction.
 
             % Fetch primitive dimensions and grid size.
-            sX = obj.primitive().sizeX();
-            sY = obj.primitive().sizeY();
+            [sX, sY] = obj.primitive().faceSize();
             [cX, cY] = obj.primitive().gridSize();
 
             % Determine count and shifts for the requested direction.

@@ -9,5 +9,5 @@ function count = generateRooftopCount(countX, countY)
 
     [cX, cY] = rooftopMoM.basisFunctions.utils.generateRooftopCounts(countX, countY);
 
-    count = sum(cX, cY);
+    count = cX + cY;
 end
