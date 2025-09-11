@@ -31,14 +31,14 @@ classdef GreensOperator < handle
             obj.greensOperator_.basisCountY.y = gridSize(2) - 1;
             obj.greensOperator_.offsetX = (gridSize(1) - 1) * gridSize(2);
 
-            M = gridSize(1) * 2;
-            N = gridSize(2) * 2;
+            M = gridSize(1) * 2
+            N = gridSize(2) * 2
 
             obj.greensOperator_.paddingX = M;
             obj.greensOperator_.paddingY = N;
 
             % compute shift operators
-            [u, v] = ndgrid(0:(M - 1), 0:(N - 1));
+            [u, v] = ndgrid(0:(M - 1), 0:(N - 1))
             forwardShiftX = exp((1i * pi * u) / gridSize(1));
             forwardShiftY = exp((1i * pi * v) / gridSize(2));
             backwardShiftX = conj(forwardShiftX);
@@ -66,9 +66,9 @@ classdef GreensOperator < handle
             else
                 obj.greensOperator_.rooftopContent = 'all';
 
-                magPartXFFT = fft2(mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(magPartX, gridSize));
-                magPartYFFT = fft2(mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(magPartY, gridSize));
-                elPartFFT = fft2(mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(elPart, gridSize));
+                magPartXFFT = fft2(mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(magPartX, gridSize))
+                magPartYFFT = fft2(mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(magPartY, gridSize))
+                elPartFFT = fft2(mom.FastImpedanceMatrix.CirculantMatrixEmbedding.compute(elPart, gridSize))
 
                 obj.greensOperator_.Gxx = magPartXFFT + (1 - forwardShiftX) .* (1 - backwardShiftX) .* elPartFFT;
                 obj.greensOperator_.Gxy = (1 - forwardShiftX) .* (1 - backwardShiftY) .* elPartFFT;

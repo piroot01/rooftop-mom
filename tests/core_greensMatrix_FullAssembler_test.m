@@ -29,3 +29,6 @@ context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 assembler = rooftopMoM.core.greensMatrix.FullAssembler(planner);
 
 output = assembler.generateFull(context);
+
+output.gxxFFT
+output.gyyFFT

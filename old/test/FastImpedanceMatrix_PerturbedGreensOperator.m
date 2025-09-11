@@ -30,21 +30,11 @@ polarization = [0, 1, 0];
 %
 
 countX = 3;
-countY = 3;
+countY = 2;
 gridSize = [countX, countY];
 sizeX = 1;
 sizeY = 1;
 origin = [0, 0, 0];
-
-%
-% antenna genome
-%
-
-antennaGenome = true(countX, countY);
-antennaGenome(2, 2) = false;
-
-disp(antennaGenome);
-
 
 lambda = 2 * countY * sizeY;
 k = 2 * pi / lambda;
@@ -60,7 +50,7 @@ basisFunctions = mom.BasisFunctions(myMeshCluster);
 
 fastRooftops = mom.FastImpedanceMatrix.RooftopBasisFunctions(quadrature, gridSize);
 fastStrategyCtx = mom.ImpedanceMatrix.StrategyContext(quadrature, basisFunctions, fastRooftops, k);
-perturbedSolver = mom.FastImpedanceMatrix.PerturbedConjugateGradientSolver(fastStrategyCtx);
+solver = mom.FastImpedanceMatrix.ConjugateGradientSolver(fastStrategyCtx);
 
 %
 % operator generation
@@ -68,11 +58,13 @@ perturbedSolver = mom.FastImpedanceMatrix.PerturbedConjugateGradientSolver(fastS
 
 tic;
 
-perturbedSolver.generateOperators(memory_MB, antennaGenome);
+solver.generateOperators(memory_MB, antennaGenome);
 
 timeToComputeOperators = toc;
 
 fprintf("Time to compute the Green's operator: %f\n", timeToComputeOperators);
+
+%{
 
 %
 % excitation - plane wave
@@ -120,3 +112,5 @@ Z = chunkedOptimiser.compute(strategyContext, gridSize);
 toc;
 
 I = Z \ V
+
+%}
