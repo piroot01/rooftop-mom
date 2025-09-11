@@ -8,7 +8,7 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
     properties (Access = private)
         chunkPlanner  % planner object used by the part assemblers
     end
-    
+
     methods
         function obj = FullAssembler(chunkPlanner)
             % constructor: store planner (keeps class small)
@@ -112,7 +112,7 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
                 'gxxFFT', gxxFFT ...
             );
         end
-        
+
         function output = generateYYImpl_(obj, context)
             % generateYYImpl_: Assemble only the YY directional operator (magnetic YY + electric).
 
@@ -153,7 +153,7 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
             circFFT = fft2(circulantTensor);
         end
 
-        function [forwardX, backwardX, forwardY, backwardY] = computeShiftOperators_(obj, sizeX, sizeY)
+        function [forwardX, backwardX, forwardY, backwardY] = computeShiftOperators_(~, sizeX, sizeY)
             % computeShiftOperators_: Compute phase multipliers corresponding to spatial shifts in
             %   the Fourier domain. The shift used here is exp(i*pi*u/sizeX)
             %   and similarly for Y. The backward shift is the complex
@@ -189,4 +189,3 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
         end
     end
 end
-
