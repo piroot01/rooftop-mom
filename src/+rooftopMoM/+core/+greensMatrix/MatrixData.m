@@ -1,6 +1,11 @@
 classdef MatrixData < handle
     properties (Access = private)
         data_ struct;
+
+        rooftopContent_ rooftopMoM.basisFunctions.RooftopContent;
+
+        paddingX_;
+        paddingY_;
     end
 
     methods
@@ -12,6 +17,10 @@ classdef MatrixData < handle
             addParameter(p, 'gyxFFT', []);
             addParameter(p, 'gyyFFT', []);
 
+            addParameter(p, 'rooftopContent', rooftopMoM.basisFunctions.RooftopContent.NONE);
+            addParameter(p, 'paddingX', []);
+            addParameter(p, 'paddingY', []);
+
             parse(p, varargin{:});
 
             obj.data_ = struct( ...
@@ -20,6 +29,10 @@ classdef MatrixData < handle
                 'gyxFFT', p.Results.gyxFFT, ...
                 'gyyFFT', p.Results.gyyFFT ...
             );
+
+            obj.rooftopContent_ = p.Results.rooftopContent;
+            obj.paddingX_ = p.Results.paddingX;
+            obj.paddingY_ = p.Results.paddingY;
         end
     end
 
@@ -42,6 +55,18 @@ classdef MatrixData < handle
 
         function gyyFFT = gyyFFT(obj)
             gyyFFT = obj.data_.gyyFFT;
+        end
+
+        function rooftopContent = rooftopContent(obj)
+            rooftopContent = obj.rooftopContent_;
+        end
+
+        function paddingX = paddingX(obj)
+            paddingX = obj.paddingX_;
+        end
+
+        function paddingY = paddingY(obj)
+            paddingY = obj.paddingY_;
         end
     end
 end

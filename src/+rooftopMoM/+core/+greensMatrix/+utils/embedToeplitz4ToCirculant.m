@@ -1,47 +1,40 @@
 function H = embedToeplitz4ToCirculant(Tgen, M, N)
-% embedToeplitz4ToCirculant: Circulant embedding of a 4th-order Toeplitz generator.
+% embedToeplitz4ToCirculant  Circulant-style embedding into a 2M x 2N matrix.
 %
-%   Inputs:
-%       Tgen: Generating MxN block (or smaller; it will be zero-padded). 
-%           Can be real or complex. Size may be (M-1)xN, Mx(N-1), etc.
-%       M, N: Target sizes for the top-left generator block.
+%   H = embedToeplitz4ToCirculant(Tgen, M, N)
 %
-%   Output:
-%       H: (2M - 1) x (2N - 1) circulant-embedded matrix constructed by reflecting Tgen:
-%           H(i,j) = Tgen(src_row(i), src_col(j)), where
-%           src_row = [1:M, M-1:-1:1], 
-%           src_col = [1:N, N-1:-1:1].
+%   This implements the same embedding as the provided class:
+%     - pads/truncates the input into a (M+1) x (N+1) core matrix
+%     - uses indices rowsTop = 1:M, rowsBottom = (M+1):-1:2,
+%       colsLeft = 1:N, colsRight = (N+1):-1:2
+%     - assembles the four quadrants into a 2M x 2N matrix
 %
-%   Notes:
-%       If Tgen is smaller than MxN it is zero-padded to MxN.
-%       If Tgen is larger than MxN it is truncated.
+%   The function preserves the data class/complexness of Tgen and
+%   truncates if Tgen is larger than (M+1)x(N+1).
 
-    % Sizes of provided Tgen
+    % input sizes
     [M0, N0] = size(Tgen);
 
-    % Prepare padded/truncated generator block A of size M x N.
-    % Use 'like' to preserve class (and complex-ness) of Tgen without creating double.
-    if M0 == M && N0 == N
-        % No padding/truncation needed.
-        A = Tgen;
-    else
-        % Allocate minimal pad array.
-        A = zeros(M, N, 'like', Tgen);
+    % create core matrix of size (M+1) x (N+1), preserving class
+    core = zeros(M+1, N+1, 'like', Tgen);
 
-        Mmin = min(M0, M); 
-        Nmin = min(N0, N);
+    % copy (or truncate) into core
+    copyM = min(M0, M+1);
+    copyN = min(N0, N+1);
+    core(1:copyM, 1:copyN) = Tgen(1:copyM, 1:copyN);
 
-        % Copy available entries.
-        A(1:Mmin, 1:Nmin) = Tgen(1:Mmin, 1:Nmin);
-    end
+    % precompute indices (same as your class)
+    rowsTop   = 1:M;
+    rowsBottom = (M+1):-1:2;
+    colsLeft  = 1:N;
+    colsRight = (N+1):-1:2;
 
-    % Build source index vectors that reflect the rows and cols:
-    % For rows: [1,2,...,M, M-1, ..., 1] (length 2M - 1)
-    src_row = [1:M, (M - 1):(-1):1];
+    % allocate result preserving class
+    H = zeros(2*M, 2*N, 'like', Tgen);
 
-    % For cols: [1,2,...,N, N-1, ..., 1] (length 2N-1)
-    src_col = [1:N, (N - 1):(-1):1];
-
-    % Single indexed extraction to form H.
-    H = A(src_row, src_col);
+    % fill quadrants
+    H(1:M,       1:N      ) = core(rowsTop,   colsLeft);
+    H(M+1:end,   1:N      ) = core(rowsBottom,colsLeft);
+    H(1:M,       N+1:end  ) = core(rowsTop,   colsRight);
+    H(M+1:end,   N+1:end  ) = core(rowsBottom,colsRight);
 end
