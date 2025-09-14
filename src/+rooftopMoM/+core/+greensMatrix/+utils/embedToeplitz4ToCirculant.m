@@ -1,4 +1,4 @@
-function H = embedToeplitz4ToCirculant(Tgen, cY, cX)
+function H = embedToeplitz4ToCirculant(Tgen, cX, cY)
 % embedToeplitz4ToCirculant: Circulant embedding of a 4th-order Toeplitz generator.
 %
 %   Purpose: Produce a reflected (mirrored) block suitable for circulant embedding
@@ -11,7 +11,7 @@ function H = embedToeplitz4ToCirculant(Tgen, cY, cX)
 %       Tgen: numeric matrix
 %           Provided generator block. Can be real or complex. May be any size;
 %           it will be truncated or zero-padded to the target size (cY x cX).
-%       cY, cX: positive integers
+%       cX, cY: positive integers
 %           Target sizes for the top-left generator block in the Y (rows) and
 %           X (columns) directions respectively.
 %
@@ -37,66 +37,68 @@ function H = embedToeplitz4ToCirculant(Tgen, cY, cX)
 %       The special single-dimension branches create explicitly complex zeros
 %       (complex(zeros(...))) to ensure complex-capable storage when needed.
 
-    % Sizes of provided Tgen
-    [cY0, cX0] = size(Tgen);
+    % Sizes of provided Tgen (now interpret cX as rows and cY as columns)
+    [cX0, cY0] = size(Tgen);
 
-    % Prepare padded/truncated generator block T of size cY x cX.
+    % Prepare padded/truncated generator block T of size cX x cY.
     % Use 'like' to preserve numeric class (single/double, real/complex).
-    if cY0 == cY && cX0 == cX
+    if cX0 == cX && cY0 == cY
         % Tgen already matches target size: use directly.
         T = Tgen;
     else
         % Allocate minimal pad array and copy the top-left portion of Tgen.
         % This truncates if Tgen is larger, or zero-pads if Tgen is smaller.
-        T = zeros(cY, cX, 'like', Tgen);
+        T = zeros(cX, cY, 'like', Tgen);
 
         cXMin = min(cX0, cX);
         cYMin = min(cY0, cY);
 
         % Copy the available entries from Tgen into T.
-        T(1:cYMin, 1:cXMin) = Tgen(1:cYMin, 1:cXMin);
+        T(1:cXMin, 1:cYMin) = Tgen(1:cXMin, 1:cYMin);
     end
 
     % ---------------------------------------------------------------------
-    % Handle three distinct cases:
-    %   1) cX == 1 & cY > 1   -> Produce (2*(cY-1)) x 2 block with first
+    % Handle three distinct cases (roles swapped: cX = rows, cY = cols):
+    %   1) cY == 1 & cX > 1   -> Produce (2*(cX-1)) x 2 block with first
     %                            column filled by reflected rows and second
     %                            column zeros.
-    %   2) cX > 1 & cY == 1   -> Produce 2 x (2*(cX-1)) block with first row
+    %   2) cY > 1 & cX == 1   -> Produce 2 x (2*(cY-1)) block with first row
     %                            filled by reflected columns and second row zeros.
     %   3) cX > 1 & cY > 1    -> General reflected 2D block using mirrored
     %                            index vectors for rows and columns.
     % ---------------------------------------------------------------------
 
-    if cX == 1 && cY > 1
-        % Column-single case: construct a tall, two-column matrix.
+    if cY == 1 && cX > 1
+        % Column-single case (columns == 1): construct a tall, two-column matrix.
         % Use 'like' to preserve numeric class (single/double, real/complex).
-        H = zeros(2 * (cY - 1), 2, 'like', Tgen);
+        H = zeros(2 * (cX - 1), 2, 'like', Tgen);
 
-        % Build reflected row index vector: [1,2,...,cY, cY-1,...,2]
-        rowIndices = [1:cY, (cY - 1):(-1):2];
+        % Build reflected row index vector based on rows (cX):
+        % [1,2,...,cX, cX-1,...,2]
+        rowIndices = [1:cX, (cX - 1):(-1):2];
 
         % Fill the first column of H with the reflected column from T.
         % The second column remains zeros (original then zeros behaviour).
         H(:, 1) = T(rowIndices, :);
-    elseif cX > 1 && cY == 1
-        % Row-single case: construct a short, wide, two-row matrix.
+    elseif cY > 1 && cX == 1
+        % Row-single case (rows == 1): construct a short, wide, two-row matrix.
         % Use 'like' to preserve numeric class (single/double, real/complex).
-        H = zeros(2, 2 * (cX - 1), 'like', Tgen);
+        H = zeros(2, 2 * (cY - 1), 'like', Tgen);
 
-        % Build reflected column index vector: [1,2,...,cX, cX-1,...,2]
-        columnIndices = [1:cX, (cX - 1):(-1):2];
+        % Build reflected column index vector based on columns (cY):
+        % [1,2,...,cY, cY-1,...,2]
+        columnIndices = [1:cY, (cY - 1):(-1):2];
 
         % Fill the first row of H with the reflected row from T.
         % The second row remains zeros (original then zeros behaviour).
         H(1, :) = T(:, columnIndices);
     elseif cX > 1 && cY > 1
-        % General 2D reflection case: reflect both rows and columns.
-        % For rows: [1, 2, ..., cY, cY-1, ..., 2] (length 2*cY - 2)
-        rowIndices = [1:cY, (cY - 1):(-1):2];
+        % General 2D reflection case: reflect both rows (cX) and columns (cY).
+        % For rows: [1, 2, ..., cX, cX-1, ..., 2] (length 2*cX - 2)
+        rowIndices = [1:cX, (cX - 1):(-1):2];
 
-        % For cols: [1, 2, ..., cX, cX-1, ..., 2] (length 2*cX - 2)
-        columnIndices = [1:cX, (cX - 1):(-1):2];
+        % For cols: [1, 2, ..., cY, cY-1, ..., 2] (length 2*cY - 2)
+        columnIndices = [1:cY, (cY - 1):(-1):2];
 
         % Select the reflected block directly using vectorized indexing.
         H = T(rowIndices, columnIndices);

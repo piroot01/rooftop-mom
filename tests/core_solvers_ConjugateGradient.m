@@ -4,8 +4,8 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 3;
-countY = 3;
+countX = 1;
+countY = 100;
 sizeX = 1;
 sizeY = 1;
 
@@ -36,7 +36,7 @@ outputNaive = fullAssembler.generateFull(context);
 mode = rooftopMoM.operators.utils.generateMiddlePortMode(rooftops);
 excitation = rooftopMoM.operators.DeltaGapFeederExcitation.generate(rooftops, mode, V);
 
-currentNaive = rooftopMoM.core.solvers.Inversion.solve(outputNaive.value(), excitation)
+currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excitation);
 
 %
 % Convolutional approach
@@ -53,13 +53,16 @@ assembler = rooftopMoM.core.greensMatrix.FullAssembler(planner);
 
 outputConv = assembler.generateFull(context);
 
-conjugateGradientSolver = rooftopMoM.core.solvers.ConjugateGradient(context, outputConv);
+conjugateGradientSolver = rooftopMoM.core.solver.ConjugateGradient(context, outputConv);
 
 tolerance = 1e-4;
 maxIterCount = 2000;
 
-currentConv = conjugateGradientSolver.solve( ...
+outputConvSolver = conjugateGradientSolver.solve( ...
     'excitation', excitation, ...
     'tolerance', tolerance, ...
     'maxIterCount', maxIterCount ...
-)
+);
+
+fprintf('Number of the iterations: %d', outputConvSolver.count());
+outputConvSolver.postRunInfo()
