@@ -58,8 +58,8 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
             electricAssembler = rooftopMoM.core.greensMatrix.ElectricPartAssembler(obj.chunkPlanner);
 
             % Compute the magnetic/electric part toeplitz kernels.
-            [magneticXX, magneticYY] = magneticAssembler.generateFull(context);
-            electric = electricAssembler.generateFull(context);
+            [magneticXX, magneticYY] = magneticAssembler.generateFull(context)
+            electric = electricAssembler.generateFull(context)
 
             % Embed Toeplitz kernels into circulant tensors and compute FFTs.
             gmxxCircFFT = obj.embedToeplitzAndFourier_(magneticXX, gridSizeX, gridSizeY);
@@ -67,9 +67,8 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
             geCircFFT = obj.embedToeplitzAndFourier_(electric, gridSizeX, gridSizeY);
 
             % Compute forward/backward shift operators for both axes.
-            [sizeX, sizeY] = size(geCircFFT);
             [forwardShiftX, backwardShiftX, forwardShiftY, backwardShiftY] = ...
-                obj.computeShiftOperators_(sizeX, sizeY);
+                obj.computeShiftOperators_(gridSizeX - 1, gridSizeY )
 
             % Combine the parts into Fourier-domain kernels.
             [gxxFFT, gxyFFT, gyxFFT, gyyFFT] = ...
@@ -83,8 +82,8 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
                 'gyxFFT', gyxFFT, ...
                 'gyyFFT', gyyFFT, ...
                 'rooftopContent', rooftopMoM.basisFunctions.RooftopContent.BOTH, ...
-                'paddingX', sizeX, ...
-                'paddingY', sizeY ...
+                'paddingX', size(geCircFFT, 1), ...
+                'paddingY', size(geCircFFT, 2) ...
             );
         end
 
@@ -109,7 +108,7 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
             [forwardShiftX, backwardShiftX, ~, ~] = obj.computeShiftOperators_(sizeX, 1);
 
             % Build Gxx Fourier kernel.
-            gxxFFT = gmxxCircFFT + (1 - forwardShiftX) .* (1 - backwardShiftX) .* geCircFFT;
+            gxxFFT = gmxxCircFFT + (1 - forwardShiftX) .* (backwardShiftX - 1) .* geCircFFT;
 
             output = rooftopMoM.core.greensMatrix.MatrixData( ...
                 'gxxFFT', gxxFFT, ...
@@ -132,28 +131,20 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
             electric = electricAssembler.generateFull(context);
 
             % embed + FFT
-            %gmyyCircFFT = obj.embedToeplitzAndFourier_(magneticYY, gridSizeX, gridSizeY);
-
-            % FIXME: temporary hack
-            val = 0.960570578590213 - 1.115902172004577i;
-            gmyyCirc = rooftopMoM.core.greensMatrix.utils.embedToeplitz4ToCirculant(magneticYY, gridSizeX, gridSizeY);
-            gmyyCirc(1, [8, 10]) = val;
-            gmyyCircFFT = fft2(gmyyCirc);
-
+            gmyyCircFFT = obj.embedToeplitzAndFourier_(magneticYY, gridSizeX, gridSizeY);
             geCircFFT = obj.embedToeplitzAndFourier_(electric, gridSizeX, gridSizeY);
 
             % Only Y-direction shifts are needed.
-            sizeY = size(geCircFFT, 2);
-            [~, ~, forwardShiftY, backwardShiftY] = obj.computeShiftOperators_(1, sizeY);
+            [~, ~, forwardShiftY, backwardShiftY] = obj.computeShiftOperators_(gridSizeX, gridSizeY);
 
             % Build Gyy Fourier kernel.
-            gyyFFT = gmyyCircFFT + (1 - forwardShiftY) .* (1 - backwardShiftY) .* geCircFFT;
+            gyyFFT = gmyyCircFFT + (1 - forwardShiftY) .* (backwardShiftY - 1) .* geCircFFT;
 
             output = rooftopMoM.core.greensMatrix.MatrixData( ...
                 'gyyFFT', gyyFFT, ...
                 'rooftopContent', rooftopMoM.basisFunctions.RooftopContent.YONLY, ... 
                 'paddingX', 1, ...
-                'paddingY', sizeY ...
+                'paddingY', 2 * gridSizeY - 2 ...
             );
         end
     end
@@ -164,12 +155,12 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
 
             circulantTensor = rooftopMoM.core.greensMatrix.utils.embedToeplitz4ToCirculant( ...
                 toeplitzKernel, gridSizeX, gridSizeY ...
-            );
+            )
 
             circFFT = fft2(circulantTensor);
         end
 
-        function [forwardX, backwardX, forwardY, backwardY] = computeShiftOperators_(~, sizeX, sizeY)
+        function [forwardX, backwardX, forwardY, backwardY] = computeShiftOperators_(~, gridSizeX, gridSizeY)
             % computeShiftOperators_: Compute phase multipliers corresponding to spatial shifts in
             %   the Fourier domain. The shift used here is exp(i*pi*u/sizeX)
             %   and similarly for Y. The backward shift is the complex
@@ -177,10 +168,14 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
 
             % If one of the sizes equals 1 we still create ndgrid for
             % consistent broadcasting with elementwise ops.
-            [u, v] = ndgrid(0:(sizeX - 1), 0:(sizeY - 1));
 
-            forwardX = exp((1i * pi * u) / sizeX);
-            forwardY = exp((1i * pi * v) / sizeY);
+            gridSizeX = double(gridSizeX);
+            gridSizeY = double(gridSizeY);
+
+            [u, v] = ndgrid(0:(2 * gridSizeX - 1), 0:(2 * gridSizeY - 3));
+
+            forwardX = exp((1i * pi * u) / gridSizeX);
+            forwardY = exp((1i * pi * v) / (gridSizeY - 1));
 
             backwardX = conj(forwardX);
             backwardY = conj(forwardY);
@@ -190,18 +185,18 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
             % combinePartsAll_: Combine magnetic and electric Fourier-domain contributions
             %   into the full set of Fourier-domain Green operator: Gxx, Gxy, Gyx, Gyy.
             %
-            %    Formula (elementwise):
-            %       Gxx = Gm_xx + (1 - fX).*(1 - bX).*Ge
-            %       Gxy =            (1 - fX).*(1 - bY).*Ge
-            %       Gyx =            (1 - fY).*(1 - bX).*Ge
-            %       Gyy = Gm_yy + (1 - fY).*(1 - bY).*Ge
+            %   Formula (elementwise):
+            %       Gxx = Gm_xx + (1 - fX) .* (bX - 1) .* Ge
+            %       Gxy = (1 - fX) .* (bY - 1) .* Ge
+            %       Gyx = (1 - fY) .* (bX - 1) .* Ge
+            %       Gyy = Gm_yy + (1 - fY) .* (bY - 1) .* Ge
             %
             %   NOTE: All inputs are already FFT(embedded-circulant) tensors.
 
-            gxx = gmxxFFT + (1 - fShiftX) .* (1 - bShiftX) .* geFFT;
-            gxy = (1 - fShiftX) .* (1 - bShiftY) .* geFFT;
-            gyx = (1 - fShiftY) .* (1 - bShiftX) .* geFFT;
-            gyy = gmyyFFT + (1 - fShiftY) .* (1 - bShiftY) .* geFFT;
+            gxx = gmxxFFT + (1 - fShiftX) .* (bShiftX - 1) .* geFFT;
+            gxy = (1 - fShiftX) .* (bShiftY - 1) .* geFFT;
+            gyx = (1 - fShiftY) .* (bShiftX - 1) .* geFFT;
+            gyy = gmyyFFT + (1 - fShiftY) .* (bShiftY - 1) .* geFFT;
         end
     end
 end
