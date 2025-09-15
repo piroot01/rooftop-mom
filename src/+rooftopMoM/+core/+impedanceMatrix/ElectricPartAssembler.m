@@ -11,13 +11,19 @@ classdef ElectricPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
 
     methods
         function output = generateFull(obj, context)
+            TRACE("ElectricPartAssembler.generateFull: Initialized full matrix assembly.");
+
             % Produce all chunks for full matrix assembly
             chunks = obj.assemblerChunkPlanner_.generateFull(context, true);
 
             output = obj.generateSpecified(context, chunks);
+
+            TRACE("ElectricPartAssembler.generateFull: Finished full matrix assembly.");
         end
 
         function output = generateSpecified(obj, context, chunks)
+            TRACE("ElectricPartAssembler.generateSpecified: Initialized chunk-specified matrix assembly.");
+
             wavenumber = context.wavenumber();
             matrixCount = numel(wavenumber);
 
@@ -61,10 +67,14 @@ classdef ElectricPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
 
             % Assemble each frequency-dependent matrix.
             for n = 1:matrixCount
+                DEBUG("ElectricPartAssembler.generateSpecified: Assembling matrix %d/%d.", n, matrixCount);
+
                 Z(:, :, n) = obj.generateImpl_(computeContext, chunks, slices, wavenumber(n));
             end
 
             output = rooftopMoM.core.impedanceMatrix.AssemblerOutput(Z);
+
+            TRACE("ElectricPartAssembler.generateSpecified: Finished chunk-specified matrix assembly.");
         end
 
         function chunkPlanner = chunkPlanner(obj)
@@ -74,6 +84,8 @@ classdef ElectricPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
 
     methods (Access = private)
         function Z = generateImpl_(~, context, chunks, slices, wavenumber)
+            TRACE("ElectricPartAssembler.generateImpl_: Initialized single matrix assembly.");
+
             basisSize = context.basisSize;
             jacobians = context.jacobians;
             p1 = [1, 1, 2, 2];
@@ -84,7 +96,7 @@ classdef ElectricPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
 
             % Process each chunk sequentially.
             for n = 1:numel(chunks)
-                fprintf("Chunk ID=%d\n", n);
+                DEBUG("ElectricPartAssembler.generateImpl_: Assembling chunk %d/%d.", n, numel(chunks));
 
                 chunk = chunks{n};
                 slice = slices{n};
@@ -123,6 +135,8 @@ classdef ElectricPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
 
             % Apply final scaling by free-space impedance and Jacobian factors.
             Z = 1i * rooftopMoM.core.Constants.Z0 / (4 * pi * wavenumber) .* Z .* (jacobians.' * jacobians);
+
+            TRACE("ElectricPartAssembler.generateImpl_: Finished single matrix assembly.");
         end
     end
 

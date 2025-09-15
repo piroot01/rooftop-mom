@@ -11,6 +11,8 @@ classdef AssemblerChunkPlanner < handle
 
     methods
         function chunks = generateFull(obj, context, includeDiagonalBlocks)
+            TRACE("AssemblerChunkPlanner.generateFull: Initialized the chunk generation procedure.");
+
             [k, l] = rooftopMoM.core.impedanceMatrix.utils.generateChunkSize(obj.elementCount_, context.quadrature().order());
 
             rooftopIndices = context.rooftops().indices();
@@ -57,9 +59,13 @@ classdef AssemblerChunkPlanner < handle
                     end
                 end
             end
+
+            TRACE("AssemblerChunkPlanner.generateFull: Finished chunk generation, total of %d chunks.", totalChunks);
         end
 
         function chunks = generateSpecified(obj, context, interactions, count)
+            TRACE("AssemblerChunkPlanner.generateSpecified: Initialized the chunk generation procedure.");
+
             blockCount = rooftopMoM.core.impedanceMatrix.utils.generateBlockCountPerChunk(obj.elementCount_, context.quadrature().order());
             groups = rooftopMoM.core.impedanceMatrix.utils.generateInteractionGroupsByColumn(interactions, count);
 
@@ -97,6 +103,8 @@ classdef AssemblerChunkPlanner < handle
                     chunkIndex = chunkIndex + 1;
                 end
             end
+
+            TRACE("AssemblerChunkPlanner.generateFull: Finished chunk generation, total of %d chunks.", totalChunks);
         end
     end
 end

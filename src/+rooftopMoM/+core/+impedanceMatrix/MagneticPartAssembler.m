@@ -80,7 +80,7 @@ classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
 
             % Process each chunk sequentially.
             for n = 1:numel(chunks)
-                fprintf("Chunk ID=%d\n", n);
+                DEBUG("MagneticPartAssembler.generateImpl_: Assembling chunk %d/%d.", n, numel(chunks));
 
                 chunk = chunks{n};
                 slice = slices{n};

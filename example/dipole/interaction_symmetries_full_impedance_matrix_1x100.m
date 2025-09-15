@@ -1,13 +1,21 @@
 clc; clearvars;
 
-% Include toolbox paths.
+% Include paths.
 currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', '..', 'src');
-if exist(srcDir, 'dir')
-    addpath(srcDir);
-else
-    warning('Toolbox path not found: %s\nConstructors may fail if the toolbox is not installed there.', srcDir);
-end
+addpath(srcDir);
+
+loggerDir = fullfile(currentDir, '..', '..', '3rd', 'matlab-logger', 'src');
+addpath(loggerDir);
+
+% Configure the logger.
+logger.Logger.configure( ...
+    'timeFormat', 'ss.SSS', ...
+    'minLevel', logger.LogLevel.DEBUG, ...
+    'sinks', { ...
+        logger.sink.ConsoleSink(), ...
+    } ...
+);
 
 %% Antenna mesh setup:
 % The mesh is described by how many faces are in each direction.
@@ -36,7 +44,7 @@ order = 5;
 % Quadrature for two rectangular faces (Gauss-Legendre).
 quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
 
-% Build rooftop basis on the mesh (also computes any auxiliary info needed)
+% Build rooftop basis on the mesh (also computes any auxiliary info needed).
 rooftops = rooftopMoM.basisFunctions.MeshUniformRooftops(mesh, quad);
 rooftops.generate();
 
