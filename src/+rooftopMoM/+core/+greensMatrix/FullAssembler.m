@@ -71,10 +71,11 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
                 obj.computeShiftOperators_(gridSizeX - 1, gridSizeY - 1);
 
             % Combine the parts into Fourier-domain kernels.
-            [gxxFFT, gxyFFT, gyxFFT, gyyFFT] = ...
-                obj.combineParts_(gmxxCircFFT, gmyyCircFFT, geCircFFT, ...
-                    forwardShiftX, backwardShiftX, ...
-                    forwardShiftY, backwardShiftY);
+            [faceSizeX, faceSizeY] = primitive.faceSize();
+            gxxFFT = gmxxCircFFT + (1 / faceSizeX)^2 .* (1 - forwardShiftX) .* (backwardShiftX - 1) .* geCircFFT;
+            gxyFFT = (1 / (faceSizeX * faceSizeY)) .* (1 - forwardShiftX) .* (backwardShiftY - 1) .* geCircFFT;
+            gyxFFT = (1 / (faceSizeY * faceSizeX)) .* (1 - forwardShiftY) .* (backwardShiftX - 1) .* geCircFFT;
+            gyyFFT = gmyyCircFFT + (1 / faceSizeY)^2 .* (1 - forwardShiftY) .* (backwardShiftY - 1) .* geCircFFT;
 
             output = rooftopMoM.core.greensMatrix.MatrixData( ...
                 'gxxFFT', gxxFFT, ...
@@ -107,7 +108,8 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
             [forwardShiftX, backwardShiftX, ~, ~] = obj.computeShiftOperators_(gridSizeX - 1, 1);
 
             % Build Gxx Fourier kernel.
-            gxxFFT = gmxxCircFFT + (1 - forwardShiftX) .* (backwardShiftX - 1) .* geCircFFT;
+            faceSizeX = primitive.sizeX();
+            gxxFFT = gmxxCircFFT + (1 / faceSizeX)^2 .* (1 - forwardShiftX) .* (backwardShiftX - 1) .* geCircFFT;
 
             output = rooftopMoM.core.greensMatrix.MatrixData( ...
                 'gxxFFT', gxxFFT, ...
@@ -137,7 +139,8 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
             [~, ~, forwardShiftY, backwardShiftY] = obj.computeShiftOperators_(1, gridSizeY - 1);
 
             % Build Gyy Fourier kernel.
-            gyyFFT = gmyyCircFFT + (1 - forwardShiftY) .* (backwardShiftY - 1) .* geCircFFT;
+            faceSizeY = primitive.sizeY();
+            gyyFFT = gmyyCircFFT + (1 / faceSizeY)^2 .* (1 - forwardShiftY) .* (backwardShiftY - 1) .* geCircFFT;
 
             output = rooftopMoM.core.greensMatrix.MatrixData( ...
                 'gyyFFT', gyyFFT, ...
@@ -175,24 +178,6 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
 
             backwardX = conj(forwardX);
             backwardY = conj(forwardY);
-        end
-
-        function [gxx, gxy, gyx, gyy] = combineParts_(~, gmxxFFT, gmyyFFT, geFFT, fShiftX, bShiftX, fShiftY, bShiftY)
-            % combinePartsAll_: Combine magnetic and electric Fourier-domain contributions
-            %   into the full set of Fourier-domain Green operator: Gxx, Gxy, Gyx, Gyy.
-            %
-            %   Formula (elementwise):
-            %       Gxx = Gm_xx + (1 - fX) .* (bX - 1) .* Ge
-            %       Gxy = (1 - fX) .* (bY - 1) .* Ge
-            %       Gyx = (1 - fY) .* (bX - 1) .* Ge
-            %       Gyy = Gm_yy + (1 - fY) .* (bY - 1) .* Ge
-            %
-            %   NOTE: All inputs are already FFT(embedded-circulant) tensors.
-
-            gxx = gmxxFFT + (1 - fShiftX) .* (bShiftX - 1) .* geFFT;
-            gxy = (1 - fShiftX) .* (bShiftY - 1) .* geFFT;
-            gyx = (1 - fShiftY) .* (bShiftX - 1) .* geFFT;
-            gyy = gmyyFFT + (1 - fShiftY) .* (bShiftY - 1) .* geFFT;
         end
     end
 end
