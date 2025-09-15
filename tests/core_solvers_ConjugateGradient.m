@@ -4,10 +4,10 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 1;
-countY = 100;
-sizeX = 1;
-sizeY = 1;
+countX = 3;
+countY = 3;
+sizeX = 1.2;
+sizeY = 0.5;
 
 rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
 rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
@@ -36,7 +36,7 @@ outputNaive = fullAssembler.generateFull(context);
 mode = rooftopMoM.operators.utils.generateMiddlePortMode(rooftops);
 excitation = rooftopMoM.operators.DeltaGapFeederExcitation.generate(rooftops, mode, V);
 
-currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excitation);
+currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excitation)
 
 %
 % Convolutional approach
@@ -65,4 +65,10 @@ outputConvSolver = conjugateGradientSolver.solve( ...
 );
 
 fprintf('Number of the iterations: %d', outputConvSolver.count());
-outputConvSolver.postRunInfo()
+currentConv = outputConvSolver.postRunInfo().current
+
+%
+% Compare the currents.
+%
+
+normDifference = norm(currentNaive) - norm(currentConv)

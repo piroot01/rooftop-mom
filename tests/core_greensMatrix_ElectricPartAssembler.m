@@ -4,10 +4,10 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-countX = 4;
-countY = 4;
-sizeX = 1;
-sizeY = 1;
+countX = 3;
+countY = 3;
+sizeX = 1.2;
+sizeY = 0.5;
 
 rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
 
@@ -18,7 +18,7 @@ rooftops = rooftopMoM.basisFunctions.UniformRectPrimitiveUniformRooftops(rectPri
 
 rooftops.generate();
 
-elementCount = 100 * order^4;
+elementCount = 1e6;
 
 planner = rooftopMoM.core.greensMatrix.AssemblerChunkPlanner(elementCount);
 

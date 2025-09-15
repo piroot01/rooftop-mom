@@ -6,8 +6,8 @@ addpath(srcDir);
 
 countX = 3;
 countY = 3;
-sizeX = 1;
-sizeY = 1;
+sizeX = 1.5;
+sizeY = 0.4;
 
 rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
 
@@ -28,15 +28,15 @@ context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 
 magAssembler = rooftopMoM.core.greensMatrix.MagneticPartAssembler(planner);
 
-%Gxx = magAssembler.generateFullDirection(context, 'x')
+Gxx = magAssembler.generateFullDir(context, 'x')
 Gyy = magAssembler.generateFullDir(context, 'y')
 
 % Test comparing to the impedance matrix
-%{
+
 rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
 mesh = rect.generateMesh();
 
-rooftops = rooftopMoM.basisFunctions.UniformRooftops(mesh, quad);
+rooftops = rooftopMoM.basisFunctions.MeshUniformRooftops(mesh, quad);
 rooftops.generate();
 
 context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
@@ -45,5 +45,4 @@ planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
 
 magAssembler = rooftopMoM.core.impedanceMatrix.MagneticPartAssembler(planner);
 
-Z = magAssembler.generateFull(context);
-%}
+Zm = magAssembler.generateFull(context).value()
