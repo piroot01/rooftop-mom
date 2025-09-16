@@ -25,6 +25,8 @@ classdef ConjugateGradient < handle
             %       'tolerance': Relative residual tolerance (default 1e-6).
             %       'maxIterCount': Maximum number of iterations (default 1000).
 
+            TRACE("ConjugateGradient.solve: Initialized solving procedure.");
+
             count = obj.context_.rooftops().count();
 
             p = inputParser();
@@ -39,6 +41,9 @@ classdef ConjugateGradient < handle
             if isempty(p.Results.excitation)
                 error('The excitation is empty!');
             end
+
+            DEBUG("ConjugateGradient.solve: Parsed inputs: rooftop count = %d, tolerance = %g, maxIterCount = %d", ...
+                count, p.Results.tolerance, p.Results.maxIterCount);
 
             output = obj.solveImpl_( ...
                 p.Results.initCurrent, ...
@@ -62,6 +67,8 @@ classdef ConjugateGradient < handle
             %   Returns:
             %       output: Solution in form of the ConjugateGradientOutput.
 
+            TRACE("ConjugateGradient.solveImpl_: Starting CG solver core.");
+
             output = rooftopMoM.core.solver.ConjugateGradientOutput();
 
             current = initCurrent;
@@ -71,9 +78,13 @@ classdef ConjugateGradient < handle
             excitationNorm = norm(excitation);
             converged = false;
 
+            DEBUG("ConjugateGradient.solveImpl_: Initial residual norm (unnormalized) = %g, excitationNorm = %g.", sqrt(rTr), excitationNorm);
+
             tic;
 
             for iteration = 1:maxIterCount
+                DEBUG("ConjugateGradient.solveImpl_: Iteration %d: residual norm (prev) = %g", iteration, rTr);
+
                 gDirection = obj.applyGreensMatrix_(direction);
                 alpha = rTr / (direction.' * gDirection);
                 current = current + alpha * direction;
@@ -82,6 +93,7 @@ classdef ConjugateGradient < handle
                 residueNorm = sqrt(rTrNew) / excitationNorm;
 
                 if residueNorm < tolerance
+                    INFO("ConjugateGradient.solveImpl_: Converged in %d iterations (residue norm = %g).", iteration, residueNorm);
                     converged = true;
                     break;
                 end
@@ -98,6 +110,12 @@ classdef ConjugateGradient < handle
 
             solvingTime = toc;
 
+            if ~converged
+                INFO("ConjugateGradient.solveImpl_: Did not converge after %d iterations (final residue norm = %g).", maxIterCount, residueNorm, solvingTime);
+            end
+
+            INFO("ConjugateGradient.solveImpl_: Total time = %g s.", solvingTime);
+
             output.setPostRunInfo( ...
                 struct( ...
                     'converged', converged, ...
@@ -106,6 +124,8 @@ classdef ConjugateGradient < handle
                     'residueNorm', residueNorm ...
                 ) ...
             );
+
+            TRACE("ConjugateGradient.solveImpl_: Exiting CG solver core.");
         end
 
         function result = applyGreensMatrix_(obj, input)
