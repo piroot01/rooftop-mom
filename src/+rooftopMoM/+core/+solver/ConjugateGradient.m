@@ -17,13 +17,13 @@ classdef ConjugateGradient < handle
 
     methods
         function output = solve(obj, varargin)
-            % solve: High-level entry point for the solver.
-            %
-            %   Optional name-value inputs:
-            %       'initCurrent': Initial guess vector (complex, column).
-            %       'excitation': Right-hand side vector (required).
-            %       'tolerance': Relative residual tolerance (default 1e-6).
-            %       'maxIterCount': Maximum number of iterations (default 1000).
+        % solve: High-level entry point for the solver.
+        %
+        %   Optional name-value inputs:
+        %       'initCurrent': Initial guess vector (complex, column).
+        %       'excitation': Right-hand side vector (required).
+        %       'tolerance': Relative residual tolerance (default 1e-6).
+        %       'maxIterCount': Maximum number of iterations (default 1000).
 
             TRACE("ConjugateGradient.solve: Initialized solving procedure.");
 
@@ -56,16 +56,16 @@ classdef ConjugateGradient < handle
 
     methods (Access = protected)
         function output = solveImpl_(obj, initCurrent, excitation, tolerance, maxIterCount)
-            % solveImpl_: Core Conjugate-Gradient loop.
-            %
-            %   Inputs:
-            %       initCurrent: Initial guess column vector.
-            %       excitation: Right-hand side column vector.
-            %       tolerance: Relative tolerance.
-            %       maxIterCount: Maximum iterations.
-            %
-            %   Returns:
-            %       output: Solution in form of the ConjugateGradientOutput.
+        % solveImpl_: Core Conjugate-Gradient loop.
+        %
+        %   Inputs:
+        %       initCurrent: Initial guess column vector.
+        %       excitation: Right-hand side column vector.
+        %       tolerance: Relative tolerance.
+        %       maxIterCount: Maximum iterations.
+        %
+        %   Returns:
+        %       output: Solution in form of the ConjugateGradientOutput.
 
             TRACE("ConjugateGradient.solveImpl_: Starting CG solver core.");
 
@@ -129,16 +129,16 @@ classdef ConjugateGradient < handle
         end
 
         function result = applyGreensMatrix_(obj, input)
-            % applyGreensMatrix_: Compute y = A * input using FFT-based kernel.
-            %   The operator depends on the rooftop basis content which can be
-            %   XONLY, YONLY, or BOTH. The strategy in each case is:
-            %   1) reshape/transpose input to 2D grid form matching the
-            %      physical arrangement of rooftop basis functions;
-            %   2) extend the grid to the padding size and compute fft2;
-            %   3) multiply pointwise by the precomputed spectral kernel(s);
-            %   4) inverse FFT (ifft2) to go back to spatial domain;
-            %   5) truncate the padded result to the useful subregion and
-            %      reshape back to a column vector if needed.
+        % applyGreensMatrix_: Compute y = A * input using FFT-based kernel.
+        %   The operator depends on the rooftop basis content which can be
+        %   XONLY, YONLY, or BOTH. The strategy in each case is:
+        %   1) reshape/transpose input to 2D grid form matching the
+        %      physical arrangement of rooftop basis functions;
+        %   2) extend the grid to the padding size and compute fft2;
+        %   3) multiply pointwise by the precomputed spectral kernel(s);
+        %   4) inverse FFT (ifft2) to go back to spatial domain;
+        %   5) truncate the padded result to the useful subregion and
+        %      reshape back to a column vector if needed.
 
             sizeX = obj.context_.rooftops().countDir('x');
             sizeY = obj.context_.rooftops().countDir('y');

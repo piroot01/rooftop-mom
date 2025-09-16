@@ -6,6 +6,8 @@ classdef MatrixData < handle
 
         paddingX_;
         paddingY_;
+
+        determinant_;
     end
 
     methods
@@ -20,6 +22,7 @@ classdef MatrixData < handle
             addParameter(p, 'rooftopContent', rooftopMoM.basisFunctions.RooftopContent.NONE);
             addParameter(p, 'paddingX', []);
             addParameter(p, 'paddingY', []);
+            addParameter(p, 'determinant', []);
 
             parse(p, varargin{:});
 
@@ -33,6 +36,7 @@ classdef MatrixData < handle
             obj.rooftopContent_ = p.Results.rooftopContent;
             obj.paddingX_ = p.Results.paddingX;
             obj.paddingY_ = p.Results.paddingY;
+            obj.determinant_ = p.Results.determinant;
         end
     end
 
@@ -67,6 +71,10 @@ classdef MatrixData < handle
 
         function paddingY = paddingY(obj)
             paddingY = obj.paddingY_;
+        end
+
+        function determinant = determinant(obj)
+            determinant = obj.determinant_;
         end
     end
 end
