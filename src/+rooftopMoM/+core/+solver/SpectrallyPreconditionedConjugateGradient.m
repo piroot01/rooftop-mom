@@ -152,7 +152,7 @@ classdef SpectrallyPreconditionedConjugateGradient < rooftopMoM.core.solver.Conj
                     output = ifft2(outputFFT);
 
                     % Truncate the useful part and return as a column (truncate returns an array with shape [sizeX, 1]).
-                    result = rooftopMoM.core.solver.utils.truncate(output, sizeX, 1);
+                    result = output(1:sizeX, 1);
                 case rooftopMoM.basisFunctions.RooftopContent.YONLY
                     % Y-only basis functions: the physical layout requires transposition before padding/FFT.
                     input = input.';
@@ -167,7 +167,8 @@ classdef SpectrallyPreconditionedConjugateGradient < rooftopMoM.core.solver.Conj
                     output = ifft2(outputFFT);
 
                     % Truncate the useful region and return vectorized.
-                    outputTruncated = rooftopMoM.core.solver.utils.truncate(output, 1, sizeY);
+                    outputTruncated = output(1, 1:sizeY);
+
                     result = outputTruncated(:);
                 case rooftopMoM.basisFunctions.RooftopContent.BOTH
                     % Both X and Y basis functions are present. The vector is split into two segments: 
@@ -197,8 +198,8 @@ classdef SpectrallyPreconditionedConjugateGradient < rooftopMoM.core.solver.Conj
                     outputY = ifft2(outputYFFT);
 
                     % Truncate to useful region (removing padding) and re-vectorize both parts to produce final column.
-                    outputXTruncated = rooftopMoM.core.solver.utils.truncate(outputX, countX - 1, countY);
-                    outputYTruncated = rooftopMoM.core.solver.utils.truncate(outputY, countX, countY - 1);
+                    outputXTruncated = outputX(1:(countX - 1), 1:countY);
+                    outputYTruncated = outputY(1:countX, 1:(countY - 1));
 
                     result = [outputXTruncated(:); outputYTruncated(:)];
                 otherwise
