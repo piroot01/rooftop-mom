@@ -129,12 +129,25 @@ classdef ConjugateGradientGenome < rooftopMoM.core.solver.ConjugateGradient
         end
 
         function result = applyGreensMatrix_(obj, input, genome)
+        % applyGreensMatrix_: Apply A * x where x is provided only on a subset (genome).
+        %
+        %   Inputs:
+        %       input: Column vector of length nnz(genome) containing values for the
+        %           active degrees-of-freedom selected by genome.
+        %       genome: Logical mask (N x 1) or vector of integer indices selecting the
+        %           active rooftop DOFs.
+        %
+        %   Output:
+        %       result: Column vector corresponding to A * fullVector restricted to the
+        %           entries indicated by genome.
+
             extendedInput = zeros(numel(genome), 1, 'like', input);
             extendedInput(genome) = input;
 
-            output = applyGreensMatrix_@rooftopMoM.core.solver.ConjugateGradient(obj, extendedInput);
+            fullOutput = applyGreensMatrix_@rooftopMoM.core.solver.ConjugateGradient(obj, extendedInput);
 
-            result = output(genome);
+            % Return onlydd active rows.
+            result = fullOutput(genome);
         end
     end
 end
