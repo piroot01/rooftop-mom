@@ -71,10 +71,10 @@ classdef SpectrallyPreconditionedConjugateGradient < rooftopMoM.core.solver.Conj
 
             DEBUG("SpectrallyPreconditionedConjugateGradient.solveImpl_: Initial residual norm (unnormalized) = %g, excitationNorm = %g.", sqrt(rTr), excitationNorm);
 
-            tic;
+            t0 = tic;
 
             for iteration = 1:maxIterCount
-                DEBUG("SpectrallyPreconditionedConjugateGradient.solveImpl_: Iteration %d: residual norm (prev) = %g", iteration, rTr);
+                TRACE("SpectrallyPreconditionedConjugateGradient.solveImpl_: Iteration %d: residual norm (prev) = %g", iteration, rTr);
 
                 gDirection = obj.applyGreensMatrix_(direction);
                 alpha = rTr / (direction.' * gDirection);
@@ -85,7 +85,7 @@ classdef SpectrallyPreconditionedConjugateGradient < rooftopMoM.core.solver.Conj
                 residueNorm = sqrt(rTrNew) / excitationNorm;
 
                 if residueNorm < tolerance
-                    INFO("SpectrallyPreconditionedConjugateGradient.solveImpl_: Converged in %d iterations (residue norm = %g).", iteration, residueNorm);
+                    DEBUG("SpectrallyPreconditionedConjugateGradient.solveImpl_: Converged in %d iterations (residue norm = %g).", iteration, residueNorm);
                     converged = true;
                     break;
                 end
@@ -100,13 +100,13 @@ classdef SpectrallyPreconditionedConjugateGradient < rooftopMoM.core.solver.Conj
                 );
             end
 
-            solvingTime = toc;
+            solvingTime = toc(t0);
 
             if ~converged
-                INFO("SpectrallyPreconditionedConjugateGradient.solveImpl_: Did not converge after %d iterations (final residue norm = %g).", maxIterCount, residueNorm, solvingTime);
+                DEBUG("SpectrallyPreconditionedConjugateGradient.solveImpl_: Did not converge after %d iterations (final residue norm = %g).", maxIterCount, residueNorm, solvingTime);
             end
 
-            INFO("SpectrallyPreconditionedConjugateGradient.solveImpl_: Total time = %g s.", solvingTime);
+            DEBUG("SpectrallyPreconditionedConjugateGradient.solveImpl_: Total time = %g s.", solvingTime);
 
             output.setPostRunInfo( ...
                 struct( ...

@@ -80,10 +80,10 @@ classdef ConjugateGradient < handle
 
             DEBUG("ConjugateGradient.solveImpl_: Initial residual norm (unnormalized) = %g, excitationNorm = %g.", sqrt(rTr), excitationNorm);
 
-            tic;
+            t0 = tic;
 
             for iteration = 1:maxIterCount
-                DEBUG("ConjugateGradient.solveImpl_: Iteration %d: residual norm (prev) = %g", iteration, rTr);
+                TRACE("ConjugateGradient.solveImpl_: Iteration %d: residual norm (prev) = %g", iteration, rTr);
 
                 gDirection = obj.applyGreensMatrix_(direction);
                 alpha = rTr / (direction.' * gDirection);
@@ -93,7 +93,7 @@ classdef ConjugateGradient < handle
                 residueNorm = sqrt(rTrNew) / excitationNorm;
 
                 if residueNorm < tolerance
-                    INFO("ConjugateGradient.solveImpl_: Converged in %d iterations (residue norm = %g).", iteration, residueNorm);
+                    DEBUG("ConjugateGradient.solveImpl_: Converged in %d iterations (residue norm = %g).", iteration, residueNorm);
                     converged = true;
                     break;
                 end
@@ -108,13 +108,13 @@ classdef ConjugateGradient < handle
                 );
             end
 
-            solvingTime = toc;
+            solvingTime = toc(t0);
 
             if ~converged
-                INFO("ConjugateGradient.solveImpl_: Did not converge after %d iterations (final residue norm = %g).", maxIterCount, residueNorm, solvingTime);
+                DEBUG("ConjugateGradient.solveImpl_: Did not converge after %d iterations (final residue norm = %g).", maxIterCount, residueNorm, solvingTime);
             end
 
-            INFO("ConjugateGradient.solveImpl_: Total time = %g s.", solvingTime);
+            DEBUG("ConjugateGradient.solveImpl_: Total time = %g s.", solvingTime);
 
             output.setPostRunInfo( ...
                 struct( ...

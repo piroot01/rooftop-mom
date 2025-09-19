@@ -80,10 +80,10 @@ classdef SpectrallyPreconditionedConjugateGradientGenome < rooftopMoM.core.solve
 
             DEBUG("SpectrallyPreconditionedConjugateGradientGenome.solveImpl_: Initial residual norm (unnormalized) = %g, excitationNorm = %g.", sqrt(rTr), excitationNorm);
 
-            tic;
+            t0 = tic;
 
             for iteration = 1:maxIterCount
-                DEBUG("SpectrallyPreconditionedConjugateGradientGenome.solveImpl_: Iteration %d: residual norm (prev) = %g", iteration, rTr);
+                TRACE("SpectrallyPreconditionedConjugateGradientGenome.solveImpl_: Iteration %d: residual norm (prev) = %g", iteration, rTr);
 
                 gDirection = obj.applyGreensMatrix_(direction, genome);
                 alpha = rTr / (direction.' * gDirection);
@@ -94,7 +94,7 @@ classdef SpectrallyPreconditionedConjugateGradientGenome < rooftopMoM.core.solve
                 residueNorm = sqrt(rTrNew) / excitationNorm;
 
                 if residueNorm < tolerance
-                    INFO("SpectrallyPreconditionedConjugateGradientGenome.solveImpl_: Converged in %d iterations (residue norm = %g).", iteration, residueNorm);
+                    DEBUG("SpectrallyPreconditionedConjugateGradientGenome.solveImpl_: Converged in %d iterations (residue norm = %g).", iteration, residueNorm);
                     converged = true;
                     break;
                 end
@@ -109,13 +109,13 @@ classdef SpectrallyPreconditionedConjugateGradientGenome < rooftopMoM.core.solve
                 );
             end
 
-            solvingTime = toc;
+            solvingTime = toc(t0);
 
             if ~converged
-                INFO("SpectrallyPreconditionedConjugateGradientGenome.solveImpl_: Did not converge after %d iterations (final residue norm = %g).", maxIterCount, residueNorm, solvingTime);
+                DEBUG("SpectrallyPreconditionedConjugateGradientGenome.solveImpl_: Did not converge after %d iterations (final residue norm = %g).", maxIterCount, residueNorm, solvingTime);
             end
 
-            INFO("SpectrallyPreconditionedConjugateGradientGenome.solveImpl_: Total time = %g s.", solvingTime);
+            DEBUG("SpectrallyPreconditionedConjugateGradientGenome.solveImpl_: Total time = %g s.", solvingTime);
 
             output.setPostRunInfo( ...
                 struct( ...
