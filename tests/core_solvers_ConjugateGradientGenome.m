@@ -4,7 +4,7 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-loggerDir = fullfile(currentDir, '..', '..', '3rd', 'matlab-logger', 'src');
+loggerDir = fullfile(currentDir, '..', '3rd', 'matlab-logger', 'src');
 addpath(loggerDir);
 
 % Configure the logger.
@@ -16,10 +16,10 @@ logger.Logger.configure( ...
     } ...
 );
 
-countX = 3;
-countY = 3;
-sizeX = 1.2;
-sizeY = 0.5;
+countX = 1;
+countY = 100;
+sizeX = 1;
+sizeY = 1;
 
 rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
 rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
@@ -37,7 +37,8 @@ quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
 %
 
 rooftopCount = rooftopMoM.basisFunctions.utils.generateRooftopCount(countX, countY);
-genome = rand(rooftopCount, 1) > 0.5
+genome = rand(rooftopCount, 1) > 0.8
+%genome = true(rooftopCount, 1);
 
 rooftops = rooftopMoM.basisFunctions.MeshUniformRooftopsGenome(mesh, quad, genome);
 rooftops.generate();
@@ -48,8 +49,8 @@ fullAssembler = rooftopMoM.core.impedanceMatrix.FullAssembler(planner);
 
 outputNaive = fullAssembler.generateFull(context);
 
-mode = rooftopMoM.operators.utils.generateMiddlePortMode(rooftops);
-excitation = rooftopMoM.operators.DeltaGapFeederExcitation.generate(rooftops, mode, V);
+mode = rooftopMoM.operators.utils.generateMiddlePortMode(rooftops.count());
+excitation = rooftopMoM.operators.DeltaGapFeederExcitation.generate(rooftops.count(), mode, V);
 
 currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excitation)
 
@@ -70,7 +71,7 @@ outputConv = assembler.generateFull(context);
 
 conjugateGradientSolver = rooftopMoM.core.solver.ConjugateGradientGenome(context, outputConv);
 
-tolerance = 1e-4;
+tolerance = 1e-9;
 maxIterCount = 2000;
 
 outputConvSolver = conjugateGradientSolver.solve( ...

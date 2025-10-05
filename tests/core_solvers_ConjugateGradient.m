@@ -4,20 +4,20 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-loggerDir = fullfile(currentDir, '..', '..', '3rd', 'matlab-logger', 'src');
+loggerDir = fullfile(currentDir, '..', '3rd', 'matlab-logger', 'src');
 addpath(loggerDir);
 
 % Configure the logger.
 logger.Logger.configure( ...
     'timeFormat', 'ss.SSS', ...
-    'minLevel', logger.LogLevel.INFO, ...
+    'minLevel', logger.LogLevel.DEBUG, ...
     'sinks', { ...
         logger.sink.ConsoleSink(), ...
     } ...
 );
 
-countX = 3;
-countY = 3;
+countX = 100;
+countY = 10;
 sizeX = 1.2;
 sizeY = 0.5;
 
@@ -39,16 +39,16 @@ quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
 rooftops = rooftopMoM.basisFunctions.MeshUniformRooftops(mesh, quad);
 rooftops.generate();
 
-planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
-context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
-fullAssembler = rooftopMoM.core.impedanceMatrix.FullAssembler(planner);
+%planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
+%context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
+%fullAssembler = rooftopMoM.core.impedanceMatrix.FullAssembler(planner);
 
-outputNaive = fullAssembler.generateFull(context);
+%outputNaive = fullAssembler.generateFull(context);
 
-mode = rooftopMoM.operators.utils.generateMiddlePortMode(rooftops);
-excitation = rooftopMoM.operators.DeltaGapFeederExcitation.generate(rooftops, mode, V);
+mode = rooftopMoM.operators.utils.generateMiddlePortMode(rooftops.count());
+excitation = rooftopMoM.operators.DeltaGapFeederExcitation.generate(rooftops.count(), mode, V);
 
-currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excitation)
+%currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excitation)
 
 %
 % Convolutional approach
@@ -67,7 +67,7 @@ outputConv = assembler.generateFull(context);
 
 conjugateGradientSolver = rooftopMoM.core.solver.ConjugateGradient(context, outputConv);
 
-tolerance = 1e-4;
+tolerance = 1e-9;
 maxIterCount = 2000;
 
 outputConvSolver = conjugateGradientSolver.solve( ...
@@ -76,11 +76,5 @@ outputConvSolver = conjugateGradientSolver.solve( ...
     'maxIterCount', maxIterCount ...
 );
 
-fprintf('Number of the iterations: %d', outputConvSolver.count());
-currentConv = outputConvSolver.postRunInfo().current
-
-%
-% Compare the currents.
-%
-
-normDifference = norm(currentNaive) - norm(currentConv)
+fprintf('Number of the iterations: %d\n', outputConvSolver.count());
+currentConv = outputConvSolver.postRunInfo().current;
