@@ -51,9 +51,116 @@ classdef ConjugateGradientGenome < rooftopMoM.core.solver.ConjugateGradient
                 p.Results.genome ...
             );
         end
+
+        % NOTE: Only temporary method, extract to a different class.
+        % NOTE: We are assuming that the edge length is 1.
+        function perturbedCurrent = rank1PerturbationRemoval(obj, excitation, tolerance, maxIterCount, mask)
+            % Approach #1: Two separate CG loops
+            % First we compute the n-th column of the admittance matrix.
+
+            tic;
+            outputYn = obj.solve('excitation', double(mask), 'tolerance', tolerance, 'maxIterCount', maxIterCount);
+            yn = outputYn.postRunInfo().current;
+            outputYn.count()
+            outputIf = obj.solve('excitation', excitation, 'tolerance', tolerance, 'maxIterCount', maxIterCount);
+            If = outputIf.postRunInfo().current;
+            outputIf.count()
+            toc;
+
+            Ynn = yn(mask);
+            Yfn = yn(excitation > 0);
+
+            zeta = Yfn / Ynn;
+            perturbedCurrent = If - zeta * yn;
+
+            % Approach #2: Single step CG loop
+            combined = [double(mask); excitation];
+            chunks = [1, numel(mask); numel(mask) + 1, 2 * numel(mask)];
+
+            tic;
+            output = obj.solveCombined_(chunks, zeros(size(combined)), combined, tolerance, maxIterCount);
+            output.count()
+            toc;
+        end
     end
 
     methods (Access = protected)
+        % NOTE: Temporary
+        % TODO: Clean and put somewhere else.
+        function output = solveCombined_(obj, chunks, initCurrent, excitation, tolerance, maxIterCount)
+        % solveImpl_: Core Conjugate-Gradient loop.
+        %
+        %   Inputs:
+        %       initCurrent: Initial guess column vector.
+        %       excitation: Right-hand side column vector.
+        %       tolerance: Relative tolerance.
+        %       maxIterCount: Maximum iterations.
+        %       genome: Logical vector selecting the active rooftop basis functions indices.
+        %
+        %   Returns:
+        %       output: Solution in form of the ConjugateGradientOutput.
+
+            TRACE("ConjugateGradientGenome.solveImpl_: Starting CG solver core.");
+
+            output = rooftopMoM.core.solver.ConjugateGradientOutput();
+
+            current = initCurrent;
+            residue = excitation - obj.applyGreensMatrixCombined_(chunks, current);
+            direction = residue;
+            rTr = residue.' * residue;
+            excitationNorm = norm(excitation);
+            converged = false;
+
+            DEBUG("ConjugateGradientGenome.solveImpl_: Initial residual norm (unnormalized) = %g, excitationNorm = %g.", sqrt(rTr), excitationNorm);
+
+            t0 = tic;
+
+            for iteration = 1:maxIterCount
+                TRACE("ConjugateGradientGenome.solveImpl_: Iteration %d: residual norm (prev) = %g", iteration, rTr);
+
+                gDirection = obj.applyGreensMatrixCombined_(chunks, direction);
+                alpha = rTr / (direction.' * gDirection);
+                current = current + alpha * direction;
+                residue = residue - alpha * gDirection;
+                rTrNew = residue.' * residue;
+                residueNorm = sqrt(rTrNew) / excitationNorm;
+
+                if residueNorm < tolerance
+                    DEBUG("ConjugateGradientGenome.solveImpl_: Converged in %d iterations (residue norm = %g).", iteration, residueNorm);
+                    converged = true;
+                    break;
+                end
+
+                beta = rTrNew / rTr;
+                direction = residue + beta * direction;
+                rTr = rTrNew;
+
+                % Insert iteration info.
+                output.insertIterationInfo( ...
+                    'residueNorm', residueNorm ...
+                );
+            end
+
+            solvingTime = toc(t0);
+
+            if ~converged
+                DEBUG("ConjugateGradientGenome.solveImpl_: Did not converge after %d iterations (final residue norm = %g).", maxIterCount, residueNorm, solvingTime);
+            end
+
+            DEBUG("ConjugateGradientGenome.solveImpl_: Total time = %g s.", solvingTime);
+
+            output.setPostRunInfo( ...
+                struct( ...
+                    'converged', converged, ...
+                    'current', current, ...
+                    'solvingTime', solvingTime, ...
+                    'residueNorm', residueNorm ...
+                ) ...
+            );
+
+            TRACE("ConjugateGradientGenome.solveImpl_: Exiting CG solver core.");
+        end
+
         function output = solveImpl_(obj, initCurrent, excitation, tolerance, maxIterCount, genome)
         % solveImpl_: Core Conjugate-Gradient loop.
         %
@@ -126,6 +233,14 @@ classdef ConjugateGradientGenome < rooftopMoM.core.solver.ConjugateGradient
             );
 
             TRACE("ConjugateGradientGenome.solveImpl_: Exiting CG solver core.");
+        end
+
+        function result = applyGreensMatrixCombined_(obj, chunks, input)
+            result = zeros(size(input), 'like', input);
+            for n = 1:size(chunks, 2)
+                section = chunks(n, 1):chunks(n, 2);
+                result(section) = obj.applyGreensMatrix_(input(section), true(numel(section), 1));
+            end
         end
 
         function result = applyGreensMatrix_(obj, input, genome)
