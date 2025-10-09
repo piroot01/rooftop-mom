@@ -17,7 +17,7 @@ logger.Logger.configure( ...
 );
 
 countX = 100;
-countY = 10;
+countY = 100;
 sizeX = 1.2;
 sizeY = 0.5;
 
@@ -25,8 +25,8 @@ rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, size
 rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
 mesh = rect.generateMesh();
 
-order = 5;
-elementCount = 100000;
+order = 3;
+elementCount = 1e7;
 k = pi / (sizeY * countY);
 V = 1;
 
@@ -67,9 +67,9 @@ outputConv = assembler.generateFull(context);
 
 solver = rooftopMoM.core.solver.GeneralizedMinimumResidual(context, outputConv);
 
-tolerance = 1e-9;
+tolerance = 1e-4;
 maxIterCount = 2000;
-restart = 200;
+restart = 100;
 
 outputConvSolver = solver.solve( ...
     'excitation', excitation, ...
