@@ -194,8 +194,11 @@ clc; clearvars; close all;
 BinGB = 1024^3;
 
 % Get the free memory available on the system
-freeMemoryB = getMemoryInfo();
-freeMemoryGB = freeMemoryB / BinGB;
+%freeMemoryB = getMemoryInfo();
+%freeMemoryGB = freeMemoryB / BinGB;
+
+freeMemoryGB = 200;
+freeMemoryB = freeMemoryGB * BinGB;
 
 % inputs
 count = 100;
@@ -235,9 +238,8 @@ function [freeMemoryB, usedMemoryB, totalMemoryB] = getMemoryInfo()
     % Platform-dependent query for total and available physical memory.
     % Returns freeMemoryB (available), usedMemoryB, and totalMemoryB.
     if ispc
-        m = memory;
-        totalMemoryB = m.TotalPhysicalMemory;
-        freeMemoryB  = m.PhysicalMemoryAvailable;
+        [~, sys] = memory;
+        freeMemoryB = sys.PhysicalMemory.Available;
     elseif ismac
         % macOS: use sysctl and vm_stat to estimate available memory
         [~, out1] = system('sysctl -n hw.memsize');
@@ -344,62 +346,82 @@ runCount = 3;
 % Choose the sample count, minimum and maximum problem sizes
 count = 10;
 Mmin = 1e2;
-Mmax = 1e3;
+Mmax = 5e3;
+
+enable_FFTMult = true;
+enable_splitFFTMult = true;
 
 Ms = round(logspace(log10(Mmin), log10(Mmax), count));
 MsSq = Ms.^2;
 
-% check the memory requirements of this script
-% we assume that the split FFT multiplication is less memory demanding and
-% the results fit in this memory
-maxMemoryB_FFTMult = predictMemoryUsageFFTMult(Mmax, Mmax);
-
-fprintf('Maximal expected memory usage %g GB.\n', maxMemoryB_FFTMult / BinGB);
-
-if freeMemoryB < maxMemoryB_FFTMult
-    error('Not enough free memory.\n');
-end
-
-timesS_FFTMult = zeros(size(Ms));
-timesS_splitFFTMult = zeros(size(Ms));
+timesS_FFTMult = nan(size(Ms));
+timesS_splitFFTMult = nan(size(Ms));
 
 for n = 1:count
     fprintf('[%d/%d] Computing with %g (M = %g) unknowns.\n', n, count, MsSq(n), Ms(n));
     M = Ms(n);
     N = M;
+    
+    if enable_FFTMult
+        memoryB_FFTMult = predictMemoryUsageFFTMult(M, M, 0);
+        if freeMemoryB < memoryB_FFTMult
+            fprintf('Not enough free memory for the FFTMult (%g GB).\n', memoryB_FFTMult / BinGB);
+            enable_FFTMult = false;
+        end
+    end
+
+    if enable_splitFFTMult
+        memoryB_splitFFTMult = predictMemoryUsageSplitFFTMult(M, M, 0);
+        if freeMemoryB < memoryB_splitFFTMult
+            fprintf('Not enough free memory for the splitFFTMult (%g GB).\n', memoryB_splitFFTMult / BinGB);
+            enable_splitFFTMult = false;
+        end
+    end
+
+    if ~enable_splitFFTMult & ~enable_splitFFTMult
+        return;
+    end
 
     ht = complex(randn(M, N), randn(M, N));
     x = complex(randn(M, N), randn(M, N));
 
     for m = 1:warmupRunCount
-        y_FFTMult = FFTMult_(FFTMultDataPrep_(ht), x);
+        if enable_FFTMult
+            y_FFTMult = FFTMult_(FFTMultDataPrep_(ht), x);
 
-        clear y_FFTMult;
+            clear y_FFTMult;
+        end
 
-        y_splitFFTMult = splitFFTMult_(splitFFTMultDataPrep_(ht), x);
+        if enable_splitFFTMult
+            y_splitFFTMult = splitFFTMult_(splitFFTMultDataPrep_(ht), x);
 
-        clear y_splitFFTMult;
+            clear y_splitFFTMult;
+        end
     end
 
     timeS_FFTMult = zeros(runCount, 1);
     timeS_splitFFTMult = zeros(runCount, 1);
 
     for m = 1:runCount
-        data = FFTMultDataPrep_(ht);
+        if enable_FFTMult
+            data = FFTMultDataPrep_(ht);
+    
+            t_FFTMult = tic;
+            y_FFTMult = FFTMult_(FFTMultDataPrep_(ht), x);
+            timeS_FFTMult(m) = toc(t_FFTMult);
+    
+            clear data y_FFTMult;
+        end
 
-        t_FFTMult = tic;
-        y_FFTMult = FFTMult_(FFTMultDataPrep_(ht), x);
-        timeS_FFTMult(m) = toc(t_FFTMult);
-
-        clear data y_FFTMult;
-
-        data = splitFFTMultDataPrep_(ht);
-
-        t_splitFFTMult = tic;
-        y_splitFFTMult = splitFFTMult_(data, x);
-        timeS_splitFFTMult(m) = toc(t_splitFFTMult);
-
-        clear data y_splitFFTMult;
+        if enable_splitFFTMult
+            data = splitFFTMultDataPrep_(ht);
+    
+            t_splitFFTMult = tic;
+            y_splitFFTMult = splitFFTMult_(data, x);
+            timeS_splitFFTMult(m) = toc(t_splitFFTMult);
+    
+            clear data y_splitFFTMult;
+        end
         
         fprintf('\t[%d/%d] timeS_FFTMult = %g s, timeS_splitFFTMult = %g s, speed up %g\n', m, runCount, ...
             timeS_FFTMult(m), timeS_splitFFTMult(m), timeS_FFTMult(m) / timeS_splitFFTMult(m));
