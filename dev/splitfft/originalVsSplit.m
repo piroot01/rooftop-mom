@@ -344,7 +344,7 @@ warmupRunCount = 1;
 runCount = 3;
 
 % Choose the sample count, minimum and maximum problem sizes
-count = 10;
+count = 100;
 Mmin = 1e2;
 Mmax = 5e3;
 
@@ -379,7 +379,7 @@ for n = 1:count
     end
 
     if ~enable_splitFFTMult & ~enable_splitFFTMult
-        return;
+        break;
     end
 
     ht = complex(randn(M, N), randn(M, N));
