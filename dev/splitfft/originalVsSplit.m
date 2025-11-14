@@ -8,8 +8,8 @@
 %    shifts to reuse computations.
 clc; clearvars; close all;
 
-M = 100;
-N = 200;
+M = 1e4;
+N = M;
 
 ht = complex(randn(M, N), randn(M, N));
 x = complex(randn(M, N), randn(M, N));
@@ -178,15 +178,29 @@ end
 % --------------------------------------------------
 memoryB = predictMemoryUsageFFTMult(M, N, 0);
 fprintf('FFTMult max memory requirements: %g GB\n', memoryB / 1024^3);
-y_FFTMult = FFTMult_(FFTMultDataPrep_(ht), x);
 
-clear y_FFTMult;
+tic;
+data = FFTMultDataPrep_(ht);
+toc;
+
+tic;
+y_FFTMult = FFTMult_(data, x);
+toc;
+
+clear data y_FFTMult;
 
 memoryB = predictMemoryUsageSplitFFTMult(M, N, 0);
 fprintf('splitFFTMult max memory requirements: %g GB\n', memoryB / 1024^3);
-y_splitFFTMult = splitFFTMult_(splitFFTMultDataPrep_(ht), x);
 
-clear y_splitFFTMult;
+tic;
+data = splitFFTMultDataPrep_(ht);
+toc;
+
+tic;
+y_splitFFTMult = splitFFTMult_(data, x);
+toc;
+
+clear data y_splitFFTMult;
 
 %% memory comparison
 clc; clearvars; close all;
