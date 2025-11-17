@@ -42,5 +42,7 @@ assembler = rooftopMoM.core.greensMatrix.FullAssembler(planner);
 
 output = assembler.generateFull(context);
 
-output.gxxFFT
-output.gyyFFT
+output.magneticXX()
+output.magneticYY()
+output.electric()
+output.rooftopContent()

@@ -1,9 +1,13 @@
-classdef ConjugateGradient < rooftopMoM.core.solver.GreensMatrixApplicator
+classdef ConjugateGradient < handle
 % ConjugateGradient: MATLAB implementation of a (matrix-free) Conjugate Gradient solver
 
+    properties (Access = protected)
+        matrixApplicator_;
+    end
+
     methods
-        function obj = ConjugateGradient(context, greensMatrix)
-            obj@rooftopMoM.core.solver.GreensMatrixApplicator(context, greensMatrix);
+        function obj = ConjugateGradient(matrixApplicator)
+            obj.matrixApplicator_ = matrixApplicator;
         end
     end
 
@@ -19,11 +23,11 @@ classdef ConjugateGradient < rooftopMoM.core.solver.GreensMatrixApplicator
 
             TRACE("ConjugateGradient.solve: Initialized solving procedure.");
 
-            count = obj.context_.rooftops().count();
+            [inputSizeX, inputSizeY] = obj.matrixApplicator_.inputSize();
 
             p = inputParser();
 
-            addParameter(p, 'initCurrent', complex(zeros(count, 1)));
+            addParameter(p, 'initCurrent', complex(zeros(inputSizeX, inputSizeY)));
             addParameter(p, 'excitation', []);
             addParameter(p, 'tolerance', 1e-6);
             addParameter(p, 'maxIterCount', 1000);
@@ -35,7 +39,7 @@ classdef ConjugateGradient < rooftopMoM.core.solver.GreensMatrixApplicator
             end
 
             DEBUG("ConjugateGradient.solve: Parsed inputs: rooftop count = %d, tolerance = %g, maxIterCount = %d", ...
-                count, p.Results.tolerance, p.Results.maxIterCount);
+                inputSizeX * inputSizeY, p.Results.tolerance, p.Results.maxIterCount);
 
             output = obj.solveImpl_( ...
                 p.Results.initCurrent, ...
@@ -64,7 +68,7 @@ classdef ConjugateGradient < rooftopMoM.core.solver.GreensMatrixApplicator
             output = rooftopMoM.core.solver.ConjugateGradientOutput();
 
             current = initCurrent;
-            residue = excitation - obj.applyGreensMatrix_(current);
+            residue = excitation - obj.matrixApplicator_.apply(current);
             direction = residue;
             rTr = residue.' * residue;
             excitationNorm = norm(excitation);
@@ -77,7 +81,7 @@ classdef ConjugateGradient < rooftopMoM.core.solver.GreensMatrixApplicator
             for iteration = 1:maxIterCount
                 TRACE("ConjugateGradient.solveImpl_: Iteration %d: residual norm (prev) = %g", iteration, rTr);
 
-                gDirection = obj.applyGreensMatrix_(direction);
+                gDirection = obj.matrixApplicator_.apply(direction);
                 alpha = rTr / (direction.' * gDirection);
                 current = current + alpha * direction;
                 residue = residue - alpha * gDirection;
@@ -103,7 +107,7 @@ classdef ConjugateGradient < rooftopMoM.core.solver.GreensMatrixApplicator
             solvingTime = toc(t0);
 
             if ~converged
-                DEBUG("ConjugateGradient.solveImpl_: Did not converge after %d iterations (final residue norm = %g).", maxIterCount, residueNorm, solvingTime);
+                DEBUG("ConjugateGradient.solveImpl_: Did not converge after %d iterations (final residue norm = %g).", maxIterCount, residueNorm);
             end
 
             DEBUG("ConjugateGradient.solveImpl_: Total time = %g s.", solvingTime);

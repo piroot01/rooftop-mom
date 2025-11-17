@@ -69,4 +69,14 @@ H6 = rooftopMoM.core.greensMatrix.utils.embedToeplitz4ToCirculant(Tgen6, cX, cY 
 %
 
 % Results in an error.
-H7 = rooftopMoM.core.greensMatrix.utils.embedToeplitz4ToCirculant(Tgen6, 0, cY);
+%H7 = rooftopMoM.core.greensMatrix.utils.embedToeplitz4ToCirculant(Tgen6, 0, cY);
+
+%
+% test 8: 2N x 2M
+%
+
+M = 3;
+N = 4;
+
+Tgen8 = randi(100, [M, N])
+H8 = rooftopMoM.core.greensMatrix.utils.embedToeplitz4ToCirculant(Tgen8, M + 1, N + 1)

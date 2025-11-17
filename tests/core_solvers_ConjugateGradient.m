@@ -1,5 +1,8 @@
 clc; clearvars;
 
+%profile clear;
+%profile -memory on;
+
 currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
@@ -18,8 +21,8 @@ logger.Logger.configure( ...
 
 countX = 100;
 countY = 100;
-sizeX = 1;
-sizeY = 1;
+sizeX = 0.5;
+sizeY = 1.7;
 
 rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
 rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
@@ -48,7 +51,7 @@ rooftops.generate();
 mode = rooftopMoM.operators.utils.generateMiddlePortMode(rooftops.count());
 excitation = rooftopMoM.operators.DeltaGapFeederExcitation.generate(rooftops.count(), mode, V);
 
-%currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excitation)
+%currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excitation);
 
 %
 % Convolutional approach
@@ -63,11 +66,14 @@ context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 
 assembler = rooftopMoM.core.greensMatrix.FullAssembler(planner);
 
-outputConv = assembler.generateFull(context);
+greensMatrix = assembler.generateFull(context);
 
-conjugateGradientSolver = rooftopMoM.core.solver.ConjugateGradient(context, outputConv);
+greensMatrixApplicator = rooftopMoM.core.greensMatrix.FFTAcceleratedApplicator(context, greensMatrix);
+greensMatrixApplicator.generate();
 
-tolerance = 1e-4;
+conjugateGradientSolver = rooftopMoM.core.solver.ConjugateGradient(greensMatrixApplicator);
+
+tolerance = 1e-3;
 maxIterCount = 2000;
 
 outputConvSolver = conjugateGradientSolver.solve( ...
@@ -78,3 +84,23 @@ outputConvSolver = conjugateGradientSolver.solve( ...
 
 fprintf('Number of the iterations: %d\n', outputConvSolver.count());
 currentConv = outputConvSolver.postRunInfo().current;
+
+greensMatrixApplicator = rooftopMoM.core.greensMatrix.SplitFFTAcceleratedApplicator(context, greensMatrix);
+greensMatrixApplicator.generate();
+
+conjugateGradientSolver = rooftopMoM.core.solver.ConjugateGradient(greensMatrixApplicator);
+
+tolerance = 1e-3;
+maxIterCount = 2000;
+
+outputConvSolver = conjugateGradientSolver.solve( ...
+    'excitation', excitation, ...
+    'tolerance', tolerance, ...
+    'maxIterCount', maxIterCount ...
+);
+
+fprintf('Number of the iterations: %d\n', outputConvSolver.count());
+currentConvSplit = outputConvSolver.postRunInfo().current;
+
+% check the norm
+norm(currentConvSplit - currentConv)

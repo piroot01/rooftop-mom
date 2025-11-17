@@ -47,12 +47,7 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
     
     methods (Access = private)
         function output = generateImpl_(obj, context)
-            % assembleImpl_: Assemble both magnetic xx/yy parts and electric part,
-            %   embed them to circulant tensors, take FFT and combine with
-            %   the appropriate shift operators to produce Fourier-domain kernels.
-
-            primitive = context.rooftops().primitive();
-            [gridSizeX, gridSizeY] = primitive.gridSize();
+            % generateImpl_: Assemble both magnetic xx/yy parts and electric part,
 
             magneticAssembler = rooftopMoM.core.greensMatrix.MagneticPartAssembler(obj.chunkPlanner);
             electricAssembler = rooftopMoM.core.greensMatrix.ElectricPartAssembler(obj.chunkPlanner);
@@ -60,6 +55,23 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
             % Compute the magnetic/electric part toeplitz kernels.
             [magneticXX, magneticYY] = magneticAssembler.generateFull(context);
             electric = electricAssembler.generateFull(context);
+
+            output = rooftopMoM.core.greensMatrix.MatrixData( ...
+                'magneticXX', magneticXX, ...
+                'magneticYY', magneticYY, ...
+                'electric', electric, ...
+                'rooftopContent', rooftopMoM.basisFunctions.RooftopContent.BOTH ...
+            );
+        end
+        %{
+            % the output here will be the MatrixData instance, the instance should contain the rooftopCOntent info
+            % in the GreensMatrixApplicator in the initialization (generate method) there will be:
+            %   (i) FFTAcceleratedApplicator:
+            %       - function that takes the rooftopContent and matrixData returns the potentially three embedded circulant matrices
+            %         if the matrix is not required then it will be empty or NaN ???
+            %       - question is whether the next function should take the embedded or plus fft2 (for now we will include in the subsequent func)
+            %       - then there will be the function that inputs the potentially three embedded matrices and constructs the potentially
+            %         four parts of the spectrall greensMatrix
 
             % Embed Toeplitz kernels into circulant tensors and compute FFTs.
             gmxxCircFFT = obj.embedToeplitzAndFourier_(magneticXX, gridSizeX, gridSizeY);
@@ -90,6 +102,7 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
                 'determinant', determinant ...
             );
         end
+        %}
 
         function output = generateXXImpl_(obj, context)
             % generateXXImpl_: Assemble only the XX directional operator (magnetic XX + electric).

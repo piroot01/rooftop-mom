@@ -8,7 +8,7 @@
 %    shifts to reuse computations.
 clc; clearvars; close all;
 
-M = 1e4;
+M = 100;
 N = M;
 
 ht = complex(randn(M, N), randn(M, N));
@@ -113,16 +113,13 @@ function y = splitFFTMult_(data, x)
     % compute FFT across rows (dimension 1)
     X_rows = fft(x, [], 1);
 
-    % precompute the column-modulated version of the row-FFT
-    x_rows_pc = X_rows .* data.pc;
-
     % multiply with the appropriate frequency-domain submatrices and
     % perform column FFTs (dimension 2)
     Yee = data.hceef .* fft(X_rows, [], 2);     % even-even block
-    Yeo = data.hceof .* fft(x_rows_pc, [], 2);  % even-odd block
+    Yeo = data.hceof .* fft(X_rows .* data.pc, [], 2);  % even-odd block
 
     % free row-FFT intermediates to reduce peak memory usage
-    clear X_rows x_rows_pc;
+    clear X_rows;
 
     % prepare row-FFT when input rows are multiplied by pr (phase shift)
     X_rows_pr = fft(x .* data.pr, [], 1);
@@ -135,10 +132,10 @@ function y = splitFFTMult_(data, x)
     % inverse FFT along columns and combine even/odd contributions
     % cpc contains conjugates of the column-phase factors
     Ye = ifft(Yee, [], 2) + ifft(Yeo, [], 2) .* data.cpc;
-
-    clear Yee Yeo Ief1 Ief2;
+    clear Yee Yeo;
 
     Yo  = ifft(Yoe, [], 2) + ifft(Yoo, [], 2) .* data.cpc;
+    clear Yoe Yoo;
 
     y = 0.25 * (ifft(Ye, [], 1) + ifft(Yo, [], 1) .* data.cpr);
 end
@@ -187,7 +184,7 @@ tic;
 y_FFTMult = FFTMult_(data, x);
 toc;
 
-clear data y_FFTMult;
+%clear data y_FFTMult;
 
 memoryB = predictMemoryUsageSplitFFTMult(M, N, 0);
 fprintf('splitFFTMult max memory requirements: %g GB\n', memoryB / 1024^3);
@@ -200,7 +197,9 @@ tic;
 y_splitFFTMult = splitFFTMult_(data, x);
 toc;
 
-clear data y_splitFFTMult;
+%clear data y_splitFFTMult;
+
+norm(y_FFTMult - y_splitFFTMult)
 
 %% memory comparison
 clc; clearvars; close all;
@@ -360,7 +359,7 @@ runCount = 3;
 % Choose the sample count, minimum and maximum problem sizes
 count = 100;
 Mmin = 1e2;
-Mmax = 5e3;
+Mmax = 5e2;
 
 enable_FFTMult = true;
 enable_splitFFTMult = true;
