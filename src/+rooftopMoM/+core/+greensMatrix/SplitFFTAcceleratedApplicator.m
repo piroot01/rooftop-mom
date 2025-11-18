@@ -61,18 +61,67 @@ classdef SplitFFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatr
         end
 
         function output = apply(obj, input)
-            % all blocks of the greens matrix have same size
-            [circSizeX, circSizeY] = size(obj.gxxf_);
+            primitive = obj.context_.rooftops().primitive();
+            countX = primitive.countX();
+            countY = primitive.countY();
 
+            % all blocks of the greens matrix have same size
             sizeX = obj.context_.rooftops().countDir('x');
             sizeY = obj.context_.rooftops().countDir('y');
 
             switch obj.matrixData_.rooftopContent()
-                case rooftopMoM.basisFunctions.RooftopContent.BOTH
-                    primitive = obj.context_.rooftops().primitive();
-                    countX = primitive.countX();
-                    countY = primitive.countY();
+                case rooftopMoM.basisFunctions.RooftopContent.XONLY
+                    inputXReshaped = zeros(countX, countY);
+                    inputXReshaped(1:(end - 1)) = input;
 
+                    inputXReshapedSpectr_e = fft(inputXReshaped, [], 1);
+                    inputXReshapedSpectr_o = fft(inputXReshaped .* obj.pr_, [], 1);
+                    clear inputXReshaped;
+
+                    % outputX = gxxf .* inputX
+                    outputXSpectr_ee = obj.gxxf_.ee .* inputXReshapedSpectr_e;
+                    outputXSpectr_eo = obj.gxxf_.eo .* inputXReshapedSpectr_e;
+                    clear inputXReshapedSpectr_e;
+                    outputXSpectr_oe = obj.gxxf_.oe .* inputXReshapedSpectr_o;
+                    outputXSpectr_oo = obj.gxxf_.oo .* inputXReshapedSpectr_o;
+                    clear inputXReshapedSpectr_o;
+
+                    outputXSpectr_e = outputXSpectr_ee + outputXSpectr_eo;
+                    clear outputXSpectr_ee outputXSpectr_eo;
+
+                    outputXSpectr_o = outputXSpectr_oe + outputXSpectr_oo;
+                    clear outputXSpectr_oe outputXSpectr_oo;
+
+                    outputX = 0.25 * (ifft(outputXSpectr_e, [], 1) + ifft(outputXSpectr_o, [], 1) .* obj.prc_);
+                    clear outputXSpectr_e outputXSpectr_o;
+
+                    output = outputX(1:sizeX);
+                case rooftopMoM.basisFunctions.RooftopContent.YONLY
+                    input = input.';
+                    inputYReshaped = zeros(countX, countY);
+                    inputYReshaped(1:(end - 1)) = input;
+
+                    inputYReshapedSpectr_e = fft(inputYReshaped, [], 2);
+                    inputYReshapedSpectr_o = fft(inputYReshaped .* obj.pc_, [], 2);
+
+                    outputYSpectr_ee = obj.gyyf_.ee .* inputYReshapedSpectr_e;
+                    outputYSpectr_oe = obj.gyyf_.oe .* inputYReshapedSpectr_e;
+                    clear inputYReshapedSpectr_e;
+                    outputYSpectr_eo = obj.gyyf_.eo .* inputYReshapedSpectr_o;
+                    outputYSpectr_oo = obj.gyyf_.oo .* inputYReshapedSpectr_o;
+                    clear inputYReshapedSpectr_o;
+
+                    outputYSpectr_e = outputYSpectr_ee + outputYSpectr_oe;
+                    clear outputYSpectr_ee outputYSpectr_oe;
+
+                    outputYSpectr_o = outputYSpectr_eo + outputYSpectr_oo;
+                    clear outputYSpectr_eo outputYSpectr_oo;
+
+                    outputY = 0.25 * (ifft(outputYSpectr_e, [], 2) + ifft(outputYSpectr_o, [], 2) .* obj.pcc_);
+                    clear outputYSpectr_e outputYSpectr_o;
+
+                    output = outputY(1:sizeY).';
+                case rooftopMoM.basisFunctions.RooftopContent.BOTH
                     % First we process the x direction of the input
                     % We extend the input in x direction such that the size matches the subsampled greens matrix
                     inputXReshaped = zeros(countX, countY);

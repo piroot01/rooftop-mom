@@ -79,7 +79,7 @@ classdef ConjugateGradient < handle
             t0 = tic;
 
             for iteration = 1:maxIterCount
-                TRACE("ConjugateGradient.solveImpl_: Iteration %d: residual norm (prev) = %g", iteration, rTr);
+                t1 = tic;
 
                 gDirection = obj.matrixApplicator_.apply(direction);
                 alpha = rTr / (direction.' * gDirection);
@@ -102,6 +102,9 @@ classdef ConjugateGradient < handle
                 output.insertIterationInfo( ...
                     'residueNorm', residueNorm ...
                 );
+
+                iterationTime = toc(t1);
+                TRACE("ConjugateGradient.solveImpl_: Iteration %d: residual norm = %g, iteration time = %g s.", iteration, rTr, iterationTime);
             end
 
             solvingTime = toc(t0);

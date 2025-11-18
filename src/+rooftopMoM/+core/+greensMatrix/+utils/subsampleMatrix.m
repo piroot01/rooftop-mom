@@ -1,4 +1,9 @@
 function result = subsampleMatrix(input)
+    if isempty(input)
+        result = [];
+        return;
+    end
+
     result = struct( ...
         'ee', input(1:2:end, 1:2:end), ...
         'eo', input(1:2:end, 2:2:end), ...

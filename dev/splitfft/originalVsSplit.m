@@ -6,13 +6,7 @@
 %  - splitFFTMult: a memory- and performance-optimized approach that
 %    splits the 2-D FFT into row/column operations and applies phase
 %    shifts to reuse computations.
-clc; clearvars; close all;
-
-M = 100;
-N = M;
-
-ht = complex(randn(M, N), randn(M, N));
-x = complex(randn(M, N), randn(M, N));
+clc; clearvars;
 
 % --------------------------------------------------
 % 2-D FFT-accelerated matrix-vector multiplication
@@ -170,36 +164,50 @@ function memoryB = predictMemoryUsageSplitFFTMult(M, N, memoryOverheadB, element
     memoryB = (xMemoryB + htMemoryB + pMemoryB + hcMemoryB) + ((4 + 2) * xMemoryB) + memoryOverheadB;
 end
 
+M = 125;
+N = M;
+
+disp(M^2);
+
+ht = complex(randn(M, N), randn(M, N));
+x = complex(randn(M, N), randn(M, N));
+
+repeatCount = 100;
+
 % --------------------------------------------------
 % Run quick sanity check and print memory estimates
 % --------------------------------------------------
 memoryB = predictMemoryUsageFFTMult(M, N, 0);
 fprintf('FFTMult max memory requirements: %g GB\n', memoryB / 1024^3);
 
-tic;
 data = FFTMultDataPrep_(ht);
-toc;
 
 tic;
-y_FFTMult = FFTMult_(data, x);
-toc;
+for n = 1:repeatCount
+    %tic;
+    y_FFTMult = FFTMult_(data, x);
+    %toc;
+end
+time_FFTMult = toc;
 
 %clear data y_FFTMult;
 
 memoryB = predictMemoryUsageSplitFFTMult(M, N, 0);
 fprintf('splitFFTMult max memory requirements: %g GB\n', memoryB / 1024^3);
 
-tic;
 data = splitFFTMultDataPrep_(ht);
-toc;
 
 tic;
-y_splitFFTMult = splitFFTMult_(data, x);
-toc;
+for n = 1:repeatCount
+    %tic;
+    y_splitFFTMult = splitFFTMult_(data, x);
+    %toc;
+end
+time_splitFFTMult = toc;
 
 %clear data y_splitFFTMult;
 
-norm(y_FFTMult - y_splitFFTMult)
+fprintf("time_FFTMult = %g s, time_splitFFTMult = %g s, speed up %gx", time_FFTMult, time_splitFFTMult, time_FFTMult / time_splitFFTMult);
 
 %% memory comparison
 clc; clearvars; close all;
@@ -359,7 +367,7 @@ runCount = 3;
 % Choose the sample count, minimum and maximum problem sizes
 count = 100;
 Mmin = 1e2;
-Mmax = 5e2;
+Mmax = 5e3;
 
 enable_FFTMult = true;
 enable_splitFFTMult = true;

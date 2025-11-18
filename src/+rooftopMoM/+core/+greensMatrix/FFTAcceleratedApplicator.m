@@ -31,9 +31,6 @@ classdef FFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApp
         end
 
         function output = apply(obj, input)
-            % all blocks of the greens matrix have same size
-            [circSizeX, circSizeY] = size(obj.gxxf_);
-
             sizeX = obj.context_.rooftops().countDir('x');
             sizeY = obj.context_.rooftops().countDir('y');
 
@@ -42,13 +39,16 @@ classdef FFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApp
                     % X-only basis functions: inputs are already in the
                     % expected vector layout (no explicit reshape here).
                     % Zero-extend and FFT.
+                    [circSizeX, circSizeY] = size(obj.gxxf_);
                     inputSpectr = fft2(input, circSizeX, circSizeY);
 
                     % Spectral multiplication: G_xx * FFT(input).
                     outputSpectr = obj.gxxf_ .* inputSpectr;
+                    clear inputSpectr;
 
                     % Inverse FFT back to spatial domain.
                     output = ifft2(outputSpectr);
+                    clear outputSpectr;
 
                     % Truncate the useful part and return as a column (truncate returns an array with shape [sizeX, 1]).
                     output = output(1:sizeX, 1);
@@ -57,58 +57,22 @@ classdef FFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApp
                     input = input.';
 
                     % Zero-extend and FFT (transpose handled above).
+                    [circSizeX, circSizeY] = size(obj.gyyf_);
                     inputSpectr = fft2(input, circSizeX, circSizeY);
 
                     % Spectral multiplication.
                     outputSpectr = obj.gyyf_ .* inputSpectr;
+                    clear inputSpectr;
 
                     % Inverse FFT.
                     output = ifft2(outputSpectr);
+                    clear outputSpectr;
 
                     % Truncate the useful region and return vectorized.
                     outputTruncated = output(1, 1:sizeY);
 
                     output = outputTruncated(:);
                 case rooftopMoM.basisFunctions.RooftopContent.BOTH
-                    % Old version
-                    %{
-                    % Both X and Y basis functions are present. The vector is split into two segments: 
-                    % first the X-directed rooftop coefficients, then the Y-directed ones.
-                    primitive = obj.context_.rooftops().primitive();
-                    countX = primitive.countX();
-                    countY = primitive.countY();
-
-                    % Split vector into two parts corresponding to the two distinct grid samplings for X and Y roofops
-                    inputX = input(1:sizeX);
-                    inputY = input((sizeX + 1):end);
-
-                    % Reshape into 2D arrays matching their grid layout.
-                    inputXReshaped = reshape(inputX, countX - 1, countY);
-                    inputYReshaped = reshape(inputY, countX, countY - 1);
-                    clear inputX inputY;
-
-                    % FFT each component after padding.
-                    inputXSpectr = fft2(inputXReshaped, circSizeX, circSizeY);
-                    inputYSpectr = fft2(inputYReshaped, circSizeX, circSizeY);
-                    clear inputXReshaped inputYReshaped;
-
-                    % Apply full 2x2 spectral Green's tensor.
-                    outputX = ifft2(obj.gxxf_ .* inputXSpectr + obj.gxyf_ .* inputYSpectr);
-                    outputY = ifft2(obj.gyxf_ .* inputXSpectr + obj.gyyf_ .* inputYSpectr);
-                    clear inputXSpectr inputYSpectr;
-
-                    % Truncate to useful region (removing padding) and re-vectorize both parts to produce final column.
-                    outputXTruncated = outputX(1:(countX - 1), 1:countY);
-                    outputYTruncated = outputY(1:countX, 1:(countY - 1));
-                    clear outputX outputY;
-
-                    output = [outputXTruncated(:); outputYTruncated(:)];
-                    %}
-
-                    %
-                    % Memory optimised version
-                    %
-
                     primitive = obj.context_.rooftops().primitive();
                     countX = primitive.countX();
                     countY = primitive.countY();
@@ -116,6 +80,7 @@ classdef FFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApp
                     % First we process the x direction of the input
                     inputXReshaped = reshape(input(1:sizeX), countX - 1, countY);
 
+                    [circSizeX, circSizeY] = size(obj.gxxf_);
                     inputXSpectr = fft2(inputXReshaped, circSizeX, circSizeY);
                     clear inputXReshaped;
 

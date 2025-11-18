@@ -19,8 +19,8 @@ logger.Logger.configure( ...
     } ...
 );
 
-countX = 100;
-countY = 100;
+countX = 1;
+countY = 132;
 sizeX = 0.5;
 sizeY = 1.7;
 
@@ -42,16 +42,18 @@ quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
 rooftops = rooftopMoM.basisFunctions.MeshUniformRooftops(mesh, quad);
 rooftops.generate();
 
-%planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
-%context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
-%fullAssembler = rooftopMoM.core.impedanceMatrix.FullAssembler(planner);
+disp(rooftops.count());
 
-%outputNaive = fullAssembler.generateFull(context);
+planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
+context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
+fullAssembler = rooftopMoM.core.impedanceMatrix.FullAssembler(planner);
+
+outputNaive = fullAssembler.generateFull(context);
 
 mode = rooftopMoM.operators.utils.generateMiddlePortMode(rooftops.count());
 excitation = rooftopMoM.operators.DeltaGapFeederExcitation.generate(rooftops.count(), mode, V);
 
-%currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excitation);
+currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excitation);
 
 %
 % Convolutional approach
@@ -73,7 +75,7 @@ greensMatrixApplicator.generate();
 
 conjugateGradientSolver = rooftopMoM.core.solver.ConjugateGradient(greensMatrixApplicator);
 
-tolerance = 1e-3;
+tolerance = 1e-12;
 maxIterCount = 2000;
 
 outputConvSolver = conjugateGradientSolver.solve( ...
@@ -85,12 +87,14 @@ outputConvSolver = conjugateGradientSolver.solve( ...
 fprintf('Number of the iterations: %d\n', outputConvSolver.count());
 currentConv = outputConvSolver.postRunInfo().current;
 
+norm(currentConv - currentNaive)
+
 greensMatrixApplicator = rooftopMoM.core.greensMatrix.SplitFFTAcceleratedApplicator(context, greensMatrix);
 greensMatrixApplicator.generate();
 
 conjugateGradientSolver = rooftopMoM.core.solver.ConjugateGradient(greensMatrixApplicator);
 
-tolerance = 1e-3;
+tolerance = 1e-12;
 maxIterCount = 2000;
 
 outputConvSolver = conjugateGradientSolver.solve( ...
