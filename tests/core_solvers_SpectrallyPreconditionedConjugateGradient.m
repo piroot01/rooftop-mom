@@ -4,20 +4,20 @@ currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
 
-loggerDir = fullfile(currentDir, '..', '..', '3rd', 'matlab-logger', 'src');
+loggerDir = fullfile(currentDir, '..', '3rd', 'matlab-logger', 'src');
 addpath(loggerDir);
 
 % Configure the logger.
 logger.Logger.configure( ...
     'timeFormat', 'ss.SSS', ...
-    'minLevel', logger.LogLevel.INFO, ...
+    'minLevel', logger.LogLevel.DEBUG, ...
     'sinks', { ...
         logger.sink.ConsoleSink(), ...
     } ...
 );
 
-countX = 3;
-countY = 2;
+countX = 100;
+countY = 1;
 sizeX = 1.2;
 sizeY = 0.5;
 
@@ -26,7 +26,7 @@ rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
 mesh = rect.generateMesh();
 
 order = 5;
-elementCount = 100000;
+elementCount = 1e7;
 k = pi / (sizeY * countY);
 V = 1;
 
@@ -45,10 +45,10 @@ fullAssembler = rooftopMoM.core.impedanceMatrix.FullAssembler(planner);
 
 outputNaive = fullAssembler.generateFull(context);
 
-mode = rooftopMoM.operators.utils.generateMiddlePortMode(rooftops);
-excitation = rooftopMoM.operators.DeltaGapFeederExcitation.generate(rooftops, mode, V);
+mode = rooftopMoM.operators.utils.generateMiddlePortMode(rooftops.count());
+excitation = rooftopMoM.operators.DeltaGapFeederExcitation.generate(rooftops.count(), mode, V);
 
-currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excitation)
+currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excitation);
 
 %
 % Convolutional approach
@@ -63,9 +63,12 @@ context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 
 assembler = rooftopMoM.core.greensMatrix.FullAssembler(planner);
 
-outputConv = assembler.generateFull(context);
+greensMatrix = assembler.generateFull(context);
 
-conjugateGradientSolver = rooftopMoM.core.solver.SpectrallyPreconditionedConjugateGradient(context, outputConv);
+greensMatrixApplicator = rooftopMoM.core.greensMatrix.FFTAcceleratedApplicator(context, greensMatrix);
+greensMatrixApplicator.generate();
+
+conjugateGradientSolver = rooftopMoM.core.solver.SpectrallyPreconditionedConjugateGradient(greensMatrixApplicator);
 
 tolerance = 1e-6;
 maxIterCount = 2000;
@@ -77,7 +80,7 @@ outputConvSolver = conjugateGradientSolver.solve( ...
 );
 
 fprintf('Number of the iterations: %d', outputConvSolver.count());
-currentConv = outputConvSolver.postRunInfo().current
+currentConv = outputConvSolver.postRunInfo().current;
 
 %
 % Compare the currents.
