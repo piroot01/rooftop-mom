@@ -104,34 +104,65 @@ function data = splitFFTMultDataPrep_(ht)
 end
 
 function y = splitFFTMult_(data, x)
-    % compute FFT across rows (dimension 1)
-    X_rows = fft(x, [], 1);
-
-    % multiply with the appropriate frequency-domain submatrices and
-    % perform column FFTs (dimension 2)
-    Yee = data.hceef .* fft(X_rows, [], 2);     % even-even block
-    Yeo = data.hceof .* fft(X_rows .* data.pc, [], 2);  % even-odd block
-
-    % free row-FFT intermediates to reduce peak memory usage
-    clear X_rows;
-
-    % prepare row-FFT when input rows are multiplied by pr (phase shift)
-    X_rows_pr = fft(x .* data.pr, [], 1);
-
-    Yoe = data.hcoef .* fft(X_rows_pr, [], 2);              % odd-even block
-    Yoo = data.hcoof .* fft(X_rows_pr .* data.pc, [], 2);   % odd-odd block
-
-    clear X_rows_pr;
-
-    % inverse FFT along columns and combine even/odd contributions
-    % cpc contains conjugates of the column-phase factors
-    Ye = ifft(Yee, [], 2) + ifft(Yeo, [], 2) .* data.cpc;
-    clear Yee Yeo;
-
-    Yo  = ifft(Yoe, [], 2) + ifft(Yoo, [], 2) .* data.cpc;
-    clear Yoe Yoo;
-
-    y = 0.25 * (ifft(Ye, [], 1) + ifft(Yo, [], 1) .* data.cpr);
+    if data.M >= data.N
+        % compute FFT across rows (dimension 1)
+        X_rows = fft(x, [], 1);
+    
+        % multiply with the appropriate frequency-domain submatrices and
+        % perform column FFTs (dimension 2)
+        Yee = data.hceef .* fft(X_rows, [], 2);     % even-even block
+        Yeo = data.hceof .* fft(X_rows .* data.pc, [], 2);  % even-odd block
+    
+        % free row-FFT intermediates to reduce peak memory usage
+        clear X_rows;
+    
+        % prepare row-FFT when input rows are multiplied by pr (phase shift)
+        X_rows_pr = fft(x .* data.pr, [], 1);
+    
+        Yoe = data.hcoef .* fft(X_rows_pr, [], 2);              % odd-even block
+        Yoo = data.hcoof .* fft(X_rows_pr .* data.pc, [], 2);   % odd-odd block
+    
+        clear X_rows_pr;
+    
+        % inverse FFT along columns and combine even/odd contributions
+        % cpc contains conjugates of the column-phase factors
+        Ye = ifft(Yee, [], 2) + ifft(Yeo, [], 2) .* data.cpc;
+        clear Yee Yeo;
+    
+        Yo  = ifft(Yoe, [], 2) + ifft(Yoo, [], 2) .* data.cpc;
+        clear Yoe Yoo;
+    
+        y = 0.25 * (ifft(Ye, [], 1) + ifft(Yo, [], 1) .* data.cpr);
+    else
+        % compute FFT across rows (dimension 1)
+        X_rows = fft(x, [], 2);
+    
+        % multiply with the appropriate frequency-domain submatrices and
+        % perform column FFTs (dimension 2)
+        Yee = data.hceef .* fft(X_rows, [], 1);     % even-even block
+        Yoe = data.hcoef .* fft(X_rows .* data.pr, [], 1);  % even-odd block
+    
+        % free row-FFT intermediates to reduce peak memory usage
+        clear X_rows;
+    
+        % prepare row-FFT when input rows are multiplied by pr (phase shift)
+        X_rows_pr = fft(x .* data.pc, [], 2);
+    
+        Yeo = data.hceof .* fft(X_rows_pr, [], 1);              % odd-even block
+        Yoo = data.hcoof .* fft(X_rows_pr .* data.pr, [], 1);   % odd-odd block
+    
+        clear X_rows_pr;
+    
+        % inverse FFT along columns and combine even/odd contributions
+        % cpc contains conjugates of the column-phase factors
+        Ye = ifft(Yee, [], 1) + ifft(Yoe, [], 1) .* data.cpr;
+        clear Yee Yoe;
+    
+        Yo  = ifft(Yeo, [], 1) + ifft(Yoo, [], 1) .* data.cpr;
+        clear Yeo Yoo;
+    
+        y = 0.25 * (ifft(Ye, [], 2) + ifft(Yo, [], 2) .* data.cpc);
+    end
 end
 
 function memoryB = predictMemoryUsageSplitFFTMult(M, N, memoryOverheadB, elementMemoryB)
@@ -164,15 +195,17 @@ function memoryB = predictMemoryUsageSplitFFTMult(M, N, memoryOverheadB, element
     memoryB = (xMemoryB + htMemoryB + pMemoryB + hcMemoryB) + ((4 + 2) * xMemoryB) + memoryOverheadB;
 end
 
-M = 125;
-N = M;
+profile on;
 
-disp(M^2);
+M = 19999;
+N = 300;
+
+disp(M*N);
 
 ht = complex(randn(M, N), randn(M, N));
 x = complex(randn(M, N), randn(M, N));
 
-repeatCount = 100;
+repeatCount = 3;
 
 % --------------------------------------------------
 % Run quick sanity check and print memory estimates
@@ -184,9 +217,9 @@ data = FFTMultDataPrep_(ht);
 
 tic;
 for n = 1:repeatCount
-    %tic;
+    tic;
     y_FFTMult = FFTMult_(data, x);
-    %toc;
+    toc;
 end
 time_FFTMult = toc;
 
@@ -199,15 +232,19 @@ data = splitFFTMultDataPrep_(ht);
 
 tic;
 for n = 1:repeatCount
-    %tic;
+    tic;
     y_splitFFTMult = splitFFTMult_(data, x);
-    %toc;
+    toc;
 end
 time_splitFFTMult = toc;
 
 %clear data y_splitFFTMult;
 
 fprintf("time_FFTMult = %g s, time_splitFFTMult = %g s, speed up %gx", time_FFTMult, time_splitFFTMult, time_FFTMult / time_splitFFTMult);
+
+norm(y_FFTMult - y_splitFFTMult)
+
+profile viewer;
 
 %% memory comparison
 clc; clearvars; close all;

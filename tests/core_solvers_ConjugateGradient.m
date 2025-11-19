@@ -19,8 +19,8 @@ logger.Logger.configure( ...
     } ...
 );
 
-countX = 1;
-countY = 132;
+countX = 2;
+countY = 150;
 sizeX = 0.5;
 sizeY = 1.7;
 
@@ -44,16 +44,16 @@ rooftops.generate();
 
 disp(rooftops.count());
 
-planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
-context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
-fullAssembler = rooftopMoM.core.impedanceMatrix.FullAssembler(planner);
+%planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
+%context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
+%fullAssembler = rooftopMoM.core.impedanceMatrix.FullAssembler(planner);
 
-outputNaive = fullAssembler.generateFull(context);
+%outputNaive = fullAssembler.generateFull(context);
 
 mode = rooftopMoM.operators.utils.generateMiddlePortMode(rooftops.count());
 excitation = rooftopMoM.operators.DeltaGapFeederExcitation.generate(rooftops.count(), mode, V);
 
-currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excitation);
+%currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excitation);
 
 %
 % Convolutional approach
@@ -87,7 +87,7 @@ outputConvSolver = conjugateGradientSolver.solve( ...
 fprintf('Number of the iterations: %d\n', outputConvSolver.count());
 currentConv = outputConvSolver.postRunInfo().current;
 
-norm(currentConv - currentNaive)
+%norm(currentConv - currentNaive)
 
 greensMatrixApplicator = rooftopMoM.core.greensMatrix.SplitFFTAcceleratedApplicator(context, greensMatrix);
 greensMatrixApplicator.generate();
