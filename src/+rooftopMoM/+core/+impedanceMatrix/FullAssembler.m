@@ -32,6 +32,9 @@ classdef FullAssembler < rooftopMoM.core.impedanceMatrix.Assembler
             [quadraturePoints, rooftopPoints] = rooftopMoM.core.impedanceMatrix.utils.convertRooftopPointsToArrays(points);
             rooftopDivPoints = rooftopMoM.core.impedanceMatrix.utils.stackPositiveAndNegativeFields(values, 'rooftopDivPositive', 'rooftopDivNegative');
 
+            % Cache points.
+            rooftopMoM.Cache.autoSet(rooftopMoM.CacheKeys.CORE_IMPEDANCEMATRIX_FULLASSEMBLER_ROOFTOPPOINTS, rooftopPoints);
+
             slices = rooftopMoM.core.impedanceMatrix.utils.generateSlicesFromChunks(chunks, order);
 
             ids = rooftopMoM.basisFunctions.utils.generateIDMask(rooftops);
