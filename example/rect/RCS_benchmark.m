@@ -1,4 +1,18 @@
 %% RCS benchmark
+%
+%   Description:
+%       This benchmark compares accuracy and solving time of two iterative solvers
+%       that use the conjugate-gradient method with a spectral preconditioner but
+%       different Green's-matrix applicators. The FFTMult variant performs the
+%       matrix–vector product using classical FFT-accelerated convolution; the
+%       splitFFTMult variant partitions arrays to avoid zero-padding, reducing memory
+%       usage and becoming faster for large problems. We evaluate both methods by
+%       computing the radar cross section (RCS) of a rectangular antenna (side ratio
+%       1:2) illuminated by a plane wave with k-vector normal to the antenna and
+%       polarization along the longer edge (unit amplitude). The first plot shows
+%       RCS normalized by antenna area as a function of electrical size; the second
+%       plot shows solver run times versus electrical size.
+
 clc; clearvars; close all;
 
 % Add required paths.
