@@ -18,12 +18,12 @@ logger.Logger.configure( ...
 
 countX = 3;
 countY = 3;
-sizeX = 1;
-sizeY = 1;
+sizeX = 1.33;
+sizeY = 0.66;
 
 rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
 
-order = 5;
+order = 2;
 
 quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
 rooftops = rooftopMoM.basisFunctions.UniformRectPrimitiveUniformRooftops(rectPrimitive, quad);

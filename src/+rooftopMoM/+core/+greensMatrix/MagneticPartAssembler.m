@@ -53,6 +53,17 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
             [points, values] = rooftops.generateRooftopsDir(dir);
             [quadraturePoints, rooftopPoints] = rooftopMoM.core.impedanceMatrix.utils.convertRooftopPointsToArrays(points);
 
+            % Cache the data
+            if rooftopMoM.Cache.getStatus()
+                quadraturePointsKey = strcat(rooftopMoM.CacheKeys.CORE_GREENSMATRIX_FULLASSEMBLER_QUADRATUREPOINTS, upper(dir));
+                rooftopPointsKey = strcat(rooftopMoM.CacheKeys.CORE_GREENSMATRIX_FULLASSEMBLER_ROOFTOPPOINTS, upper(dir));
+                rooftopValuesKey = strcat(rooftopMoM.CacheKeys.CORE_GREENSMATRIX_FULLASSEMBLER_ROOFTOPVALUES, upper(dir));
+
+                rooftopMoM.Cache.autoSet(quadraturePointsKey, quadraturePoints);
+                rooftopMoM.Cache.autoSet(rooftopPointsKey, rooftopPoints);
+                rooftopMoM.Cache.autoSet(rooftopValuesKey, values);
+            end
+
             slices = rooftopMoM.core.impedanceMatrix.utils.generateSlicesFromChunks(chunks, order);
 
             jacobians = rooftopMoM.core.greensMatrix.utils.generate2DJacobians(rooftops.primitive(), basisSize);

@@ -13,6 +13,7 @@ classdef Cache < handle
         options_;
 
         cacheEnabled_ logical;
+        cacheAll_ logical;
     end
 
     methods (Access = private)
@@ -20,6 +21,7 @@ classdef Cache < handle
             obj.store_ = struct();
             obj.options_ = containers.Map('KeyType','char','ValueType','any');
             obj.cacheEnabled_ = false;
+            obj.cacheAll_ = false;
         end
     end
 
@@ -45,6 +47,15 @@ classdef Cache < handle
             flag = logical(obj.cacheEnabled_);
         end
 
+        % Cache all enable/disable
+        function setCacheAll_(obj, flag)
+             obj.cacheAll_ = logical(flag);
+        end
+
+        function flag = getCacheAll_(obj)
+            flag = logical(obj.cacheAll_);
+        end
+
         % Options management
         function setOption_(obj, path, flag)
             obj.options_(char(path)) = logical(flag);
@@ -67,14 +78,42 @@ classdef Cache < handle
             obj.setOption_(path, flag);
         end
 
-        function tf = getOptionStatus_(obj, path)
+        function flag = getOptionStatus_(obj, path)
+            if obj.cacheAll_
+                flag = true;
+                return;
+            end
+
             path = char(path);
 
             if obj.options_.isKey(path)
-                tf = logical(obj.options_(path));
+                flag = logical(obj.options_(path));
             else
-                tf = false;
+                flag = false;
             end
+        end
+
+        function flag = getOptionDataStatus_(obj, path)
+            path = char(path);
+
+            if ~obj.getOptionStatus_(path)
+                flag = false;
+                return;
+            end
+
+            data = obj.get_(path);
+            if isempty(data)
+                flag = false;
+                return;
+            end
+
+            % Special-case: empty struct (no fields) counts as empty.
+            if isstruct(data) && isempty(fieldnames(data))
+                flag = false;
+                return;
+            end
+
+            flag = true;
         end
 
         function keys = listOptions_(obj)
@@ -130,6 +169,7 @@ classdef Cache < handle
             obj.store_ = struct();
             obj.options_ = containers.Map('KeyType','char','ValueType','any');
             obj.cacheEnabled_ = false;
+            obj.cacheAll_ = false;
             % NOTE: getInstance_() persistent INST will remain; instance is now reset.
         end
     end
@@ -207,6 +247,16 @@ classdef Cache < handle
             flag = inst.getStatus_();
         end
 
+        function setCacheAll(flag)
+            inst = rooftopMoM.Cache.getInstance_();
+            inst.setCacheAll_(flag);
+        end
+
+        function flag = getCacheAll()
+            inst = rooftopMoM.Cache.getInstance_();
+            flag = inst.getCacheAll_();
+        end
+
         function setOption(path, flag)
             inst = rooftopMoM.Cache.getInstance_();
             inst.setOption_(path, flag);
@@ -220,6 +270,11 @@ classdef Cache < handle
         function flag = getOptionStatus(path)
             inst = rooftopMoM.Cache.getInstance_();
             flag = inst.getOptionStatus_(path);
+        end
+
+        function flag = getOptionDataStatus(path)
+            inst = rooftopMoM.Cache.getInstance_();
+            flag = inst.getOptionDataStatus_(path);
         end
 
         function keys = listOptions()
@@ -244,7 +299,12 @@ classdef Cache < handle
 
         function cleared = clear(path)
             inst = rooftopMoM.Cache.getInstance_();
-            cleared = inst.clear_(path);
+
+            if nargin < 1
+                cleared = inst.clear_();
+            else
+                cleared = inst.clear_(path);
+            end
         end
 
         function snapshot = snapshot()

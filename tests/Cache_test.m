@@ -29,7 +29,7 @@ rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, size
 rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
 mesh = rect.generateMesh();
 
-order = 5;
+order = 2;
 
 quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
 rooftops = rooftopMoM.basisFunctions.MeshUniformRooftops(mesh, quad);
@@ -53,9 +53,13 @@ rooftopMoM.Cache.getOptionStatus(rooftopMoM.CacheKeys.CORE_IMPEDANCEMATRIX_FULLA
 % Obtain the rooftopPoints
 rooftopPoints = rooftopMoM.Cache.get(rooftopMoM.CacheKeys.CORE_IMPEDANCEMATRIX_FULLASSEMBLER_ROOFTOPPOINTS);
 
+pre = rooftopMoM.Cache.getOptionDataStatus(rooftopMoM.CacheKeys.CORE_IMPEDANCEMATRIX_FULLASSEMBLER_ROOFTOPPOINTS)
+
 rooftopMoM.Cache.clear(rooftopMoM.CacheKeys.CORE_IMPEDANCEMATRIX_FULLASSEMBLER_ROOFTOPPOINTS);
 
 rooftopMoM.Cache.getOptionStatus(rooftopMoM.CacheKeys.CORE_IMPEDANCEMATRIX_FULLASSEMBLER_ROOFTOPPOINTS)
+
+post = rooftopMoM.Cache.getOptionDataStatus(rooftopMoM.CacheKeys.CORE_IMPEDANCEMATRIX_FULLASSEMBLER_ROOFTOPPOINTS)
 
 % Destory the cache
 rooftopMoM.Cache.destroy();

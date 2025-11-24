@@ -19,7 +19,11 @@ classdef CacheKeys
         % Naming convention: UPPER_SNAKE with readable descriptive name.
         CORE_IMPEDANCEMATRIX_FULLASSEMBLER_QUADRATUREPOINTS = 'core.impedanceMatrix.FullAssembler.quadraturePoints';
         CORE_IMPEDANCEMATRIX_FULLASSEMBLER_ROOFTOPPOINTS = 'core.impedanceMatrix.FullAssembler.rooftopPoints';
-        CORE_IMPEDANCEMATRIX_FULLASSEMBLER_ROOFTOPDIVPOINTS = 'core.impedanceMatrix.FullAssembler.rooftopDivPoints';
+        CORE_IMPEDANCEMATRIX_FULLASSEMBLER_ROOFTOPVALUES = 'core.impedanceMatrix.FullAssembler.rooftopValues';
+
+        CORE_GREENSMATRIX_FULLASSEMBLER_QUADRATUREPOINTS = 'core.greensMatrix.FullAssembler.quadraturePoints';
+        CORE_GREENSMATRIX_FULLASSEMBLER_ROOFTOPPOINTS = 'core.greensMatrix.FullAssembler.rooftopPoints';
+        CORE_GREENSMATRIX_FULLASSEMBLER_ROOFTOPVALUES = 'core.greensMatrix.FullAssembler.rooftopValues';
     end
 
     methods (Static)
