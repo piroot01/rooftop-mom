@@ -1,4 +1,4 @@
-classdef DeltaGapFeederExcitation < rooftopMoM.operators.OperatorInterface
+classdef DeltaGapFeederExcitation < rooftopMoM.operator.OperatorInterface
     methods (Static)
         function V = generate(count, mode, voltage)
         % generate: Build a voltage vector from a binary mode mask.

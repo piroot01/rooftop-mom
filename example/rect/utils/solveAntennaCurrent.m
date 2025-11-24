@@ -28,15 +28,23 @@ function output = solveAntennaCurrent(varargin)
     maxIterCount = p.Results.maxIterCount;
     useSplitFFT = p.Results.useSplitFFT;
 
+    DEBUG("solveAntennaCurrent: Parsed inputs: countX = %g, countY = %g, sizeX = %g m, sizeY = %g m.", countX, countY, sizeX, sizeY);
+
     % create the mesh of the antenna
     rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
+
+    TRACE("solveAntennaCurrent: Rectangle primitive generated.");
 
     % Prepare the quadrature points and weights
     quadrature = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(quadratureOrder);
 
+    TRACE("solveAntennaCurrent: Quadrature points and weights generated.");
+
     % Generate rooftop basis functions
     rooftops = rooftopMoM.basisFunctions.UniformRectPrimitiveUniformRooftops(rectPrimitive, quadrature);
     rooftops.generate();
+
+    TRACE("solveAntennaCurrent: Rooftop basis functions generated.");
 
     % Prepare a Green's matrix filling strategy and assemble the context
     planner = rooftopMoM.core.greensMatrix.AssemblerChunkPlanner(elementCount);
@@ -48,6 +56,8 @@ function output = solveAntennaCurrent(varargin)
     % Generate the Green's matrix
     greensMatrix = assembler.generateFull(context);
 
+    TRACE("solveAntennaCurrent: Green's matrix assembled.");
+
     % Create the Green's matrix applicator
     if ~useSplitFFT
         greensMatrixApplicator = rooftopMoM.core.greensMatrix.FFTAcceleratedApplicator(context, greensMatrix);
@@ -56,6 +66,8 @@ function output = solveAntennaCurrent(varargin)
     end
 
     greensMatrixApplicator.generate();
+
+    TRACE("solveAntennaCurrent: Green's matrix applicator generated.");
 
     % Instantiate the preconditioned conjugate gradient solver
     solver = rooftopMoM.core.solver.SpectrallyPreconditionedConjugateGradient(greensMatrixApplicator);

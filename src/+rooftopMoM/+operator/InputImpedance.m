@@ -1,4 +1,4 @@
-classdef InputImpedance < rooftopMoM.operators.OperatorInterface
+classdef InputImpedance < rooftopMoM.operator.OperatorInterface
     methods (Static)
         function Zin = generate(impedanceMatrix, currentVector, mode)
         % generate: Compute the input impedance seen at the excited port(s).
