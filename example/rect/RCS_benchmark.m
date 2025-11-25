@@ -42,8 +42,8 @@ rooftopMoM.Cache.setCacheAll(true);
 %% Prepare benchmark inputs and outputs
 % Choose minimum and maximum electrical sizes and the number of samples.
 kaMin = 1e-1;
-kaMax = 100;
-sampleCount = 20;
+kaMax = 10;
+sampleCount = 1;
 
 % Constants used to compute the wavenumber and antenna size.
 % Number of rooftops per wavelength to aim for.
@@ -106,7 +106,7 @@ for n = 1:sampleCount
         'waveIntensity', waveIntensity ...
     );
 
-    DEBUG('RCS_benchmark: Computing with the FFT-preconditioned CG solver');
+    DEBUG('RCS_benchmark: Computing with the FFT preconditioned CG solver');
 
     result_FFTMult = solveAntennaCurrent(solverContext, ...
         'tolerance', tolerance, ...
@@ -136,6 +136,9 @@ for n = 1:sampleCount
     solvingTime_FFTMult = result_FFTMult.solverOutput.postRunInfo().solvingTime;
     solvingTime_splitFFTMult = result_splitFFTMult.solverOutput.postRunInfo().solvingTime;
     DEBUG('RCS_benchmark: FFTMult variant took %g s and splitFFTMult took %g s (%gx speed up)', solvingTime_FFTMult, solvingTime_splitFFTMult, solvingTime_FFTMult / solvingTime_splitFFTMult);
+
+    % Clear the cache
+    rooftopMoM.Cache.clear();
 
     % Store results for this sample.
     benchmarkOutput{n} = struct( ...
