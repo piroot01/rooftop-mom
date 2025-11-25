@@ -43,7 +43,7 @@ rooftopMoM.Cache.setCacheAll(true);
 % Choose minimum and maximum electrical sizes and the number of samples.
 kaMin = 1e-1;
 kaMax = 10;
-sampleCount = 1;
+sampleCount = 50;
 
 % Constants used to compute the wavenumber and antenna size.
 % Number of rooftops per wavelength to aim for.

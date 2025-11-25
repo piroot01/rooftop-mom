@@ -1,7 +1,7 @@
 clc; clearvars;
 
 %profile clear;
-%profile -memory on;
+%profile on;
 
 currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
@@ -13,20 +13,16 @@ addpath(loggerDir);
 % Configure the logger.
 logger.Logger.configure( ...
     'timeFormat', 'ss.SSS', ...
-    'minLevel', logger.LogLevel.DEBUG, ...
+    'minLevel', logger.LogLevel.TRACE, ...
     'sinks', { ...
         logger.sink.ConsoleSink(), ...
     } ...
 );
 
-countX = 2;
-countY = 150;
-sizeX = 0.5;
-sizeY = 1.7;
-
-rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
-rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
-mesh = rect.generateMesh();
+countX = 500;
+countY = 500;
+sizeX = 1;
+sizeY = 1;
 
 order = 3;
 elementCount = 1e7;
@@ -34,26 +30,6 @@ k = pi / (sizeY * countY);
 V = 1;
 
 quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
-
-%
-% Classical naive approach
-%
-
-rooftops = rooftopMoM.basisFunctions.MeshUniformRooftops(mesh, quad);
-rooftops.generate();
-
-disp(rooftops.count());
-
-%planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
-%context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
-%fullAssembler = rooftopMoM.core.impedanceMatrix.FullAssembler(planner);
-
-%outputNaive = fullAssembler.generateFull(context);
-
-mode = rooftopMoM.operators.utils.generateMiddlePortMode(rooftops.count());
-excitation = rooftopMoM.operators.DeltaGapFeederExcitation.generate(rooftops.count(), mode, V);
-
-%currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excitation);
 
 %
 % Convolutional approach
@@ -73,7 +49,14 @@ greensMatrix = assembler.generateFull(context);
 greensMatrixApplicator = rooftopMoM.core.greensMatrix.FFTAcceleratedApplicator(context, greensMatrix);
 greensMatrixApplicator.generate();
 
+%profile viewer;
+
+%{
+
 conjugateGradientSolver = rooftopMoM.core.solver.ConjugateGradient(greensMatrixApplicator);
+
+mode = rooftopMoM.operator.utils.generateMiddlePortMode(rooftops.count());
+excitation = rooftopMoM.operator.DeltaGapFeederExcitation.generate(rooftops.count(), mode, V);
 
 tolerance = 1e-12;
 maxIterCount = 2000;
@@ -86,6 +69,10 @@ outputConvSolver = conjugateGradientSolver.solve( ...
 
 fprintf('Number of the iterations: %d\n', outputConvSolver.count());
 currentConv = outputConvSolver.postRunInfo().current;
+
+%}
+
+%{
 
 %norm(currentConv - currentNaive)
 
@@ -108,3 +95,7 @@ currentConvSplit = outputConvSolver.postRunInfo().current;
 
 % check the norm
 norm(currentConvSplit - currentConv)
+
+%}
+
+%profile viewer;

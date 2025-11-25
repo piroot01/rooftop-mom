@@ -16,8 +16,8 @@ logger.Logger.configure( ...
     } ...
 );
 
-countX = 3;
-countY = 3;
+countX = 30;
+countY = 10;
 sizeX = 1;
 sizeY = 1;
 
@@ -25,14 +25,14 @@ rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, size
 rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
 mesh = rect.generateMesh();
 
-order = 5;
+order = 3;
 
 quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
 rooftops = rooftopMoM.basisFunctions.MeshUniformRooftops(mesh, quad);
 
 rooftops.generate();
 
-elementCount = 100000;
+elementCount = 1e7;
 
 planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
 
@@ -43,5 +43,3 @@ context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 fullAssembler = rooftopMoM.core.impedanceMatrix.FullAssembler(planner);
 
 Z = fullAssembler.generateFull(context);
-
-Z.value()
