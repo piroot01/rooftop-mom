@@ -1,8 +1,5 @@
 clc; clearvars;
 
-%profile clear;
-%profile on;
-
 currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
@@ -20,11 +17,11 @@ logger.Logger.configure( ...
 );
 
 countX = 500;
-countY = 500;
+countY = 600;
 sizeX = 1;
 sizeY = 1;
 
-order = 3;
+order = 4;
 elementCount = 1e7;
 k = pi / (sizeY * countY);
 V = 1;

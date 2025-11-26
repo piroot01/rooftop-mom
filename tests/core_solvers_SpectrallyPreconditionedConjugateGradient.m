@@ -16,8 +16,8 @@ logger.Logger.configure( ...
     } ...
 );
 
-countX = 100;
-countY = 1000;
+countX = 1;
+countY = 100;
 sizeX = 1;
 sizeY = 1;
 
@@ -25,7 +25,7 @@ rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, size
 rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
 mesh = rect.generateMesh();
 
-order = 5;
+order = 2;
 elementCount = 1e7;
 k = pi / (sizeY * countY);
 V = 1;
@@ -39,16 +39,16 @@ quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
 rooftops = rooftopMoM.basisFunctions.MeshUniformRooftops(mesh, quad);
 rooftops.generate();
 
-%planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
-%context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
-%fullAssembler = rooftopMoM.core.impedanceMatrix.FullAssembler(planner);
+planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
+context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
+fullAssembler = rooftopMoM.core.impedanceMatrix.FullAssembler(planner);
 
-%outputNaive = fullAssembler.generateFull(context);
+outputNaive = fullAssembler.generateFull(context);
 
-mode = rooftopMoM.operators.utils.generateMiddlePortMode(rooftops.count());
-excitation = rooftopMoM.operators.DeltaGapFeederExcitation.generate(rooftops.count(), mode, V);
+mode = rooftopMoM.operator.utils.generateMiddlePortMode(rooftops.count());
+excitation = rooftopMoM.operator.DeltaGapFeederExcitation.generate(rooftops.count(), mode, V);
 
-%currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excitation);
+currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excitation);
 
 %
 % Convolutional approach
@@ -64,8 +64,6 @@ context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 assembler = rooftopMoM.core.greensMatrix.FullAssembler(planner);
 
 greensMatrix = assembler.generateFull(context);
-
-%{
 
 greensMatrixApplicator = rooftopMoM.core.greensMatrix.FFTAcceleratedApplicator(context, greensMatrix);
 greensMatrixApplicator.generate();
@@ -84,7 +82,6 @@ outputConvSolver = conjugateGradientSolver.solve( ...
 fprintf('Number of the iterations: %d\n', outputConvSolver.count());
 currentConv = outputConvSolver.postRunInfo().current;
 
-%}
 
 greensMatrixApplicator = rooftopMoM.core.greensMatrix.SplitFFTAcceleratedApplicator(context, greensMatrix);
 greensMatrixApplicator.generate();
@@ -107,6 +104,6 @@ currentSplitConv = outputConvSolver.postRunInfo().current;
 % Compare the currents.
 %
 
-%norm(currentConv - currentNaive)
-%norm(currentSplitConv - currentNaive)
+norm(currentConv - currentNaive)
+norm(currentSplitConv - currentNaive)
 norm(currentConv - currentSplitConv)

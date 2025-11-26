@@ -50,8 +50,7 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
             order = quadrature.order();
             blockSize = order^2;
 
-            [points, values] = rooftops.generateRooftopsDir(dir);
-            [quadraturePoints, rooftopPoints] = rooftopMoM.core.greensMatrix.utils.convertRooftopPointsToArrays(points);
+            [quadraturePoints, rooftopPoints, values] = rooftops.generateRooftopsDir(dir);
 
             % Cache the data
             if rooftopMoM.Cache.getStatus()

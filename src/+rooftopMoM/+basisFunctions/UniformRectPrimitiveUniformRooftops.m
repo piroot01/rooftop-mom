@@ -22,7 +22,7 @@ classdef UniformRectPrimitiveUniformRooftops < rooftopMoM.basisFunctions.Uniform
             obj.quadrature_.generate();
         end
 
-        function [rooftopPoints, rooftopValues] = generateRooftopsDir(obj, dir)
+        function [quadraturePoints, rooftopPoints, rooftopValues] = generateRooftopsDir(obj, dir)
         % generateRooftopsDirection: Generate rooftop basis for given axis direction.
 
             % Fetch primitive dimensions and grid size.
@@ -45,48 +45,17 @@ classdef UniformRectPrimitiveUniformRooftops < rooftopMoM.basisFunctions.Uniform
 
             % Generate a single rooftop's geometry and values.
             [singlePoints, rooftopValues] = obj.generateRooftop_(dir);
-            singleQuadraturePointsPositive = singlePoints.quadraturePointsPositive;
-            singleQuadraturePointsNegative = singlePoints.quadraturePointsNegative;
-
             orderSquared = obj.quadrature_.order()^2;
+            columnCount = orderSquared * count;
 
-            if count == 0
-                rooftopPoints = struct( ...
-                    'quadraturePointsPositive', zeros(3, 0), ...
-                    'quadraturePointsNegative', zeros(3, 0), ...
-                    'rooftopPointsPositive',zeros(3, 0), ...
-                    'rooftopPointsNegative', zeros(3, 0) ...
-                );
-            else
-                rooftopPoints = struct( ...
-                    'quadraturePointsPositive', repmat(singleQuadraturePointsPositive, 1, count) + kron(shifts, ones(1, orderSquared)), ...
-                    'quadraturePointsNegative', repmat(singleQuadraturePointsNegative, 1, count) + kron(shifts, ones(1, orderSquared)), ...
-                    'rooftopPointsPositive', repmat(singlePoints.rooftopPointsPositive, 1, count), ...
-                    'rooftopPointsNegative', repmat(singlePoints.rooftopPointsNegative, 1, count) ...
-                );
-            end
+            quadraturePoints = zeros(3, columnCount, 2);
+            shiftsDistributed = repelem(shifts, 1, orderSquared);
+            quadraturePoints(:, :, 1) = repmat(singlePoints.quadraturePointsPositive, 1, count) + shiftsDistributed;
+            quadraturePoints(:, :, 2) = repmat(singlePoints.quadraturePointsNegative, 1, count) + shiftsDistributed;
 
-            %{
-            % memory friendly
-            tic;
-            quadraturePointsPositive = zeros(3, orderSquared * count);
-            quadraturePointsNegative = zeros(3, orderSquared * count);
-
-            for n = 1:count
-                columnIndices = (n - 1) * orderSquared + (1:orderSquared);
-                shift = shifts(:, n);
-                quadraturePointsPositive(:, columnIndices) = singleQuadraturePointsPositive + shift;
-                quadraturePointsNegative(:, columnIndices) = singleQuadraturePointsNegative + shift;
-            end
-
-            rooftopPoints = struct( ...
-                'quadraturePointsPositive', quadraturePointsPositive, ...
-                'quadraturePointsNegative', quadraturePointsNegative, ...
-                'rooftopPointsPositive', repmat(singlePoints.rooftopPointsPositive, 1, count), ...
-                'rooftopPointsNegative', repmat(singlePoints.rooftopPointsNegative, 1, count) ...
-            );
-            toc;
-            %}
+            rooftopPoints = zeros(3, columnCount, 2);
+            rooftopPoints(:, :, 1) = repmat(singlePoints.rooftopPointsPositive, 1, count);
+            rooftopPoints(:, :, 2) = repmat(singlePoints.rooftopPointsNegative, 1, count);
         end
 
         function quadrature = quadrature(obj)

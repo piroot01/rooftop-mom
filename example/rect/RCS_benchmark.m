@@ -36,6 +36,7 @@ logger.Logger.configure( ...
 );
 
 %% Enable caching of rooftop data arrays to speed up operator evaluations
+rooftopMoM.Cache.destroy();
 rooftopMoM.Cache.setStatus(true);
 rooftopMoM.Cache.setCacheAll(true);
 
