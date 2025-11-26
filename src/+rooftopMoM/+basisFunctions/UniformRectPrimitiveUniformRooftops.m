@@ -22,40 +22,11 @@ classdef UniformRectPrimitiveUniformRooftops < rooftopMoM.basisFunctions.Uniform
             obj.quadrature_.generate();
         end
 
-        function [quadraturePoints, rooftopPoints, rooftopValues] = generateRooftopsDir(obj, dir)
+        function [rooftopPoints, rooftopValues] = generateRooftopsDir(obj, dir)
         % generateRooftopsDirection: Generate rooftop basis for given axis direction.
 
-            % Fetch primitive dimensions and grid size.
-            [sX, sY] = obj.primitive().faceSize();
-            [cX, cY] = obj.primitive().gridSize();
-
-            % Determine count and shifts for the requested direction.
-            switch dir
-                case 'x'
-                    % Number of rooftops along x-directed edges.
-                    count = double((cX - 1) * cY);
-                    shifts = rooftopMoM.basisFunctions.utils.generateRectGridShifts(cX - 1, cY, sX, sY);
-                case 'y'
-                    % Number of rooftops along y-directed edges.
-                    count = double((cY - 1) * cX);
-                    shifts = rooftopMoM.basisFunctions.utils.generateRectGridShifts(cX, cY - 1, sX, sY);
-                otherwise
-                    error("Unknown direction '%s'. Use 'x' or 'y'.", direction);
-            end
-
             % Generate a single rooftop's geometry and values.
-            [singlePoints, rooftopValues] = obj.generateRooftop_(dir);
-            orderSquared = obj.quadrature_.order()^2;
-            columnCount = orderSquared * count;
-
-            quadraturePoints = zeros(3, columnCount, 2);
-            shiftsDistributed = repelem(shifts, 1, orderSquared);
-            quadraturePoints(:, :, 1) = repmat(singlePoints.quadraturePointsPositive, 1, count) + shiftsDistributed;
-            quadraturePoints(:, :, 2) = repmat(singlePoints.quadraturePointsNegative, 1, count) + shiftsDistributed;
-
-            rooftopPoints = zeros(3, columnCount, 2);
-            rooftopPoints(:, :, 1) = repmat(singlePoints.rooftopPointsPositive, 1, count);
-            rooftopPoints(:, :, 2) = repmat(singlePoints.rooftopPointsNegative, 1, count);
+            [rooftopPoints, rooftopValues] = obj.generateRooftop_(dir);
         end
 
         function quadrature = quadrature(obj)

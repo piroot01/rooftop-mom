@@ -1,4 +1,4 @@
-cc; clearvars;
+clc; clearvars;
 
 currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
@@ -6,8 +6,8 @@ addpath(srcDir);
 
 countX = 3;
 countY = 3;
-sizeX = 1;
-sizeY = 1;
+sizeX = 1.5;
+sizeY = 0.5;
 
 rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
 rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
@@ -20,7 +20,7 @@ rooftops = rooftopMoM.basisFunctions.MeshUniformRooftops(mesh, quad);
 
 rooftops.generate();
 
-elementCount = 100000;
+elementCount = 16;
 
 planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
 
@@ -31,3 +31,5 @@ context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 magAssembler = rooftopMoM.core.impedanceMatrix.MagneticPartAssembler(planner);
 
 Z = magAssembler.generateFull(context);
+
+Z.value()

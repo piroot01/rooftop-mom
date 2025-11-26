@@ -1,10 +1,7 @@
 classdef PlaneWaveExcitation < rooftopMoM.operator.OperatorInterface
+% Currently works only for UniformRectPrimitiveUniformRooftops :C
     methods (Static)
-        function V = generateWithAssemblerContext(context, direction, polarization, intensity, useCachedData)
-            if nargin < 5
-                useCachedData = false;
-            end
-
+        function V = generateWithAssemblerContext(context, direction, polarization, intensity, chunkSize)
             V = rooftopMoM.operator.PlaneWaveExcitation.generate( ...
                 context.quadrature(), ...
                 context.rooftops(), ...
@@ -12,57 +9,93 @@ classdef PlaneWaveExcitation < rooftopMoM.operator.OperatorInterface
                 direction, ...
                 polarization, ...
                 intensity, ...
-                useCachedData ...
+                chunkSize ...
             );
         end
 
-        function V = generate(quadrature, rooftops, wavenumber, direction, polarization, intensity, useCachedData)
-            if nargin < 7
-                useCachedData = false;
-            end
-
-            [quadraturePoints, rooftopPoints, rooftopValues] = rooftopMoM.operator.utils.generateRooftopData(rooftops, useCachedData);
-
+        function V = generate(quadrature, rooftops, wavenumber, direction, polarization, intensity, chunkSize)
             direction = direction(:).';
             polarization = polarization(:).';
 
+            context = struct( ...
+                'chunkSize', chunkSize, ...
+                'quadrature', quadrature, ...
+                'rooftops', rooftops ...
+            );
+
             matrixCount = numel(wavenumber);
             basisSize = rooftops.count();
-            order = quadrature.order();
-            blockSize = order^2;
-
-            weights = quadrature.weights2D();
-
-            rooftopEdgeLengths = rooftopMoM.operator.utils.generateRooftopEdgeLengths(rooftops, rooftopValues);
-
-            computeContext = struct( ...
-                'basisSize', basisSize, ...
-                'blockSize', blockSize, ...
-                'quadraturePoints', quadraturePoints, ...
-                'rooftopPoints', rooftopPoints, ...
-                'rooftopEdgeLengths', rooftopEdgeLengths, ...
-                'weights', repmat(weights, basisSize, 1).'  ...
-            );
 
             V = complex(zeros(basisSize, 1, matrixCount));
 
             for n = 1:matrixCount
-                V(:, :, n) = rooftopMoM.operator.PlaneWaveExcitation.generateImpl_(computeContext, direction, polarization, intensity, wavenumber(n));
+                V(:, :, n) = rooftopMoM.operator.PlaneWaveExcitation.generateImpl_(context, direction, polarization, intensity, wavenumber(n));
             end
         end
     end
 
     methods (Static, Access = private)
-        function V = generateImpl_(computeContext, direction, polarization, intensity, wavenumber)
-            exponent = 1i * wavenumber * pagemtimes(direction, computeContext.quadraturePoints);
+        function V = generateImpl_(context, direction, polarization, intensity, wavenumber)
+            Vx = rooftopMoM.operator.PlaneWaveExcitation.generateDir_(context, direction, polarization, intensity, wavenumber, 'x');
+            Vy = rooftopMoM.operator.PlaneWaveExcitation.generateDir_(context, direction, polarization, intensity, wavenumber, 'y');
+            V = [Vx; Vy];
+        end
 
-            integrand = computeContext.rooftopPoints .* exp(exponent);
+        function V = generateDir_(context, direction, polarization, intensity, wavenumber, dir)
+            quadrature = context.quadrature;
+            rooftops = context.rooftops;
+            primitive = rooftops.primitive();
 
-            integral = pagemtimes(polarization, (integrand .* computeContext.weights));
+            orderSquared = quadrature.order()^2;
 
-            integralReshaped = reshape(integral, computeContext.blockSize, computeContext.basisSize, 2);
+            [chunks, chunkCount] = rooftopMoM.operator.utils.generateChunks(rooftops.countDir(dir), orderSquared, context.chunkSize);
 
-            V = sum(sum(integralReshaped, 1), 3) .* computeContext.rooftopEdgeLengths;
+            [rooftopPoints, rooftopValues] = context.rooftops.generateRooftopsDir(dir);
+
+            V = complex(zeros(rooftops.countDir(dir), 1));
+
+            for n = 1:chunkCount
+                chunk = chunks{n};
+                chunkIndices = chunk.indicesStart:chunk.indicesEnd;
+                chunkSize = numel(chunkIndices);
+
+                rooftopPointsPositive = repmat(rooftopPoints.rooftopPointsPositive, 1, chunkSize);
+                rooftopPointsNegative = repmat(rooftopPoints.rooftopPointsNegative, 1, chunkSize);
+                rooftopPointsCombined = cat(3, rooftopPointsPositive, rooftopPointsNegative);
+
+                shifts = rooftopMoM.basisFunctions.utils.generateRectGridShiftsSliceDirection( ...
+                    primitive.countX, primitive.sizeX, primitive.sizeY, ...
+                    chunkIndices, ...
+                    dir ...
+                );
+
+                quadraturePointsPositive = rooftopMoM.core.greensMatrix.utils.generateQuadraturePointsSlice(rooftopPoints.quadraturePointsPositive, shifts);
+                quadraturePointsNegative = rooftopMoM.core.greensMatrix.utils.generateQuadraturePointsSlice(rooftopPoints.quadraturePointsNegative, shifts);
+                quadraturePointsCombined = cat(3, quadraturePointsPositive, quadraturePointsNegative);
+
+                context = struct( ...
+                    'blockSize', orderSquared, ...
+                    'chunkSize', chunkSize, ...
+                    'quadraturePoints', quadraturePointsCombined, ...
+                    'rooftopPoints', rooftopPointsCombined, ...
+                    'rooftopEdgeLengths', repelem(rooftopValues.length, 1, chunkSize), ...
+                    'weights', repmat(quadrature.weights2D().', 1, chunkSize) ...
+                );
+
+                V(chunkIndices) = rooftopMoM.operator.PlaneWaveExcitation.generateDirChunk_(context, direction, polarization, intensity, wavenumber);
+            end
+        end
+
+        function V = generateDirChunk_(context, direction, polarization, intensity, wavenumber)
+            exponent = 1i * wavenumber * pagemtimes(direction, context.quadraturePoints);
+
+            integrand = context.rooftopPoints .* exp(exponent);
+
+            integral = pagemtimes(polarization, (integrand .* context.weights));
+
+            integralReshaped = reshape(integral, context.blockSize, context.chunkSize, 2);
+
+            V = sum(sum(integralReshaped, 1), 3) .* context.rooftopEdgeLengths;
 
             V = intensity * V;
         end

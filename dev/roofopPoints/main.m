@@ -1,60 +1,87 @@
 clc; clearvars;
 
-countX = 2000;
-countY = 2000;
-order = 2;
-repeatCount = 5;
+profile on;
 
-count = (countX - 1) * countY + countX * (countY - 1);
+rng(0);
+
+countX = 3;
+countY = 3;
+order = 2;
+repeatCount = 1;
+
 orderSquared = order^2;
 
-singleQuadraturePointsPositive = randn([3, orderSquared]);
-singleQuadraturePointsNegative = randn([3, orderSquared]);
-singleRooftopPointsPositive = randn([3, orderSquared]);
-singleRooftopPointsNegative = randn([3, orderSquared]);
+singleQuadraturePointsPositive = randi(10, [3, orderSquared]);
 
-shifts = randn([3, count]);
+tic;
+shifts = generateRectGridShifts(countX, countY, 1, 1);
+toc;
 
+count = size(shifts, 2);
 cols = orderSquared * count;
 
 for n = 1:repeatCount
     tic;
-    %{
-    quadraturePointsPositive = repmat(singleQuadraturePointsPositive, 1, count);
-    quadraturePointsNegative = repmat(singleQuadraturePointsNegative, 1, count);
     shiftsDistributed = repelem(shifts, 1, orderSquared);
-    rooftopPointsPositive = repmat(singleRooftopPointsPositive, 1, count) + shiftsDistributed;
-    rooftopPointsNegative = repmat(singleRooftopPointsNegative, 1, count) + shiftsDistributed;
-
-    quadraturePoints = cat(3, quadraturePointsPositive, quadraturePointsNegative);
-    rooftopPoints = cat(3, rooftopPointsPositive, rooftopPointsNegative);
-    %}
-    
-    quadraturePoints = zeros(3, cols, 2, 'like', singleRooftopPointsPositive);
-    quadraturePoints(:, :, 1) = repmat(singleQuadraturePointsPositive, 1, count);
-    quadraturePoints(:, :, 2) = repmat(singleQuadraturePointsNegative, 1, count);
-
-    shiftsDistributed = repelem(shifts, 1, orderSquared);
-    rooftopPoints = zeros(3, cols, 2, 'like', singleRooftopPointsPositive);
-    rooftopPoints(:, :, 1) = repmat(singleRooftopPointsPositive, 1, count) + shiftsDistributed;
-    rooftopPoints(:, :, 2) = repmat(singleRooftopPointsNegative, 1, count) + shiftsDistributed;
-    
-    %{
-    quadraturePoints = zeros(3, cols, 2, 'like', singleRooftopPointsPositive);
-    quadraturePoints(:, :, 1) = repmat(singleQuadraturePointsPositive, 1, count);
-    quadraturePoints(:, :, 2) = repmat(singleQuadraturePointsNegative, 1, count);
-
-    shiftsDistributed = repelem(shifts, 1, orderSquared);
-    rooftopPoints = zeros(3, cols, 2, 'like', singleRooftopPointsPositive);
-    rooftopPoints(:, :, 1) = repmat(singleRooftopPointsPositive, 1, count);
-    rooftopPoints(:, :, 2) = repmat(singleRooftopPointsNegative, 1, count);
-    rooftopPoints = rooftopPoints + shiftsDistributed;
-    %}
-    %{
-    quadraturePoints = cat(3, repmat(singleQuadraturePointsPositive, 1, count), repmat(singleQuadraturePointsNegative, 1, count));
-
-    shiftsDistributed = repelem(shifts, 1, orderSquared);
-    rooftopPoints = cat(3, repmat(singleRooftopPointsPositive, 1, count), repmat(singleRooftopPointsNegative, 1, count)) + shiftsDistributed;
-    %}
+    quadraturePoints1 = repmat(singleQuadraturePointsPositive, 1, count) + shiftsDistributed
     toc;
+    clear quadraturePoints1;
+
+    tic;
+    qP = reshape(singleQuadraturePointsPositive, 3, orderSquared, 1);
+    s = reshape(shifts, 3, 1, count);
+    quadraturePoints2 = reshape(s + qP, 3, cols)
+    toc;
+    clear quadraturePoints2;
+end
+
+profile viewer;
+
+function shifts = generateRectGridShifts(countX, countY, sizeX, sizeY, idx)
+% generateRectGridShifts: Generates shift vectors for a rectangular grid.
+%
+%   shifts = generateRectGridShifts(..., idx)
+%       -> returns shifts only for the linear indices in idx. idx may be:
+%            - a vector of indices (e.g. 4:16)
+%            - a two-element vector [start end] (treated as start:end)
+%            - a single scalar
+%
+% Notes:
+%   - Linear indices follow the same ordering as reshape(ndgrid(...),1,[]): 
+%     the x-index (countX) varies fastest, y-index (countY) slower.
+%   - Returned shifts are doubles: 3 x numel(idx).
+%
+% Example:
+%   % shifts for columns 4..16 only
+%   s = generateRectGridShifts(2000,1000,1.0,1.0, 4:16);
+
+    % total number of cells
+    N = double(countX) * double(countY);
+
+    % if no idx provided, keep original behaviour (small grids ok)
+    if nargin < 5 || isempty(idx)
+        [xn, yn] = ndgrid(double(0:(countX - 1)) * double(sizeX), ...
+                          double(0:(countY - 1)) * double(sizeY));
+        shifts = [reshape(xn, 1, []); reshape(yn, 1, []); zeros(1, numel(xn))];
+        return
+    end
+
+    % normalize idx:
+    if numel(idx) == 2 && idx(1) < idx(2) && all(mod(idx,1)==0) % treat as range [start end]
+        idx = idx(1):idx(2);
+    end
+    idx = idx(:).';  % row vector
+
+    % convert to 0-based linear offsets
+    k0 = double(idx) - 1;
+
+    % compute 0-based grid coordinates (vectorized, no big temporary grids)
+    ix = mod(k0, double(countX));        % 0..countX-1 (x index)
+    iy = floor(k0 / double(countX));     % 0..countY-1 (y index)
+
+    % scale by cell size and build shifts
+    xcoords = ix * double(sizeX);
+    ycoords = iy * double(sizeY);
+
+    shifts = [xcoords; ycoords; zeros(1, numel(idx))];
 end

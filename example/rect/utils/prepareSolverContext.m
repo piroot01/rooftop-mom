@@ -58,6 +58,8 @@ function context = prepareSolverContext(varargin)
     % Generate the excitation vector using the cached rooftop data.
     excitation = rooftopMoM.operator.PlaneWaveExcitation.generateWithAssemblerContext(context, waveDirection, wavePolarization, waveIntensity, true);
 
+    TRACE("solveAntennaCurrent: Plane wave excitation vector assembled.");
+
     % And clear the cache
     rooftopMoM.Cache.clear();
 

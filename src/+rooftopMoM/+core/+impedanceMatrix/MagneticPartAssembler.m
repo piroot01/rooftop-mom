@@ -145,7 +145,7 @@ classdef MagneticPartAssembler < rooftopMoM.core.impedanceMatrix.Assembler
             pCount = numel(p1);
 
             % Map rooftop points to each polarity combination.
-            rowRooftopPointsPolarity    = chunkContext.rowRooftopPoints(:, :, p1);
+            rowRooftopPointsPolarity = chunkContext.rowRooftopPoints(:, :, p1);
             columnRooftopPointsPolarity = chunkContext.columnRooftopPoints(:, :, p2);
 
             % Create expanded mask identifying singular quadrature pairs.

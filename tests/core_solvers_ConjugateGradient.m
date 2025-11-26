@@ -17,12 +17,12 @@ logger.Logger.configure( ...
 );
 
 countX = 500;
-countY = 600;
+countY = 500;
 sizeX = 1;
 sizeY = 1;
 
 order = 4;
-elementCount = 1e7;
+elementCount = 1e6;
 k = pi / (sizeY * countY);
 V = 1;
 
