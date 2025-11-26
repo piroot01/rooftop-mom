@@ -26,11 +26,25 @@ function mask = generateSingularityMask(indices, rooftopIndex)
         rooftopIndex = 1;
     end
 
-    basisSize = size(indices, 2);
-    mask = false(basisSize, 1, pCount);
+    if rooftopIndex == 1
+        % hyperoptimalised
 
-    for p = 1:pCount
-        mask(:, :, p) = indices(p1(p), :).' == indices(p2(p), rooftopIndex);
+        if indices(2, 1) == 2
+            % x-direction
+            mask = [1; 2; 0; 1];
+        else
+            % y-direction
+            mask = [1; double(indices(2, 1)); 0; 1];
+        end
+    else
+        mask = zeros(pCount, 1);
+
+        for p = 1:pCount
+            %mask(:, :, p) = indices(p1(p), :).' == indices(p2(p), rooftopIndex);
+            idx = find(indices(p1(p), :).'  == indices(p2(p), rooftopIndex), 1, 'first');
+            if ~isempty(idx)
+                mask(p) = idx;
+            end
+        end
     end
 end
-

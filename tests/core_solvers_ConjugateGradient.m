@@ -1,5 +1,8 @@
 clc; clearvars;
 
+%profile clear;
+%profile -memory on;
+
 currentDir = fileparts(mfilename('fullpath'));
 srcDir = fullfile(currentDir, '..', 'src');
 addpath(srcDir);
@@ -16,13 +19,13 @@ logger.Logger.configure( ...
     } ...
 );
 
-countX = 500;
-countY = 500;
-sizeX = 1;
-sizeY = 1;
+countX = 20000;
+countY = 20000;
+sizeX = 1.5;
+sizeY = 0.5;
 
-order = 4;
-elementCount = 1e6;
+order = 3;
+elementCount = 5e6;
 k = pi / (sizeY * countY);
 V = 1;
 
@@ -34,18 +37,29 @@ quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
 
 rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
 rooftops = rooftopMoM.basisFunctions.UniformRectPrimitiveUniformRooftops(rectPrimitive, quad);
+
+tic;
 rooftops.generate();
+toc;
+
+rooftops.count()
+
 
 planner = rooftopMoM.core.greensMatrix.AssemblerChunkPlanner(elementCount);
 context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 
 assembler = rooftopMoM.core.greensMatrix.FullAssembler(planner);
 
+
+tic;
 greensMatrix = assembler.generateFull(context);
+toc;
+
+%{
 
 greensMatrixApplicator = rooftopMoM.core.greensMatrix.FFTAcceleratedApplicator(context, greensMatrix);
 greensMatrixApplicator.generate();
-
+%}
 %profile viewer;
 
 %{

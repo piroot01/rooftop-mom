@@ -13,22 +13,29 @@ function indices = generateAllInteriorEdgesInDir(countX, countY, direction)
 %   Indexing convention:
 %       Linear face indices are arranged columnwise into a cX-by-cY matrix.
 
-    % Build grid of linear face indices.
-    idx = reshape(1:(countX * countY), countX, countY);
-
     switch direction
         case 'x'
-            % Face pairs adjacent along the first grid dimension (x).
-            % For each column, pair index (r, c) with (r+1, c).
-            leftIdx  = idx(1:(end - 1), :);
-            rightIdx = idx(2:end, :);
-            indices = [leftIdx(:).'; rightIdx(:).'];
+            if countX < 2 || countY < 1
+                indices = zeros(2,0);
+                return
+            end
+
+            r = (1:(countX - 1)).';
+            offs = (0:(countY - 1)) * countX;
+            left = r + offs;
+            left = left(:).';
+            indices = cat(1, left, left + 1);
         case 'y'
-            % Face pairs adjacent along the second grid dimension (y).
-            % For each row, pair index (r, c) with (r, c+1).
-            bottomIdx = idx(:, 1:(end - 1));
-            topIdx    = idx(:, 2:end);
-            indices = [bottomIdx(:).'; topIdx(:).'];
+            if countY < 2 || countX < 1
+                indices = zeros(2,0);
+                return
+            end
+
+            r = (1:countX).';
+            offs = (0:(countY - 2)) * countX;
+            bottom = r + offs;
+            bottom = bottom(:).';
+            indices = cat(1, bottom, bottom + countX);
         otherwise
             error("Unknown direction '%s'. Use 'x' or 'y'.", direction);
     end

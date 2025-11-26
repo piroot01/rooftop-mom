@@ -65,7 +65,7 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
             end
             %}
 
-            jacobians = rooftopMoM.core.greensMatrix.utils.generate2DJacobians(rooftops.primitive(), basisSize);
+            jacobian = rooftops.primitive.sizeX() * rooftops.primitive.sizeY();
 
             singularityContext = rooftopMoM.core.greensMatrix.MagneticPartAssembler.generateSingularityContext(rooftops.indicesDir(direction), rooftopValues);
 
@@ -77,7 +77,7 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
                 'basisSize', basisSize, ...
                 'blockSize', blockSize, ...
                 'rooftopPoints', rooftopPoints, ...
-                'jacobians', jacobians, ...
+                'jacobian', jacobian, ...
                 'singularityContext', singularityContext, ...
                 'weights', weights ...
             );
@@ -94,7 +94,7 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
 
         function G = generateImplCore_(~, context, chunks, wavenumber)
             basisSize = context.basisSize;
-            jacobians = context.jacobians;
+            jacobian = context.jacobian;
             % Initialize greens matrix for this frequency.
             G = complex(zeros(basisSize, 1));
 
@@ -141,7 +141,7 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
                 integralKernel = rooftopMoM.core.impedanceMatrix.utils.generateScalarGreensFunction(wavenumber, distanceMatrix);
 
                 % Obtain mask of singular interactions.
-                singularityMask = context.singularityContext.indexMask(chunk.rowIndices, chunk.columnIndices, :);
+                singularityMask = reshape((chunk.rowIndices == context.singularityContext.indexMask).', chunkRowSize, [], 4);
 
                 % Bundle chunk-specific data for integration.
                 chunkContext = struct( ...
@@ -149,7 +149,7 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
                     'rowRooftopPoints', rowRooftopPoints, ...
                     'columnRooftopPoints', columnRooftopPoints, ...
                     'singularityMask', singularityMask, ...
-                    'distanceMatrix', distanceMatrix, ...
+                    'distanceMatrix', distanceMatrix, ...   e
                     'integralKernel', integralKernel ...
                 );
 
@@ -162,7 +162,7 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
             end
 
             % Apply final scaling by free-space impedance and Jacobian factors.
-            G = 1i * wavenumber * rooftopMoM.core.Constants.Z0 / (4 * pi) .* G .* (jacobians .* jacobians);
+            G = 1i * wavenumber * rooftopMoM.core.Constants.Z0 / (4 * pi) .* G .* (jacobian .* jacobian);
         end
     end
 
