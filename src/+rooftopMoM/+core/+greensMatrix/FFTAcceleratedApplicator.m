@@ -16,10 +16,7 @@ classdef FFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApp
 
     methods
         function generate(obj)
-            primitive = obj.context_.rooftops().primitive();
-            [gridSizeX, gridSizeY] = primitive.gridSize();
-
-            [magneticXXCirc, magneticYYCirc, electricCirc] = rooftopMoM.core.greensMatrix.utils.generateGreensMatrixCirculants(obj.matrixData_, gridSizeX + 1, gridSizeY + 1);
+            [magneticXXCirc, magneticYYCirc, electricCirc] = rooftopMoM.core.greensMatrix.utils.generateGreensMatrixCirculants(obj.matrixData_);
 
             primitive = obj.context_.rooftops().primitive();
             [obj.gxxf_, obj.gxyf_, obj.gyxf_, obj.gyyf_, obj.determinant_] = rooftopMoM.core.greensMatrix.utils.generateSpectralGreensMatrix( ...

@@ -27,7 +27,7 @@ classdef SplitFFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatr
 
             [magneticXXCirc, magneticYYCirc, electricCirc] = rooftopMoM.core.greensMatrix.utils.generateGreensMatrixCirculants(obj.matrixData_, gridSizeX + 1, gridSizeY + 1);
 
-            [gxxf, gxyf, gyxf, gyyf, obj.determinant_] = rooftopMoM.core.greensMatrix.utils.generateSpectralGreensMatrix( ...
+            [gxxf, gxyf, gyxf, gyyf, determinant] = rooftopMoM.core.greensMatrix.utils.generateSpectralGreensMatrix( ...
                 magneticXXCirc, magneticYYCirc, electricCirc, ...
                 obj.matrixData_.rooftopContent(), ...
                 primitive.sizeX(), ...
@@ -46,6 +46,9 @@ classdef SplitFFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatr
 
             obj.gyyf_ = rooftopMoM.core.greensMatrix.utils.subsampleMatrix(gyyf);
             clear gyyf;
+
+            obj.determinant_ = rooftopMoM.core.greensMatrix.utils.subsampleMatrix(determinant);
+            clear determinant;
 
             M = double(gridSizeX);
             N = double(gridSizeY);
@@ -444,6 +447,16 @@ classdef SplitFFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatr
                         outputYSpectr_oo = outputYSpectr_oo + obj.gxxf_.oo .* inputYReshapedSpectr_oo;
                         clear inputYReshapedSpectr_oo;
 
+                        outputXSpectr_ee = outputXSpectr_ee ./ obj.determinant_.ee;
+                        outputXSpectr_eo = outputXSpectr_eo ./ obj.determinant_.eo;
+                        outputXSpectr_oe = outputXSpectr_oe ./ obj.determinant_.oe;
+                        outputXSpectr_oo = outputXSpectr_oo ./ obj.determinant_.oo;
+
+                        outputYSpectr_ee = outputYSpectr_ee ./ obj.determinant_.ee;
+                        outputYSpectr_eo = outputYSpectr_eo ./ obj.determinant_.eo;
+                        outputYSpectr_oe = outputYSpectr_oe ./ obj.determinant_.oe;
+                        outputYSpectr_oo = outputYSpectr_oo ./ obj.determinant_.oo;
+
                         outputXSpectr_e = ifft(outputXSpectr_ee, [], 2) + ifft(outputXSpectr_eo, [], 2) .* obj.pcc_;
                         clear outputXSpectr_ee outputXSpectr_eo;
 
@@ -535,6 +548,16 @@ classdef SplitFFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatr
                         clear inputYReshapedSpectr_oe;
                         outputYSpectr_oo = outputYSpectr_oo + obj.gxxf_.oo .* inputYReshapedSpectr_oo;
                         clear inputYReshapedSpectr_oo;
+
+                        outputXSpectr_ee = outputXSpectr_ee ./ obj.determinant_.ee;
+                        outputXSpectr_eo = outputXSpectr_eo ./ obj.determinant_.eo;
+                        outputXSpectr_oe = outputXSpectr_oe ./ obj.determinant_.oe;
+                        outputXSpectr_oo = outputXSpectr_oo ./ obj.determinant_.oo;
+
+                        outputYSpectr_ee = outputYSpectr_ee ./ obj.determinant_.ee;
+                        outputYSpectr_eo = outputYSpectr_eo ./ obj.determinant_.eo;
+                        outputYSpectr_oe = outputYSpectr_oe ./ obj.determinant_.oe;
+                        outputYSpectr_oo = outputYSpectr_oo ./ obj.determinant_.oo;
 
                         outputXSpectr_e = ifft(outputXSpectr_ee, [], 1) + ifft(outputXSpectr_oe, [], 1) .* obj.prc_;
                         clear outputXSpectr_ee outputXSpectr_oe;

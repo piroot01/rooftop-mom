@@ -19,8 +19,8 @@ logger.Logger.configure( ...
     } ...
 );
 
-countX = 2;
-countY = 2;
+countX = 200;
+countY = 100;
 sizeX = 1.5;
 sizeY = 0.5;
 
@@ -44,33 +44,25 @@ toc;
 
 rooftops.count()
 
-
 planner = rooftopMoM.core.greensMatrix.AssemblerChunkPlanner(elementCount);
 context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 
 assembler = rooftopMoM.core.greensMatrix.FullAssembler(planner);
 
-
 tic;
 greensMatrix = assembler.generateFull(context);
 toc;
 
-%{
-
 greensMatrixApplicator = rooftopMoM.core.greensMatrix.FFTAcceleratedApplicator(context, greensMatrix);
 greensMatrixApplicator.generate();
-%}
-%profile viewer;
-
-%{
 
 conjugateGradientSolver = rooftopMoM.core.solver.ConjugateGradient(greensMatrixApplicator);
 
 mode = rooftopMoM.operator.utils.generateMiddlePortMode(rooftops.count());
 excitation = rooftopMoM.operator.DeltaGapFeederExcitation.generate(rooftops.count(), mode, V);
 
-tolerance = 1e-12;
-maxIterCount = 2000;
+tolerance = 1e-1;
+maxIterCount = 10000;
 
 outputConvSolver = conjugateGradientSolver.solve( ...
     'excitation', excitation, ...
@@ -81,10 +73,6 @@ outputConvSolver = conjugateGradientSolver.solve( ...
 fprintf('Number of the iterations: %d\n', outputConvSolver.count());
 currentConv = outputConvSolver.postRunInfo().current;
 
-%}
-
-%{
-
 %norm(currentConv - currentNaive)
 
 greensMatrixApplicator = rooftopMoM.core.greensMatrix.SplitFFTAcceleratedApplicator(context, greensMatrix);
@@ -92,7 +80,7 @@ greensMatrixApplicator.generate();
 
 conjugateGradientSolver = rooftopMoM.core.solver.ConjugateGradient(greensMatrixApplicator);
 
-tolerance = 1e-12;
+tolerance = 1e-1;
 maxIterCount = 2000;
 
 outputConvSolver = conjugateGradientSolver.solve( ...
@@ -106,7 +94,3 @@ currentConvSplit = outputConvSolver.postRunInfo().current;
 
 % check the norm
 norm(currentConvSplit - currentConv)
-
-%}
-
-%profile viewer;

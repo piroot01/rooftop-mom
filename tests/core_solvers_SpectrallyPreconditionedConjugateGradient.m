@@ -16,16 +16,16 @@ logger.Logger.configure( ...
     } ...
 );
 
-countX = 1;
-countY = 1000;
-sizeX = 1.5;
-sizeY = 0.2;
+countX = 200;
+countY = 100;
+sizeX = 1;
+sizeY = 1;
 
 rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
 rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
 mesh = rect.generateMesh();
 
-order = 2;
+order = 5;
 elementCount = 1e7;
 k = pi / (sizeY * countY);
 V = 1;
@@ -35,7 +35,7 @@ quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
 %
 % Classical naive approach
 %
-
+%{
 rooftops = rooftopMoM.basisFunctions.MeshUniformRooftops(mesh, quad);
 rooftops.generate();
 
@@ -44,11 +44,9 @@ context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 fullAssembler = rooftopMoM.core.impedanceMatrix.FullAssembler(planner);
 
 outputNaive = fullAssembler.generateFull(context);
+%}
 
-mode = rooftopMoM.operator.utils.generateMiddlePortMode(rooftops.count());
-excitation = rooftopMoM.operator.DeltaGapFeederExcitation.generate(rooftops.count(), mode, V);
-
-currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excitation);
+%currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excitation);
 
 %
 % Convolutional approach
@@ -57,6 +55,9 @@ currentNaive = rooftopMoM.core.solver.Inversion.solve(outputNaive.value(), excit
 rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
 rooftops = rooftopMoM.basisFunctions.UniformRectPrimitiveUniformRooftops(rectPrimitive, quad);
 rooftops.generate();
+
+mode = rooftopMoM.operator.utils.generateMiddlePortMode(rooftops.count());
+excitation = rooftopMoM.operator.DeltaGapFeederExcitation.generate(rooftops.count(), mode, V);
 
 planner = rooftopMoM.core.greensMatrix.AssemblerChunkPlanner(elementCount);
 context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
@@ -70,7 +71,7 @@ greensMatrixApplicator.generate();
 
 conjugateGradientSolver = rooftopMoM.core.solver.SpectrallyPreconditionedConjugateGradient(greensMatrixApplicator);
 
-tolerance = 1e-6;
+tolerance = 1e-9;
 maxIterCount = 2000;
 
 outputConvSolver = conjugateGradientSolver.solve( ...
@@ -88,7 +89,7 @@ greensMatrixApplicator.generate();
 
 conjugateGradientSolver = rooftopMoM.core.solver.SpectrallyPreconditionedConjugateGradient(greensMatrixApplicator);
 
-tolerance = 1e-12;
+tolerance = 1e-9;
 maxIterCount = 2000;
 
 outputConvSolver = conjugateGradientSolver.solve( ...
@@ -104,6 +105,5 @@ currentSplitConv = outputConvSolver.postRunInfo().current;
 % Compare the currents.
 %
 
-norm(currentConv - currentNaive)
-norm(currentSplitConv - currentNaive)
 norm(currentConv - currentSplitConv)
+
