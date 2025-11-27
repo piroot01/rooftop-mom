@@ -29,11 +29,11 @@ classdef AssemblerChunkPlanner < handle
 
     methods (Access = private)
         function chunks = generateImpl_(obj, context, count)
-            interactionIndices = (1:count).';
+            TRACE('AssemblerChunkPlanner.generateImpl_: Generating chunks.');
 
-            internalChunkPlanner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(obj.elementCount_);
+            blockCount = rooftopMoM.core.impedanceMatrix.utils.generateBlockCountPerChunk(obj.elementCount_, context.quadrature().order());
 
-            chunks = internalChunkPlanner.generateSpecified(context, interactionIndices, count);
+            chunks = rooftopMoM.core.greensMatrix.utils.generateChunks(blockCount, count);
         end
     end
 end

@@ -86,7 +86,7 @@ classdef AssemblerChunkPlanner < handle
                 for n = 1:numChunksInGroups(m)
                     % Determine the slice of indices from the group for this specific chunk.
                     startIdx = (n - 1) * blockCount + 1;
-                    endIdx   = min(n * blockCount, groupSize);
+                    endIdx = min(n * blockCount, groupSize);
 
                     % Get the actual linear indices of the matrix elements for this chunk.
                     chunkIndices = currentGroup(startIdx:endIdx);
@@ -96,7 +96,7 @@ classdef AssemblerChunkPlanner < handle
                     [rows, cols] = ind2sub([count, count], chunkIndices);
 
                     % Define a rectangular chunk.
-                    chunk.rowIndices    = rows(1):rows(end);
+                    chunk.rowIndices = rows(1):rows(end);
                     chunk.columnIndices = cols(1):cols(end);
 
                     chunks{chunkIndex} = chunk;
