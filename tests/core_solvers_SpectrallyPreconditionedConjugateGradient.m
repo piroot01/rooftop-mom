@@ -17,9 +17,9 @@ logger.Logger.configure( ...
 );
 
 countX = 1;
-countY = 100;
-sizeX = 1;
-sizeY = 1;
+countY = 1000;
+sizeX = 1.5;
+sizeY = 0.2;
 
 rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
 rect = rooftopMoM.mesh.UniformRect(rectPrimitive);

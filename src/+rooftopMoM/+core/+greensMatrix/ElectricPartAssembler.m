@@ -35,11 +35,10 @@ classdef ElectricPartAssembler < rooftopMoM.core.greensMatrix.Assembler
             order = quadrature.order();
             blockSize = order^2;
 
-            quadraturePoints = rooftopMoM.basisFunctions.utils.generateQuadraturePointsUniformRectPrimitive(quadrature, primitive);
+            % The direction does not matter 
+            quadraturePoints = rooftopMoM.basisFunctions.utils.generateSingleQuadraturePointsUniformRectPrimitive(quadrature, primitive);
 
-            slices = rooftopMoM.core.impedanceMatrix.utils.generateSlicesFromChunks(chunks, order);
-
-            jacobians = rooftopMoM.core.greensMatrix.utils.generate2DJacobians(primitive, count);
+            jacobian = primitive.sizeX() * primitive.sizeY();
 
             singularityContext = rooftopMoM.core.greensMatrix.ElectricPartAssembler.generateSingularityContext(primitive);
 
@@ -48,14 +47,15 @@ classdef ElectricPartAssembler < rooftopMoM.core.greensMatrix.Assembler
             computeContext = struct( ...
                 'count', count, ...
                 'blockSize', blockSize, ...
+                'primitive', primitive, ...
                 'quadraturePoints', quadraturePoints, ...
-                'jacobians', jacobians, ...
+                'jacobian', jacobian, ...
                 'singularityContext', singularityContext, ...
                 'weights', weights ...
             );
 
             % TODO: Include the multi-wavenumber output
-            G = obj.generateImplCore_(computeContext, chunks, slices, wavenumber);
+            G = obj.generateImplCore_(computeContext, chunks, wavenumber);
 
             % Reshape according to the primitive shape.
             [cX, cY] = primitive.gridSize();
@@ -64,9 +64,9 @@ classdef ElectricPartAssembler < rooftopMoM.core.greensMatrix.Assembler
             G = reshape(G, cX, cY);
         end
 
-        function G = generateImplCore_(~, context, chunks, slices, wavenumber)
+        function G = generateImplCore_(~, context, chunks, wavenumber)
             count = context.count;
-            jacobians = context.jacobians;
+            jacobian = context.jacobian;
 
             % Initialize greens matrix for this frequency.
             G = complex(zeros(count, 1));
@@ -76,23 +76,33 @@ classdef ElectricPartAssembler < rooftopMoM.core.greensMatrix.Assembler
                 DEBUG("ElectricPartAssembler.generateImplCore_: Assembling chunk %d/%d.", n, numel(chunks));
 
                 chunk = chunks{n};
-                slice = slices{n};
+                chunkRowSize = numel(chunk.rowIndices);
+                chunkColumnSize = numel(chunk.columnIndices);
 
-                % Determine row and column index ranges for current chunk.
-                rowSlice = slice.rowIndicesStart:slice.rowIndicesEnd;
-                colSlice = slice.columnIndicesStart:slice.columnIndicesEnd;
+                % Row quadrature points in-place generation.
+                rowShifts = rooftopMoM.basisFunctions.utils.generateRectGridShiftsSlice( ...
+                    context.primitive.countX, context.primitive.sizeX, context.primitive.sizeY, ...
+                    chunk.rowIndices ...
+                );
 
-                rowQuadraturePointsPolarity = context.quadraturePoints(:, rowSlice);
-                columnQuadraturePointsPolarity = context.quadraturePoints(:, colSlice);
+                rowQuadraturePoints = rooftopMoM.core.greensMatrix.utils.generateQuadraturePointsSlice(context.quadraturePoints, rowShifts);
 
-                distanceMatrix = rooftopMoM.core.impedanceMatrix.utils.generateDistanceMatrix(rowQuadraturePointsPolarity, columnQuadraturePointsPolarity);
+                % Column quadrature points in-place generation.
+                columnShifts = rooftopMoM.basisFunctions.utils.generateRectGridShiftsSlice( ...
+                    context.primitive.countX, context.primitive.sizeX, context.primitive.sizeY, ...
+                    chunk.columnIndices ...
+                );
+
+                columnQuadraturePoints = rooftopMoM.core.greensMatrix.utils.generateQuadraturePointsSlice(context.quadraturePoints, columnShifts);
+
+                distanceMatrix = rooftopMoM.core.impedanceMatrix.utils.generateDistanceMatrix(rowQuadraturePoints, columnQuadraturePoints);
                 integralKernel = rooftopMoM.core.impedanceMatrix.utils.generateScalarGreensFunction(wavenumber, distanceMatrix);
 
                 singularityMask = context.singularityContext.indexMask(chunk.rowIndices, chunk.columnIndices, :);
 
                 % Bundle chunk-specific data for integration.
                 chunkContext = struct( ...
-                    'chunkSize', [numel(chunk.rowIndices), numel(chunk.columnIndices)], ...
+                    'chunkSize', [chunkRowSize, chunkColumnSize], ...
                     'singularityMask', singularityMask, ...
                     'distanceMatrix', distanceMatrix, ...
                     'integralKernel', integralKernel ...
@@ -105,7 +115,7 @@ classdef ElectricPartAssembler < rooftopMoM.core.greensMatrix.Assembler
             G(context.singularityContext.indexMask) = G(context.singularityContext.indexMask) + context.singularityContext.type3Values;
 
             % Apply final scaling by free-space impedance and Jacobian factors.
-            G = 1i * rooftopMoM.core.Constants.Z0 / (4 * pi * wavenumber) .* G .* (jacobians .* jacobians);
+            G = 1i * rooftopMoM.core.Constants.Z0 / (4 * pi * wavenumber) .* G .* (jacobian .* jacobian);
         end
     end
 

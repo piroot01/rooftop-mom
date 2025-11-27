@@ -29,3 +29,20 @@ context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 elAssembler = rooftopMoM.core.greensMatrix.ElectricPartAssembler(planner);
 
 Ge = elAssembler.generateFull(context)
+
+rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
+rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
+mesh = rect.generateMesh();
+
+quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
+rooftops = rooftopMoM.basisFunctions.MeshUniformRooftops(mesh, quad);
+rooftops.generate();
+
+planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(elementCount);
+context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
+elAssembler = rooftopMoM.core.impedanceMatrix.ElectricPartAssembler(planner);
+
+Z = elAssembler.generateFull(context);
+
+Z.value()
+

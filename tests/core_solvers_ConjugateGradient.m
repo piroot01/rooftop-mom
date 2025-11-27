@@ -19,13 +19,13 @@ logger.Logger.configure( ...
     } ...
 );
 
-countX = 12000;
-countY = 12000;
+countX = 2;
+countY = 2;
 sizeX = 1.5;
 sizeY = 0.5;
 
-order = 3;
-elementCount = 3e7;
+order = 2;
+elementCount = 10000;
 k = pi / (sizeY * countY);
 V = 1;
 

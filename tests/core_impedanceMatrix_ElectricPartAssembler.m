@@ -32,4 +32,4 @@ elAssembler = rooftopMoM.core.impedanceMatrix.ElectricPartAssembler(planner);
 
 Z = elAssembler.generateFull(context);
 
-disp(Z)
+disp(Z.value())
