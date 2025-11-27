@@ -37,9 +37,9 @@ logger.Logger.configure( ...
 
 %% Prepare benchmark inputs and outputs
 % Choose minimum and maximum electrical sizes and the number of samples.
-kaMin = 1e-1;
-kaMax = 10;
-sampleCount = 50;
+kaMin = 2e3;
+kaMax = 2e3;
+sampleCount = 1;
 
 % Constants used to compute the wavenumber and antenna size.
 % Number of rooftops per wavelength to aim for.
@@ -61,7 +61,7 @@ polarization = [0; 1; 0];
 waveIntensity = 1;
 
 % Memory allocation for a single chunk (number of elements, complex doubles).
-chunkSize = 1e7;
+chunkSize = 5e8;
 
 % Iterative solver settings.
 tolerance = 1e-6;

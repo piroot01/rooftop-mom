@@ -56,12 +56,10 @@ function context = prepareSolverContext(varargin)
     TRACE("solveAntennaCurrent: Green's matrix assembled.");
 
     % Generate the excitation vector using the cached rooftop data.
-    excitation = rooftopMoM.operator.PlaneWaveExcitation.generateWithAssemblerContext(context, waveDirection, wavePolarization, waveIntensity, true);
+    %excitation = rooftopMoM.operator.PlaneWaveExcitation.generateWithAssemblerContext(context, waveDirection, wavePolarization, waveIntensity, chunkSize);
+    excitation = rooftopMoM.operator.PlaneWaveExcitation.generatePerpendicular(rooftops, wavePolarization, waveIntensity);
 
     TRACE("solveAntennaCurrent: Plane wave excitation vector assembled.");
-
-    % And clear the cache
-    rooftopMoM.Cache.clear();
 
     context = struct( ...
         'context', context, ...

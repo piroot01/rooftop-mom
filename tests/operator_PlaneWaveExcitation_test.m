@@ -16,21 +16,17 @@ logger.Logger.configure( ...
     } ...
 );
 
-% Setup caching
-rooftopMoM.Cache.setStatus(true);
-rooftopMoM.Cache.setCacheAll(true);
-
 countX = 5000;
-countY = 5000;
+countY = 2500;
 sizeX = 1;
 sizeY = 1;
 
 k = 1;
-order = 2;
-elementCount = 1e7;
+order = 3;
+elementCount = 3e7;
 
 direction = [0; 0; -1];
-polarization = [0; 1; 0];
+polarization = [0; 1.5; 0];
 
 quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
 
@@ -40,5 +36,11 @@ rooftops.generate();
 context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 
 tic;
-V2 = rooftopMoM.operator.PlaneWaveExcitation.generateWithAssemblerContext(context, direction, polarization, 1, elementCount);
+V1 = rooftopMoM.operator.PlaneWaveExcitation.generateWithAssemblerContext(context, direction, polarization, 1, elementCount);
 toc;
+
+tic;
+V2 = rooftopMoM.operator.PlaneWaveExcitation.generatePerpendicular(rooftops, polarization, 1);
+toc;
+
+all(V1 - V2 < 1e-10)

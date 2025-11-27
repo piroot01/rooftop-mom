@@ -32,12 +32,25 @@ classdef PlaneWaveExcitation < rooftopMoM.operator.OperatorInterface
                 V(:, :, n) = rooftopMoM.operator.PlaneWaveExcitation.generateImpl_(context, direction, polarization, intensity, wavenumber(n));
             end
         end
+
+        function V = generatePerpendicular(rooftops, polarization, intensity)
+            nx = rooftops.countDir('x');
+            ny = rooftops.countDir('y');
+
+            V = zeros(nx + ny, 1);
+
+            V(1:nx) = polarization(1);
+            V((nx + 1):end) = polarization(2);
+
+            V = V * intensity;
+        end
     end
 
     methods (Static, Access = private)
         function V = generateImpl_(context, direction, polarization, intensity, wavenumber)
             Vx = rooftopMoM.operator.PlaneWaveExcitation.generateDir_(context, direction, polarization, intensity, wavenumber, 'x');
             Vy = rooftopMoM.operator.PlaneWaveExcitation.generateDir_(context, direction, polarization, intensity, wavenumber, 'y');
+
             V = [Vx; Vy];
         end
 
@@ -46,15 +59,24 @@ classdef PlaneWaveExcitation < rooftopMoM.operator.OperatorInterface
             rooftops = context.rooftops;
             primitive = rooftops.primitive();
 
+            rooftopCount = rooftops.countDir(dir);
+
+            if rooftopCount == 0
+                V = [];
+                return
+            end
+
             orderSquared = quadrature.order()^2;
 
-            [chunks, chunkCount] = rooftopMoM.operator.utils.generateChunks(rooftops.countDir(dir), orderSquared, context.chunkSize);
+            [chunks, chunkCount] = rooftopMoM.operator.utils.generateChunks(rooftopCount, orderSquared, context.chunkSize);
 
             [rooftopPoints, rooftopValues] = context.rooftops.generateRooftopsDir(dir);
 
             V = complex(zeros(rooftops.countDir(dir), 1));
 
             for n = 1:chunkCount
+                DEBUG("PlaneWaveExcitation.generateDir_: Assembling chunk %d/%d.", n, chunkCount);
+
                 chunk = chunks{n};
                 chunkIndices = chunk.indicesStart:chunk.indicesEnd;
                 chunkSize = numel(chunkIndices);
