@@ -41,7 +41,7 @@ function context = prepareSolverContext(varargin)
     rooftops = rooftopMoM.basisFunctions.UniformRectPrimitiveUniformRooftops(rectPrimitive, quadrature);
     rooftops.generate();
 
-    TRACE("solveAntennaCurrent: Rooftop basis functions generated.");
+    TRACE("solveAntennaCurrent: Rooftop basis functions generated: rooftop count = %g", rooftops.count());
 
     % Prepare a Green's matrix filling strategy and assemble the context
     planner = rooftopMoM.core.greensMatrix.AssemblerChunkPlanner(chunkSize);

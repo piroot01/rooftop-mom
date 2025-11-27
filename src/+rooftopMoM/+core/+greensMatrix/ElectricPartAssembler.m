@@ -71,9 +71,11 @@ classdef ElectricPartAssembler < rooftopMoM.core.greensMatrix.Assembler
             % Initialize greens matrix for this frequency.
             G = complex(zeros(count, 1));
 
+            t0 = tic;
+
             % Process each chunk sequentially.
             for n = 1:numel(chunks)
-                DEBUG("ElectricPartAssembler.generateImplCore_: Assembling chunk %d/%d.", n, numel(chunks));
+                t1 = tic;
 
                 chunk = chunks{n};
                 chunkRowSize = numel(chunk.rowIndices);
@@ -109,7 +111,13 @@ classdef ElectricPartAssembler < rooftopMoM.core.greensMatrix.Assembler
                 );
 
                 G(chunk.rowIndices, chunk.columnIndices) = rooftopMoM.core.greensMatrix.ElectricPartAssembler.generateChunk(context, chunkContext, wavenumber);
+
+                iterationTime = toc(t1);
+                TRACE("ElectricPartAssembler.generateImplCore_: Assembled chunk %d/%d: iteration time = %g s.", n, numel(chunks), iterationTime);
             end
+
+            assemblyTime = toc(t0);
+            TRACE("ElectricPartAssembler.generateImplCore_: All chunks assembled in %g s.", assemblyTime);
 
             % Apply the singularity correction.
             G(context.singularityContext.indexMask) = G(context.singularityContext.indexMask) + context.singularityContext.type3Values;

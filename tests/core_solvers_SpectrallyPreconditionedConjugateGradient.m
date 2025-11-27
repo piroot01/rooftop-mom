@@ -26,7 +26,7 @@ rect = rooftopMoM.mesh.UniformRect(rectPrimitive);
 mesh = rect.generateMesh();
 
 order = 5;
-elementCount = 1e7;
+elementCount = 1e6;
 k = pi / (sizeY * countY);
 V = 1;
 

@@ -98,9 +98,11 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
             % Initialize greens matrix for this frequency.
             G = complex(zeros(basisSize, 1));
 
+            t0 = tic;
+
             % Process each chunk sequentially.
             for n = 1:numel(chunks)
-                DEBUG("MagneticPartAssembler.generateImplCore_: Assembling chunk %d/%d.", n, numel(chunks));
+                t1 = tic;
 
                 chunk = chunks{n};
                 chunkRowSize = numel(chunk.rowIndices);
@@ -159,7 +161,13 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
 
                 % Accumulate into the global Z matrix.
                 G(chunk.rowIndices, chunk.columnIndices) = matrixChunk + singularCorrection;
+
+                iterationTime = toc(t1);
+                TRACE("MagneticPartAssembler.generateImplCore_: Assembled chunk %d/%d: iteration time = %g s.", n, numel(chunks), iterationTime);
             end
+
+            assemblyTime = toc(t0);
+            TRACE("MagneticPartAssembler.generateImplCore_: All chunks assembled in %g s.", assemblyTime);
 
             % Apply final scaling by free-space impedance and Jacobian factors.
             G = 1i * wavenumber * rooftopMoM.core.Constants.Z0 / (4 * pi) .* G .* (jacobian .* jacobian);
