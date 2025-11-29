@@ -37,9 +37,9 @@ logger.Logger.configure( ...
 
 %% Prepare benchmark inputs and outputs
 % Choose minimum and maximum electrical sizes and the number of samples.
-kaMin = 1e2;
-kaMax = 1e2;
-sampleCount = 1;
+kaMin = 1;
+kaMax = 5e2;
+sampleCount = 10;
 
 % Constants used to compute the wavenumber and antenna size.
 % Number of rooftops per wavelength to aim for.
