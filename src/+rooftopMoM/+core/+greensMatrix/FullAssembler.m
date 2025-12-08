@@ -55,6 +55,7 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
             % Compute the magnetic/electric part toeplitz kernels.
             [magneticXX, magneticYY] = magneticAssembler.generateFull(context);
             electric = electricAssembler.generateFull(context);
+            %electric = zeros(size(electric));
 
             output = rooftopMoM.core.greensMatrix.MatrixData( ...
                 'magneticXX', magneticXX, ...

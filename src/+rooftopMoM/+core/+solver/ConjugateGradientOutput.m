@@ -18,11 +18,13 @@ classdef ConjugateGradientOutput < rooftopMoM.core.solver.Output
             p = inputParser;
 
             addParameter(p, 'residueNorm', []);
+            addParameter(p, 'solverTime', []);
 
             parse(p, varargin{:});
 
             iterationInfo = struct( ...
-                'residueNorm', p.Results.residueNorm ...
+                'residueNorm', p.Results.residueNorm, ...
+                'solverTime', p.Results.solverTime ...
             );
 
             obj.iterationInfo_{end + 1} = iterationInfo;

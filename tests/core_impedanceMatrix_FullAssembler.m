@@ -16,8 +16,8 @@ logger.Logger.configure( ...
     } ...
 );
 
-countX = 30;
-countY = 10;
+countX = 10;
+countY = 20;
 sizeX = 1;
 sizeY = 1;
 
@@ -42,4 +42,6 @@ context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 
 fullAssembler = rooftopMoM.core.impedanceMatrix.FullAssembler(planner);
 
-Z = fullAssembler.generateFull(context);
+output = fullAssembler.generateFull(context);
+
+Z = output.value();

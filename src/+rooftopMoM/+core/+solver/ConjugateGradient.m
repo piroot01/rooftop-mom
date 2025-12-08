@@ -74,7 +74,7 @@ classdef ConjugateGradient < handle
             excitationNorm = norm(excitation);
             converged = false;
 
-            DEBUG("ConjugateGradient.solveImpl_: Initial residual norm (unnormalized) = %g, excitationNorm = %g.", sqrt(rTr), excitationNorm);
+            DEBUG("ConjugateGradient.solveImpl_: Initial residual norm = %g, excitationNorm = %g.", sqrt(rTr) / excitationNorm, excitationNorm);
 
             t0 = tic;
 
@@ -104,7 +104,7 @@ classdef ConjugateGradient < handle
                 );
 
                 iterationTime = toc(t1);
-                TRACE("ConjugateGradient.solveImpl_: Iteration %d: residual norm = %g, iteration time = %g s.", iteration, rTr, iterationTime);
+                TRACE("ConjugateGradient.solveImpl_: Iteration %d: residual norm = %g, iteration time = %g s.", iteration, residueNorm, iterationTime);
             end
 
             solvingTime = toc(t0);

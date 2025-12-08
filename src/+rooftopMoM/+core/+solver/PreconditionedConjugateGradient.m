@@ -1,11 +1,13 @@
-classdef SpectrallyPreconditionedConjugateGradient < handle
+classdef PreconditionedConjugateGradient < handle
     properties (Access = protected)
         matrixApplicator_;
+        preconditionerApplicator_;
     end
 
     methods
-        function obj = SpectrallyPreconditionedConjugateGradient(matrixApplicator)
+        function obj = PreconditionedConjugateGradient(matrixApplicator, preconditionerApplicator)
             obj.matrixApplicator_ = matrixApplicator;
+            obj.preconditionerApplicator_ = preconditionerApplicator;
         end
     end
 
@@ -19,7 +21,7 @@ classdef SpectrallyPreconditionedConjugateGradient < handle
             %       'tolerance': Relative residual tolerance (default 1e-6).
             %       'maxIterCount': Maximum number of iterations (default 1000).
 
-            TRACE("SpectrallyPreconditionedConjugateGradient.solve: Initialized solving procedure.");
+            TRACE("PreconditionedConjugateGradient.solve: Initialized solving procedure.");
 
             [inputSizeX, inputSizeY] = obj.matrixApplicator_.inputSize();
 
@@ -36,7 +38,7 @@ classdef SpectrallyPreconditionedConjugateGradient < handle
                 error('The excitation is empty!');
             end
 
-            DEBUG("SpectrallyPreconditionedConjugateGradient.solve: Parsed inputs: rooftop count = %d, tolerance = %g, maxIterCount = %d", ...
+            DEBUG("PreconditionedConjugateGradient.solve: Parsed inputs: rooftop count = %d, tolerance = %g, maxIterCount = %d", ...
                 inputSizeX * inputSizeY, p.Results.tolerance, p.Results.maxIterCount);
 
             output = obj.solveImpl_( ...
@@ -61,19 +63,19 @@ classdef SpectrallyPreconditionedConjugateGradient < handle
             %   Returns:
             %       output: Solution in form of the ConjugateGradientOutput.
 
-            TRACE("SpectrallyPreconditionedConjugateGradient.solveImpl_: Starting CG solver core.");
+            TRACE("PreconditionedConjugateGradient.solveImpl_: Starting CG solver core.");
 
             output = rooftopMoM.core.solver.ConjugateGradientOutput();
 
             current = initCurrent;
             residue = excitation - obj.matrixApplicator_.apply(current);
-            preconditionedResidue = obj.matrixApplicator_.applyPreconditioner(residue);
+            preconditionedResidue = obj.preconditionerApplicator_.apply(residue);
             direction = preconditionedResidue;
             rTr = residue.' * preconditionedResidue;
             excitationNorm = norm(excitation);
             converged = false;
 
-            DEBUG("SpectrallyPreconditionedConjugateGradient.solveImpl_: Initial residual norm (unnormalized) = %g, excitationNorm = %g.", sqrt(rTr), excitationNorm);
+            DEBUG("PreconditionedConjugateGradient.solveImpl_: Initial residual norm = %g, excitationNorm = %g.", sqrt(rTr) / excitationNorm, excitationNorm);
 
             t0 = tic;
 
@@ -84,36 +86,37 @@ classdef SpectrallyPreconditionedConjugateGradient < handle
                 alpha = rTr / (direction.' * gDirection);
                 current = current + alpha * direction;
                 residue = residue - alpha * gDirection;
-                preconditionedResidue = obj.matrixApplicator_.applyPreconditioner(residue);
+                preconditionedResidue = obj.preconditionerApplicator_.apply(residue);
                 rTrNew = residue.' * preconditionedResidue;
-                residueNorm = sqrt(rTrNew) / excitationNorm;
-
-                if residueNorm < tolerance
-                    DEBUG("SpectrallyPreconditionedConjugateGradient.solveImpl_: Converged in %d iterations (residue norm = %g).", iteration, residueNorm);
-                    converged = true;
-                    break;
-                end
+                residueNorm = abs(sqrt(rTrNew) / excitationNorm);
 
                 beta = rTrNew / rTr;
                 direction = preconditionedResidue + beta * direction;
                 rTr = rTrNew;
 
                 % Insert iteration info.
+                iterationTime = toc(t1);
+                TRACE("PreconditionedConjugateGradient.solveImpl_: Iteration %d: residual norm = %g, iteration time = %g s.", iteration, residueNorm, iterationTime);
+
                 output.insertIterationInfo( ...
-                    'residueNorm', residueNorm ...
+                    'residueNorm', residueNorm, ...
+                    'solverTime', toc(t0) ...
                 );
 
-                iterationTime = toc(t1);
-                TRACE("ConjugateGradient.solveImpl_: Iteration %d: residual norm = %g, iteration time = %g s.", iteration, rTr, iterationTime);
+                if residueNorm < tolerance
+                    DEBUG("PreconditionedConjugateGradient.solveImpl_: Converged in %d iterations (residue norm = %g).", iteration, residueNorm);
+                    converged = true;
+                    break;
+                end
             end
 
             solvingTime = toc(t0);
 
             if ~converged
-                DEBUG("SpectrallyPreconditionedConjugateGradient.solveImpl_: Did not converge after %d iterations (final residue norm = %g).", maxIterCount, residueNorm, solvingTime);
+                DEBUG("PreconditionedConjugateGradient.solveImpl_: Did not converge after %d iterations (final residue norm = %g).", maxIterCount, residueNorm, solvingTime);
             end
 
-            DEBUG("SpectrallyPreconditionedConjugateGradient.solveImpl_: Total time = %g s.", solvingTime);
+            DEBUG("PreconditionedConjugateGradient.solveImpl_: Total time = %g s.", solvingTime);
 
             output.setPostRunInfo( ...
                 struct( ...
@@ -124,7 +127,7 @@ classdef SpectrallyPreconditionedConjugateGradient < handle
                 ) ...
             );
 
-            TRACE("SpectrallyPreconditionedConjugateGradient.solveImpl_: Exiting CG solver core.");
+            TRACE("PreconditionedConjugateGradient.solveImpl_: Exiting PCG solver core.");
         end
     end
 end

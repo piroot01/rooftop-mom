@@ -3,18 +3,24 @@ clc; clearvars;
 % First we generate random symmetric Toeplitz matrix
 %ht = randn([N, 1]);
 
-%{
+N = 10;
+
+
 ht = zeros(N, 1);
 for n = 1:N
     ht(n) = (1 + abs(n))^(-1.1);
 end
-%}
 
-N = 100;
+%{
+ht = zeros(N, 1);
+ht(1) = 2.006;
+ht(2) = -1;
+%}
+%{
 t0 = pi^2/3;
 tk = @(k) 4 * (-1)^k / k^2; % for k>=1
 ht = [t0; arrayfun(@(k) tk(k), 1:N-1).'];
-
+%}
 
 %{
 % user parameters (play with these)
@@ -139,7 +145,7 @@ for j = 0:(N-1)
         c(j+1) = ((N - j) * ht(j+1) + j * ht(N - j + 1)) / N;
     end
 end
-
+%{
 %% Plain CG solver with FFT mat-vec multiplication
 data = FFTMultPrep(ht);
 applicator = @(x) FFTMult(data, x);
@@ -203,6 +209,14 @@ end
 eigsFunChan = @(x) eigsFunChan_(data, cf, x);
 
 eigs_Chan = eigs(eigsFunChan, N)
+%}
+%% Plain CG solver with FFT mat-vec multiplication
+data = FFTMultPrep(ht);
+applicator = @(x) FFTMult(data, x);
+
+function y = applyPreconditioner(sf, x)
+    y = ifft(fft(x) ./ sf);
+end
 
 %% New preconditioner: T + S is a good preconditioner
 % ht is the first column of the symmetric Toeplitz matrix
@@ -217,9 +231,6 @@ tic;
 tcgs = toc;
 fprintf('FFT accelerated new1-preconditioned cgs: flag=%d, relres=%g, iter=%d, time=%g s\n', flagC, relresC, iterC, tcgs);
 
-% Compare solutions (to direct solve)
-fprintf('||x_3 - x_fft_new1_cgs|| = %g\n', norm(x3 - xNew1));
-
 % Eigenvalues
 function y = eigsFunNew1_(data, N1f, x)
     y = applyPreconditioner(N1f, FFTMult(data, x));
@@ -229,6 +240,49 @@ eigsFunNew1 = @(x) eigsFunNew1_(data, N1f, x);
 
 eigs_New1 = eigs(eigsFunNew1, N)
 
+%% New preconditioner: T - S is a good preconditioner
+% ht is the first column of the symmetric Toeplitz matrix
+C = zeros(N, N);
+for n = 0:(N - 1)
+    C(:, n + 1) = circshift(c, n);
+end
+C
+
+r1 = C * b;
+
+k = (0:(N - 1)).';
+d = exp(1i * pi * k / N)
+
+C = diag(d) * C * diag(conj(d))
+
+data.hsf = fft(hs);
+data.d = d;
+
+r2 = FFTSkewMult(data, b)
+
+function y = FFTSkewMult(data, x)
+    d = data.d;
+    dx = d .* x;
+    y = conj(d) .* ifft(data.hsf .* fft(dx));
+end
+
+
+precondApplicator = @(x) applyPreconditioner(N1f, x);
+
+tic;
+[xNew1, flagC, relresC, iterC] = cgs(applicator, b, tolerance, maxIterCount, precondApplicator);
+tcgs = toc;
+fprintf('FFT accelerated new1-preconditioned cgs: flag=%d, relres=%g, iter=%d, time=%g s\n', flagC, relresC, iterC, tcgs);
+
+% Eigenvalues
+function y = eigsFunNew2_(data, N1f, x)
+    y = applyPreconditioner(N1f, FFTMult(data, x));
+end
+
+eigsFunNew1 = @(x) eigsFunNew2_(data, N1f, x);
+
+eigs_New1 = eigs(eigsFunNew1, N)
+%{
 %% New preconditioner: C_1^(-1) is a good preconditioner
 function y = applyPreconditioner2(data, x)
     N = data.N;
@@ -320,7 +374,7 @@ fprintf('FFT accelerated Nearest-circulant_preconditioned cgs: flag=%d, relres=%
 
 % Compare solutions (to direct solve)
 fprintf('||x_3 - x_fft_nearest_circulant_cgs|| = %g\n', norm(x3 - xCf));
-
+%}
 %% Helpers
 function data = FFTMultPrep(ht)
     data.N = numel(ht);

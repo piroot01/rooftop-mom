@@ -1,46 +1,29 @@
 classdef FFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApplicator
-    properties (Access = private)
-        gxxf_;
-        gxyf_;
-        gyxf_;
-        gyyf_;
-
-        determinant_;
-    end
-
     methods
-        function obj = FFTAcceleratedApplicator(context, matrixData)
-            obj@rooftopMoM.core.greensMatrix.GreensMatrixApplicator(context, matrixData);
+        function obj = FFTAcceleratedApplicator(context, spectralMatrixData)
+            obj@rooftopMoM.core.greensMatrix.GreensMatrixApplicator(context, spectralMatrixData);
         end
     end
 
     methods
-        function generate(obj)
-            [magneticXXCirc, magneticYYCirc, electricCirc] = rooftopMoM.core.greensMatrix.utils.generateGreensMatrixCirculants(obj.matrixData_);
-
-            primitive = obj.context_.rooftops().primitive();
-            [obj.gxxf_, obj.gxyf_, obj.gyxf_, obj.gyyf_, obj.determinant_] = rooftopMoM.core.greensMatrix.utils.generateSpectralGreensMatrix( ...
-                magneticXXCirc, magneticYYCirc, electricCirc, ...
-                obj.matrixData_.rooftopContent(), ...
-                primitive.sizeX(), ...
-                primitive.sizeY() ...
-            );
+        function generate(~)
+            % NOTE: Nothing has to be prepared
         end
 
         function output = apply(obj, input)
             sizeX = obj.context_.rooftops().countDir('x');
             sizeY = obj.context_.rooftops().countDir('y');
 
-            switch obj.matrixData_.rooftopContent()
+            switch obj.spectralMatrixData_.rooftopContent()
                 case rooftopMoM.basisFunctions.RooftopContent.XONLY
                     % X-only basis functions: inputs are already in the
                     % expected vector layout (no explicit reshape here).
                     % Zero-extend and FFT.
-                    [circSizeX, circSizeY] = size(obj.gxxf_);
+                    [circSizeX, circSizeY] = size(obj.spectralMatrixData_.gxxf());
                     inputSpectr = fft2(input, circSizeX, circSizeY);
 
                     % Spectral multiplication: G_xx * FFT(input).
-                    outputSpectr = obj.gxxf_ .* inputSpectr;
+                    outputSpectr = obj.spectralMatrixData_.gxxf() .* inputSpectr;
                     clear inputSpectr;
 
                     % Inverse FFT back to spatial domain.
@@ -54,11 +37,11 @@ classdef FFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApp
                     input = input.';
 
                     % Zero-extend and FFT (transpose handled above).
-                    [circSizeX, circSizeY] = size(obj.gyyf_);
+                    [circSizeX, circSizeY] = size(obj.spectralMatrixData_.gyyf());
                     inputSpectr = fft2(input, circSizeX, circSizeY);
 
                     % Spectral multiplication.
-                    outputSpectr = obj.gyyf_ .* inputSpectr;
+                    outputSpectr = obj.spectralMatrixData_.gyyf() .* inputSpectr;
                     clear inputSpectr;
 
                     % Inverse FFT.
@@ -75,12 +58,12 @@ classdef FFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApp
                     % First we process the x direction of the input
                     inputXReshaped = reshape(input(1:sizeX), countX - 1, countY);
 
-                    [circSizeX, circSizeY] = size(obj.gxxf_);
+                    [circSizeX, circSizeY] = size(obj.spectralMatrixData_.gxxf());
                     inputXSpectr = fft2(inputXReshaped, circSizeX, circSizeY);
                     clear inputXReshaped;
 
-                    outputXSpectr = obj.gxxf_ .* inputXSpectr;
-                    outputYSpectr = obj.gyxf_ .* inputXSpectr;
+                    outputXSpectr = obj.spectralMatrixData_.gxxf() .* inputXSpectr;
+                    outputYSpectr = obj.spectralMatrixData_.gyxf() .* inputXSpectr;
                     clear inputXSpectr;
 
                     % Secondly we process the y direction of the input
@@ -89,8 +72,8 @@ classdef FFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApp
                     inputYSpectr = fft2(inputYReshaped, circSizeX, circSizeY);
                     clear inputYReshaped;
 
-                    outputXSpectr = outputXSpectr + obj.gxyf_ .* inputYSpectr;
-                    outputYSpectr = outputYSpectr + obj.gyyf_ .* inputYSpectr;
+                    outputXSpectr = outputXSpectr + obj.spectralMatrixData_.gxyf() .* inputYSpectr;
+                    outputYSpectr = outputYSpectr + obj.spectralMatrixData_.gyyf() .* inputYSpectr;
                     clear inputYSpectr;
 
                     % And apply the inverse FFTs sequentially
@@ -113,6 +96,8 @@ classdef FFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApp
             end
         end
 
+        %{
+        % TODO: Remove from this class
         function output = applyPreconditioner(obj, input)
             sizeX = obj.context_.rooftops().countDir('x');
             sizeY = obj.context_.rooftops().countDir('y');
@@ -190,8 +175,8 @@ classdef FFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApp
                 otherwise
                     error('Unknown rooftop content: %s', rooftopContent);
             end
-
         end
+        %}
 
         function varargout = inputSize(obj)
             if nargout <= 1

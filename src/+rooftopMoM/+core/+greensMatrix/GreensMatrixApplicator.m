@@ -1,13 +1,13 @@
 classdef GreensMatrixApplicator < handle
     properties (Access = protected)
         context_;
-        matrixData_ rooftopMoM.core.greensMatrix.MatrixData;
+        spectralMatrixData_ rooftopMoM.core.greensMatrix.SpectralMatrixData;
     end
 
     methods
-        function obj = GreensMatrixApplicator(context, matrixData)
+        function obj = GreensMatrixApplicator(context, spectralMatrixData)
             obj.context_ = context;
-            obj.matrixData_ = matrixData;
+            obj.spectralMatrixData_ = spectralMatrixData;
         end
     end
 
