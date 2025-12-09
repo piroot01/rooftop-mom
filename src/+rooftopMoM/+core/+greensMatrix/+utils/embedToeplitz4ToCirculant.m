@@ -37,8 +37,20 @@ function H = embedToeplitz4ToCirculant(Tgen, cX, cY)
 %       The special single-dimension branches create explicitly complex zeros
 %       (complex(zeros(...))) to ensure complex-capable storage when needed.
 
+    % Ignore empty kerneles.
+    if isempty(Tgen)
+        H = [];
+        return;
+    end
+
     % Sizes of provided Tgen (now interpret cX as rows and cY as columns)
     [cX0, cY0] = size(Tgen);
+
+    % If cX and cY are empty set them same as cX0 and cY0
+    if nargin < 2 || (isempty(cX) && isempty(cY))
+        cX = cX0;
+        cY = cY0;
+    end
 
     % Prepare padded/truncated generator block T of size cX x cY.
     % Use 'like' to preserve numeric class (single/double, real/complex).

@@ -13,24 +13,24 @@ addpath(loggerDir);
 % Configure the logger.
 logger.Logger.configure( ...
     'timeFormat', 'ss.SSS', ...
-    'minLevel', logger.LogLevel.INFO, ...
+    'minLevel', logger.LogLevel.TRACE, ...
     'sinks', { ...
         logger.sink.ConsoleSink(), ...
     } ...
 );
 
-countX = 100000;
+countX = 200000;
 countY = 1;
 sizeX = 1;
 sizeY = 1;
 
 order = 3;
-elementCount = 1e6;
+elementCount = 5e6;
 k = pi / (sizeX * countX);
 V = 1;
 
 tolerance = 1e-6;
-maxIterCount = 1e2;
+maxIterCount = 1e3;
 
 quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
 
@@ -95,7 +95,10 @@ end
 % Test the solver via build in CG solver
 gxxf = buildSpectralGreensMatrix(electricCirc, forwardX, backwardX);
 
+
 applySpectralGreensMatrixHandle = @(x) applySpectralGreensMatrix(x, gxxf);
+
+%{
 t0 = tic;
 [Icg, flag0, ~ ,iter0] = cgs(applySpectralGreensMatrixHandle, excitation, tolerance, maxIterCount);
 solvingTime = toc(t0);
@@ -103,7 +106,7 @@ fprintf('Unpreconditioned variant: flag0 = %d, iteration count = %d, solving tim
 
 % Solve for current using the \ operator
 %Iref = Ze \ excitation;
-
+%}
 % Compare the iterative and direct solver
 %normDiff = norm(Iref - Icg);
 %fprintf('Norm difference is %g.\n', normDiff);
@@ -167,8 +170,8 @@ end
 %applyShiftPrecondHandle = @(x) applyShiftPrecond(x, lambdaShiftOperator);
 
 % Then the T. Chan's preconditioner of the electric part
-tChan = rooftopMoM.core.greensMatrix.preconditioner.utils.generateTChanPreconditionerKernel(gxxf);
-lambdaTChan = fft(tChan);
+%tChan = rooftopMoM.core.greensMatrix.preconditioner.utils.generateTChanPreconditionerKernel(gxxf);
+%lambdaTChan = fft(tChan);
 %[forwardX, backwardX, ~, ~] = rooftopMoM.core.greensMatrix.utils.generateSpectralShiftOperators(length(tChan), 1)
 %lambdaTChan = buildSpectralGreensMatrix(tChan, forwardX, backwardX)
 
@@ -179,7 +182,7 @@ lambdaTChan = fft(tChan);
 % Mathematically: P_inv = P_electric_inv * P_shift_inv
 %applyToeplitzPrecondHandle = @(x) applyToeplitzPrecond(x, fft(electricCirc));
 %applyBothPrecondHandle = @(x) applyToeplitzPrecondHandle(applyShiftPrecondHandle(x));
-
+%{
 applyTChanPrecondHandle = @(x) applyTChanPrecond(x, lambdaTChan);
 
 % Solve using CGS with the Preconditioner argument
@@ -191,6 +194,43 @@ fprintf('Preconditioned variant: flag0 = %d, iteration count = %d, solving time 
 % Compare the iterative and direct solver
 normDiff = norm(Icg - Icg_prec1);
 fprintf('Norm difference is %g.\n', normDiff);
+%}
+% Generate the preconditioner from the ifft(gxx)
+
+G = greensMatrix.electric; 
+[cX, cY] = size(G);
+
+% 2. Allocate output
+% We perform the calculation directly in the spatial domain.
+gxx_half = zeros(cX, cY, 'like', G); 
+
+if cX > 1
+    % --- Internal Points ---
+    % Standard 2*x[n] - x[n-1] - x[n+1]
+    gxx_half(2:end-1, :) = 2*G(2:end-1, :) - G(1:end-2, :) - G(3:end, :);
+
+    % --- Boundary Points (Reflective/Neumann) ---
+    % Top: Neighbor is index 2. -> 2*x[1] - x[2] - x[2] = 2*(x[1] - x[2])
+    gxx_half(1, :) = 2 * (G(1, :) - G(2, :));
+
+    % Bottom: Neighbor is index end-1. -> 2*x[end] - x[end-1] - x[end-1]
+    gxx_half(end, :) = 2 * (G(end, :) - G(end-1, :));
+else
+    % Edge case: 1xN input. Laplacian of a single point depends on physics, 
+    % but with this reflection logic, 2*x[1] - x[1] - x[1] = 0.
+    gxx_half = zeros(cX, cY, 'like', G); 
+end
+
+tChan = rooftopMoM.core.greensMatrix.preconditioner.utils.generateTChanPreconditionerKernel(gxx_half);
+lambdaTChan = fft(tChan);
+
+applyTChanPrecondHandle = @(x) applyTChanPrecond(x, lambdaTChan);
+
+% Solve using CGS with the Preconditioner argument
+t0 = tic;
+[Icg_gxx_half, flag1, relres, iter1] = cgs(applySpectralGreensMatrixHandle, excitation, tolerance, maxIterCount, applyTChanPrecondHandle);
+solvingTime = toc(t0);
+fprintf('Preconditioned variant gxx half: flag0 = %d, iteration count = %d, solving time = %g s.\n', flag1, iter1, solvingTime);
 
 %% Generalized Black-Box "Probe" Preconditioner
 % Automatically extracts a banded Toeplitz approximation of arbitrary width.
@@ -198,7 +238,7 @@ fprintf('Norm difference is %g.\n', normDiff);
 % USER PARAMETER: Control the width of the preconditioner here.
 % bandwidth = 1  -> Tridiagonal (Size 3 stencil: captures neighbors)
 % bandwidth = 5  -> Banded (Size 11 stencil: captures wider interactions)
-bandwidth = 100; 
+bandwidth = 10; 
 
 fprintf('Probing operator with bandwidth = %d...\n', bandwidth);
 
@@ -249,6 +289,13 @@ P_probe = spdiags(B, diagonals, N, N);
 [L_probe, U_probe] = lu(P_probe);
 applyProbePrecond = @(x) U_probe \ (L_probe \ x);
 
+%% LU preconditioner based on the direct assembly
+[P, x0] = create_preconditioner(greensMatrix.magneticXX, greensMatrix.electric, 1);
+
+probeVector = zeros(cX - 1, 1);
+probeVector(1) = 1;
+x2 = applySpectralGreensMatrixHandle(probeVector);
+
 % ---------------------------------------------------------
 % Solve using CGS with the Learned Preconditioner
 % ---------------------------------------------------------
@@ -273,8 +320,6 @@ fprintf('Time: %g s\n', solveTime);
 fprintf('Relative Residual: %g\n', relres);
 fprintf('--------------------------------------------------\n');
 
-
-norm(Icg - Icg_prec2)
 %{
 %% Custom PCG solver
 % 1. Define your Combined Operator (S * E)
@@ -371,4 +416,68 @@ function [current, output] = solve_pcg_standalone(A_fun, M_fun, initCurrent, exc
     output.solvingTime = solvingTime;
     output.finalResidueNorm = residueNorm;
     output.iterations = iteration;
+end
+
+function [P, h] = create_preconditioner(M, E, lx)
+    % Inputs:
+    % M: Column vector of size (N-1) x 1
+    % E: Column vector of size N x 1
+    % lx: Scalar value
+    
+    % 1. Determine dimensions
+    % The system size is determined by M (N-1)
+    K = length(M); % This is N-1 in the text's notation
+    
+    % 2. Prepare the component vectors
+    % Calculate E_diff term: E(m) - E(m+1)
+    % Note: E is size K+1, so we take diff of first K vs second K elements
+    E_diff = E(1:end-1) - E(2:end);
+    
+    % Construct the difference kernel 'd' for x(m) - x(m-1)
+    % This corresponds to [1, -1, 0, ...] in the time domain
+    d = zeros(K, 1);
+    d(1) = 1;
+    if K > 1
+        d(2) = -1;
+    end
+    
+    % 3. Compute the Impulse Response 'h' (First column of Z)
+    % We use FFT to perform the circulant convolution efficiently.
+    % Formula: h = M + (1/lx^2) * (E_diff circ_conv d)
+    
+    % Compute convolution in spectral domain
+    conv_term_f = fft(E_diff) .* fft(d);
+    conv_term = ifft(conv_term_f);
+    
+    % Combine to get the full first column of Z
+    h = M + (1/lx^2) * conv_term;
+    
+    % 4. Extract Diagonals for the Preconditioner
+    % Z is circulant, so diagonals are constant.
+    % Z_ij = h(i-j). 
+    % Main diagonal (i=j): h(0) -> Matlab index 1
+    % Sub diagonal (i=j+1): h(1) -> Matlab index 2
+    % Super diagonal (i=j-1): h(-1) -> Wraps to Matlab index end
+    
+    val_main = h(1);
+    val_sub  = h(2);
+    val_sup  = h(end);
+    
+    % 5. Construct Sparse Band Matrix
+    % We create a tridiagonal matrix.
+    % spdiags takes columns of values. We replicate the scalar values.
+    
+    % Columns for diagonals: [Lower, Main, Upper]
+    B = [val_sub * ones(K, 1), val_main * ones(K, 1), val_sup * ones(K, 1)];
+    
+    % Positions: -1 (sub), 0 (main), 1 (super)
+    d_pos = [-1, 0, 1];
+    
+    % Create the sparse matrix
+    P = spdiags(B, d_pos, K, K);
+    
+    % Note: If strictly cyclic preconditioner is needed (including corners),
+    % one would add diagonals at positions -(K-1) and (K-1).
+    % However, for efficient LU decomposition as requested, 
+    % we strictly keep the central band.
 end

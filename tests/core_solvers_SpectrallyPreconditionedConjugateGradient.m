@@ -16,8 +16,8 @@ logger.Logger.configure( ...
     } ...
 );
 
-countX = 5;
-countY = 5;
+countX = 100;
+countY = 100;
 sizeX = 1;
 sizeY = 1;
 

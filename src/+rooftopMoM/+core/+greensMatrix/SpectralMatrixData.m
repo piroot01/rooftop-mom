@@ -1,55 +1,44 @@
 classdef SpectralMatrixData < handle
     properties (Access = private)
-        context_;
-
-        gxxf_;
-        gxyf_;
-        gyxf_;
-        gyyf_;
-
-        rooftopContent_ rooftopMoM.basisFunctions.RooftopContent;
+        blockXX_;
+        blockXY_;
+        blockYX_;
+        blockYY_;
     end
 
     methods
-        function obj = SpectralMatrixData(context)
-            obj.context_ = context;
-        end
-    end
+        function obj = SpectralMatrixData(varargin)
+            p = inputParser();
 
-    methods
-        function generate(obj, matrixData)
-            [magneticXXCirc, magneticYYCirc, electricCirc] = rooftopMoM.core.greensMatrix.utils.generateGreensMatrixCirculants(matrixData);
+            addParameter(p, 'blockXX', []);
+            addParameter(p, 'blockXY', []);
+            addParameter(p, 'blockYX', []);
+            addParameter(p, 'blockYY', []);
 
-            primitive = obj.context_.rooftops().primitive();
-            [obj.gxxf_, obj.gxyf_, obj.gyxf_, obj.gyyf_] = rooftopMoM.core.greensMatrix.utils.generateSpectralGreensMatrix( ...
-                magneticXXCirc, magneticYYCirc, electricCirc, ...
-                matrixData.rooftopContent(), ...
-                primitive.sizeX(), primitive.sizeY() ...
-            );
+            parse(p, varargin{:});
 
-            obj.rooftopContent_ = matrixData.rooftopContent();
+            obj.blockXX_ = p.Results.blockXX;
+            obj.blockXY_ = p.Results.blockXY;
+            obj.blockYX_ = p.Results.blockYX;
+            obj.blockYY_ = p.Results.blockYY;
         end
     end
 
     methods
-        function gxxf = gxxf(obj)
-            gxxf = obj.gxxf_;
+        function blockXX = blockXX(obj)
+            blockXX = obj.blockXX_;
         end
 
-        function gxyf = gxyf(obj)
-            gxyf = obj.gxyf_;
+        function blockXY = blockXY(obj)
+            blockXY = obj.blockXY_;
         end
 
-        function gyxf = gyxf(obj)
-            gyxf = obj.gyxf_;
+        function blockYX = blockYX(obj)
+            blockYX = obj.blockYX_;
         end
 
-        function gyyf = gyyf(obj)
-            gyyf = obj.gyyf_;
-        end
-
-        function rooftopContent = rooftopContent(obj)
-            rooftopContent = obj.rooftopContent_;
+        function blockYY = blockYY(obj)
+            blockYY = obj.blockYY_;
         end
     end
 end

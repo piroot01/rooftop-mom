@@ -15,29 +15,34 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
             obj.chunkPlanner = chunkPlanner;
         end
 
-        function output = generateFull(obj, context)
-            % generateFull: Decide whether to assemble both directions
-            %   or only one, according to primitive grid size.
-
+        function matrixData = generate(obj, context)
             primitive = context.rooftops().primitive();
             [gridSizeX, gridSizeY] = primitive.gridSize();
 
             if gridSizeX ~= 1 && gridSizeY ~= 1
                 % Both directions present -> full assembly.
-                output = obj.generateImpl_(context);
+                matrixData = obj.generateImpl_(context);
                 return;
             elseif gridSizeX ~= 1 && gridSizeY == 1
                 % Only X direction nontrivial -> assemble XX part only.
-                output = obj.generateXXImpl_(context);
+                matrixData = obj.generateXXImpl_(context);
                 return;
             elseif gridSizeX == 1 && gridSizeY ~= 1
                 % Only Y direction nontrivial -> assemble YY part only.
-                output = obj.generateYYImpl_(context);
+                matrixData = obj.generateYYImpl_(context);
                 return;
             else
                 % Both are 1 (degenerate) -> error (illegal primitive).
                 error('The dimensions of the primitive are illegal %dx%d.', gridSizeX, gridSizeY);
             end
+        end
+
+        function [magneticXX, magneticYY, electric] = generateFull(obj, context)
+            magneticAssembler = rooftopMoM.core.greensMatrix.MagneticPartAssembler(obj.chunkPlanner);
+            electricAssembler = rooftopMoM.core.greensMatrix.ElectricPartAssembler(obj.chunkPlanner);
+
+            [magneticXX, magneticYY] = magneticAssembler.generateFull(context);
+            electric = electricAssembler.generateFull(context);
         end
 
         function generateSpecified(~, ~)
@@ -46,7 +51,7 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
     end
     
     methods (Access = private)
-        function output = generateImpl_(obj, context)
+        function matrixData = generateImpl_(obj, context)
         % generateImpl_: Assemble both magnetic xx/yy parts and electric part,
 
             magneticAssembler = rooftopMoM.core.greensMatrix.MagneticPartAssembler(obj.chunkPlanner);
@@ -55,9 +60,8 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
             % Compute the magnetic/electric part toeplitz kernels.
             [magneticXX, magneticYY] = magneticAssembler.generateFull(context);
             electric = electricAssembler.generateFull(context);
-            %electric = zeros(size(electric));
 
-            output = rooftopMoM.core.greensMatrix.MatrixData( ...
+            matrixData = rooftopMoM.core.greensMatrix.MatrixData( ...
                 'magneticXX', magneticXX, ...
                 'magneticYY', magneticYY, ...
                 'electric', electric, ...
@@ -65,7 +69,7 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
             );
         end
         
-        function output = generateXXImpl_(obj, context)
+        function matrixData = generateXXImpl_(obj, context)
         % generateXXImpl_: Assemble only the XX directional operator (magnetic XX + electric).
 
             magneticAssembler = rooftopMoM.core.greensMatrix.MagneticPartAssembler(obj.chunkPlanner);
@@ -74,7 +78,7 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
             magneticXX = magneticAssembler.generateFullDir(context, 'x');
             electric = electricAssembler.generateFull(context);
 
-            output = rooftopMoM.core.greensMatrix.MatrixData( ...
+            matrixData = rooftopMoM.core.greensMatrix.MatrixData( ...
                 'magneticXX', magneticXX, ...
                 'magneticYY', [], ...
                 'electric', electric, ...
@@ -82,7 +86,7 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
             );
         end
         
-        function output = generateYYImpl_(obj, context)
+        function matrixData = generateYYImpl_(obj, context)
             % generateYYImpl_: Assemble only the YY directional operator (magnetic YY + electric).
 
             magneticAssembler = rooftopMoM.core.greensMatrix.MagneticPartAssembler(obj.chunkPlanner);
@@ -91,7 +95,7 @@ classdef FullAssembler < rooftopMoM.core.greensMatrix.Assembler
             magneticYY = magneticAssembler.generateFullDir(context, 'y');
             electric = electricAssembler.generateFull(context);
 
-            output = rooftopMoM.core.greensMatrix.MatrixData( ...
+            matrixData = rooftopMoM.core.greensMatrix.MatrixData( ...
                 'magneticXX', [], ...
                 'magneticYY', magneticYY, ...
                 'electric', electric, ...

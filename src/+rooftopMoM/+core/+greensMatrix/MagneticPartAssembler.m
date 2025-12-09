@@ -10,17 +10,54 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
     end
 
     methods
-        function [Gxx, Gyy] = generateFull(obj, context)
+        function matrixData = generate(obj, context)
+            primitive = context.rooftops().primitive();
+            [gridSizeX, gridSizeY] = primitive.gridSize();
+
+            if gridSizeX ~= 1 && gridSizeY ~= 1
+                % Both directions present -> full assembly.
+                matrixData = rooftopMoM.core.greensMatrix.MatrixData( ...
+                    'magneticXX', obj.generateFullDir(context, 'x'), ...
+                    'magneticYY', obj.generateFullDir(context, 'y'), ...
+                    'electric', [], ...
+                    'rooftopContent', rooftopMoM.basisFunctions.RooftopContent.BOTH ...
+                );
+                return;
+            elseif gridSizeX ~= 1 && gridSizeY == 1
+                % Only X direction nontrivial -> assemble XX part only.
+                matrixData = rooftopMoM.core.greensMatrix.MatrixData( ...
+                    'magneticXX', obj.generateFullDir(context, 'x'), ...
+                    'magneticYY', [], ...
+                    'electric', [], ...
+                    'rooftopContent', rooftopMoM.basisFunctions.RooftopContent.XONLY ...
+                );
+                return;
+            elseif gridSizeX == 1 && gridSizeY ~= 1
+                % Only Y direction nontrivial -> assemble YY part only.
+                matrixData = rooftopMoM.core.greensMatrix.MatrixData( ...
+                    'magneticXX', [], ...
+                    'magneticYY', obj.generateFullDir(context, 'y'), ...
+                    'electric', [], ...
+                    'rooftopContent', rooftopMoM.basisFunctions.RooftopContent.YONLY ...
+                );
+                return;
+            else
+                % Both are 1 (degenerate) -> error (illegal primitive).
+                error('The dimensions of the primitive are illegal %dx%d.', gridSizeX, gridSizeY);
+            end
+        end
+
+        function [magneticXX, magneticYY] = generateFull(obj, context)
             % Produce all chunks for full matrix assembly
             chunksX = obj.assemblerChunkPlanner_.generateFullDir(context, 'x');
             chunksY = obj.assemblerChunkPlanner_.generateFullDir(context, 'y');
 
-            [Gxx, Gyy] = obj.generateSpecified(context, chunksX, chunksY);
+            [magneticXX, magneticYY] = obj.generateSpecified(context, chunksX, chunksY);
         end
 
-        function [Gxx, Gyy] = generateSpecified(obj, context, chunksX, chunksY)
-            Gxx = obj.generateSpecifiedDir(context, chunksX, 'x');
-            Gyy = obj.generateSpecifiedDir(context, chunksY, 'y');
+        function [magneticXX, magneticYY] = generateSpecified(obj, context, chunksX, chunksY)
+            magneticXX = obj.generateSpecifiedDir(context, chunksX, 'x');
+            magneticYY = obj.generateSpecifiedDir(context, chunksY, 'y');
         end
 
         function G = generateFullDir(obj, context, direction)
@@ -51,19 +88,6 @@ classdef MagneticPartAssembler < rooftopMoM.core.greensMatrix.Assembler
             blockSize = order^2;
 
             [rooftopPoints, rooftopValues] = rooftops.generateRooftopsDir(direction);
-
-            %{
-            % Cache the data
-            if rooftopMoM.Cache.getStatus()
-                quadraturePointsKey = strcat(rooftopMoM.CacheKeys.CORE_GREENSMATRIX_FULLASSEMBLER_QUADRATUREPOINTS, upper(direction));
-                rooftopPointsKey = strcat(rooftopMoM.CacheKeys.CORE_GREENSMATRIX_FULLASSEMBLER_ROOFTOPPOINTS, upper(direction));
-                rooftopValuesKey = strcat(rooftopMoM.CacheKeys.CORE_GREENSMATRIX_FULLASSEMBLER_ROOFTOPVALUES, upper(direction));
-
-                rooftopMoM.Cache.autoSet(quadraturePointsKey, quadraturePoints);
-                rooftopMoM.Cache.autoSet(rooftopPointsKey, rooftopPoints);
-                rooftopMoM.Cache.autoSet(rooftopValuesKey, values);
-            end
-            %}
 
             jacobian = rooftops.primitive.sizeX() * rooftops.primitive.sizeY();
 
