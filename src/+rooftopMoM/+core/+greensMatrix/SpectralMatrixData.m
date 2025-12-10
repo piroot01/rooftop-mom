@@ -41,8 +41,8 @@ classdef SpectralMatrixData < handle
         function [sizeX, sizeY] = blockSize(obj)
             fieldNames = {'blockXX_', 'blockXY_', 'blockYX_', 'blockYY_'};
 
-            for i = 1:numel(fieldNames)
-                currentBlock = obj.(fieldNames{i});
+            for n = 1:numel(fieldNames)
+                currentBlock = obj.(fieldNames{n});
 
                 if ~isempty(currentBlock)
                     [sizeX, sizeY] = size(currentBlock);

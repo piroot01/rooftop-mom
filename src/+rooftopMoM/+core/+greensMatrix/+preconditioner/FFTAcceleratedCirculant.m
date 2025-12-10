@@ -1,22 +1,34 @@
 classdef FFTAcceleratedCirculant < rooftopMoM.core.greensMatrix.preconditioner.PreconditionerInterface
     properties (Access = private)
-        spectralMatrixData_;
+        rooftopContent_ rooftopMoM.basisFunctions.RooftopContent;
+
+        determinant_;
     end
 
     methods
-        function obj = FFTAcceleratedCirculant(context, spectralMatrixData)
-            obj@rooftopMoM.core.greensMatrix.preconditioner.PreconditionerInterface(context);
+        function obj = FFTAcceleratedCirculant(context, spectralMatrixData, rooftopContent)
+            obj@rooftopMoM.core.greensMatrix.preconditioner.PreconditionerInterface(context, spectralMatrixData);
 
-            obj.spectralMatrixData_ = spectralMatrixData;
+            obj.rooftopContent_ = rooftopContent;
         end
     end
 
     methods
-        function output = apply(obj, input)
-            sizeX = obj.context_.rooftops().countDir('x');
-            sizeY = obj.context_.rooftops().countDir('y');
+        function generate(obj)
+            determinant = obj.spectralMatrixData_.generateDeterminant(obj.rooftopContent_);
 
-            switch obj.spectralMatrixData_.rooftopContent()
+            if any(abs(determinant) < eps, 'all')
+                error('Some values of the determinant are smaller than eps!');
+            else
+                obj.determinant_ = determinant;
+            end
+        end
+
+        function output = apply(obj, input)
+            basisSizeX = obj.context_.rooftops().countDir('x');
+            basisSizeY = obj.context_.rooftops().countDir('y');
+
+            switch obj.rooftopContent_
                 case rooftopMoM.basisFunctions.RooftopContent.XONLY
                     [fftSizeX, ~] = size(obj.spectralMatrixData_.pxxf());
                     inputSpectr = fft(input, fftSizeX, 1);

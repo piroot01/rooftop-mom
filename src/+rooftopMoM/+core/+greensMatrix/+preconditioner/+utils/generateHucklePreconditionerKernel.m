@@ -1,5 +1,4 @@
 function circulantKernel = generateHucklePreconditionerKernel(toeplitzKernel, pX, pY, centerScale)
-    % Memory-minimal version: the only significant allocation is circulantKernel.
     if isempty(toeplitzKernel)
         circulantKernel = [];
         return;

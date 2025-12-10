@@ -28,25 +28,29 @@ classdef MatrixData < handle
     end
 
     methods
+        function [kernelSizeX, kernelSizeY] = minimalKernelSize(obj)
+            if ~isempty(obj.electric_)
+                [kernelSizeX, kernelSizeY] = size(obj.electric_);
+            else
+                switch obj.rooftopContent_
+                    case rooftopMoM.basisFunctions.RooftopContent.XONLY
+                        kernelSizeX = size(obj.magneticXX_, 1);
+                        kernelSizeY = 1;
+                    case rooftopMoM.basisFunctions.RooftopContent.YONLY
+                        kernelSizeX = 1;
+                        kernelSizeY = size(obj.magneticYY_, 2);
+                    case rooftopMoM.basisFunctions.RooftopContent.BOTH
+                        kernelSizeX = size(obj.magneticXX_, 2);
+                        kernelSizeY = size(obj.magneticYY_, 1);
+                    otherwise
+                        error('Unknown rooftop content: %s', rooftopContent);
+                end
+            end
+        end
+
         function spectralMatrixData = generateSpectralGreensMatrix(obj, options)
             if nargin < 2 || (~isfield(options, 'kernelSizeX') && ~isfield(options, 'kernelSizeY'))
-                if ~isempty(obj.electric_)
-                    [options.kernelSizeX, options.kernelSizeY] = size(obj.electric_);
-                else
-                    switch obj.rooftopContent_
-                        case rooftopMoM.basisFunctions.RooftopContent.XONLY
-                            options.kernelSizeX = size(obj.magneticXX_, 1);
-                            options.kernelSizeY = 1;
-                        case rooftopMoM.basisFunctions.RooftopContent.YONLY
-                            options.kernelSizeX = 1;
-                            options.kernelSizeY = size(obj.magneticYY_, 2);
-                        case rooftopMoM.basisFunctions.RooftopContent.BOTH
-                            options.kernelSizeX = size(obj.magneticXX_, 2);
-                            options.kernelSizeY = size(obj.magneticYY_, 1);
-                        otherwise
-                            error('Unknown rooftop content: %s', rooftopContent);
-                    end
-                end
+                [options.kernelSizeX, options.kernelSizeY] = obj.minimalKernelSize();
             end
 
             if nargin < 2 || (~isfield(options, 'faceSizeX') && ~isfield(options, 'faceSizeY'))
@@ -56,15 +60,8 @@ classdef MatrixData < handle
 
             [magneticXXCirc, magneticYYCirc, electricCirc] = obj.generateCirculants_(options.kernelSizeX, options.kernelSizeY);
 
-            [blockXX, blockXY, blockYX, blockYY] = obj.generateSpectralGreensMatrixBlocks_( ...
-                magneticXXCirc, magneticYYCirc, electricCirc, options.faceSizeX, options.faceSizeY ...
-            );
-
-            spectralMatrixData = rooftopMoM.core.greensMatrix.SpectralMatrixData( ...
-                'blockXX', blockXX, ...
-                'blockXY', blockXY, ...
-                'blockYX', blockYX, ...
-                'blockYY', blockYY ...
+            spectralMatrixData = rooftopMoM.core.greensMatrix.utils.generateSpectralGreensMatrix( ...
+                magneticXXCirc, magneticYYCirc, electricCirc, obj.rooftopContent_, options.faceSizeX, options.faceSizeY ...
             );
         end
     end
@@ -74,69 +71,6 @@ classdef MatrixData < handle
             magneticXXCirc = rooftopMoM.core.greensMatrix.utils.embedToeplitz4ToCirculant(obj.magneticXX_, kernelSizeX, kernelSizeY);
             magneticYYCirc = rooftopMoM.core.greensMatrix.utils.embedToeplitz4ToCirculant(obj.magneticYY_, kernelSizeX, kernelSizeY);
             electricCirc = rooftopMoM.core.greensMatrix.utils.embedToeplitz4ToCirculant(obj.electric_, kernelSizeX, kernelSizeY);
-        end
-
-        function [blockXX, blockXY, blockYX, blockYY] = generateSpectralGreensMatrixBlocks_(obj, magneticXXCirc, magneticYYCirc, electricCirc, faceSizeX, faceSizeY)
-            % Size Extraction
-            if ~isempty(electricCirc)
-                [circSizeX, circSizeY] = size(electricCirc);
-            elseif ~isempty(magneticXXCirc)
-                [circSizeX, circSizeY] = size(magneticXXCirc);
-            elseif ~isempty(magneticYYCirc)
-                [circSizeX, circSizeY] = size(magneticYYCirc);
-            else
-                error('At least one of the circulants must be nonempty!');
-            end
-
-            % Compute Spectra (FFT) & Sanitize
-            magneticXXCircSpectr = fft2(magneticXXCirc);
-            if isempty(magneticXXCircSpectr)
-                magneticXXCircSpectr = 0;
-            end
-
-            magneticYYCircSpectr = fft2(magneticYYCirc);
-            if isempty(magneticYYCircSpectr)
-                magneticYYCircSpectr = 0;
-            end
-
-            electricCircSpectr = fft2(electricCirc);
-            if isempty(electricCircSpectr)
-                electricCircSpectr = 0;
-            end
-
-            % Generate Shift Operators (Calculate once, use everywhere)
-            [forwardShiftX, backwardShiftX, forwardShiftY, backwardShiftY] = ...
-                rooftopMoM.core.greensMatrix.utils.generateSpectralShiftOperators(circSizeX, circSizeY);
-
-            % Determine Active Modes
-            isXActive = (obj.rooftopContent_ == rooftopMoM.basisFunctions.RooftopContent.XONLY) || ...
-                (obj.rooftopContent_ == rooftopMoM.basisFunctions.RooftopContent.BOTH);
-
-            isYActive = (obj.rooftopContent_ == rooftopMoM.basisFunctions.RooftopContent.YONLY) || ...
-                (obj.rooftopContent_ == rooftopMoM.basisFunctions.RooftopContent.BOTH);
-
-            % Compute Blocks
-            blockXX = []; blockXY = []; blockYX = []; blockYY = [];
-
-            % Compute XX Component
-            if isXActive
-                termMagnetic = magneticXXCircSpectr;
-                termElectric = (1 / faceSizeX)^2 .* (1 - forwardShiftX) .* (backwardShiftX - 1) .* electricCircSpectr;
-                blockXX = termMagnetic + termElectric;
-            end
-
-            % Compute YY Component
-            if isYActive
-                termMagnetic = magneticYYCircSpectr;
-                termElectric = (1 / faceSizeY)^2 .* (1 - forwardShiftY) .* (backwardShiftY - 1) .* electricCircSpectr;
-                blockYY = termMagnetic + termElectric;
-            end
-
-            % Compute Cross-Coupling (XY / YX)
-            if isXActive && isYActive
-                blockXY = (1 / (faceSizeX * faceSizeY)) .* (1 - forwardShiftX) .* (backwardShiftY - 1) .* electricCircSpectr;
-                blockYX = (1 / (faceSizeY * faceSizeX)) .* (1 - forwardShiftY) .* (backwardShiftX - 1) .* electricCircSpectr;
-            end
         end
     end
 
