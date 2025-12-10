@@ -28,9 +28,9 @@ classdef SpectralMatrixData < handle
         function determinant = generateDeterminant(obj, rooftopContent)
             switch rooftopContent
                 case rooftopMoM.basisFunctions.RooftopContent.XONLY
-                    determinant = [];
+                    determinant = obj.blockXX_;
                 case rooftopMoM.basisFunctions.RooftopContent.YONLY
-                    determinant = [];
+                    determinant = obj.blockYY_;
                 case rooftopMoM.basisFunctions.RooftopContent.BOTH
                     determinant = obj.blockXX_ .* obj.blockYY_ - obj.blockXY_ .* obj.blockYX_;
                 otherwise

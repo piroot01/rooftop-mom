@@ -1,6 +1,8 @@
 classdef FFTAcceleratedToeplitz < rooftopMoM.core.greensMatrix.preconditioner.PreconditionerInterface
     properties (Access = private)
         rooftopContent_ rooftopMoM.basisFunctions.RooftopContent;
+
+        determinant_;
     end
 
     methods
@@ -12,6 +14,16 @@ classdef FFTAcceleratedToeplitz < rooftopMoM.core.greensMatrix.preconditioner.Pr
     end
 
     methods
+        function generate(obj)
+            determinant = obj.spectralMatrixData_.generateDeterminant(obj.rooftopContent_);
+
+            if any(abs(determinant) < eps, 'all')
+                error('Some values of the determinant are smaller than eps!');
+            else
+                obj.determinant_ = determinant;
+            end
+        end
+
         function output = apply(obj, input)
             basisSizeX = obj.context_.rooftops().countDir('x');
             basisSizeY = obj.context_.rooftops().countDir('y');

@@ -19,8 +19,8 @@ logger.Logger.configure( ...
     } ...
 );
 
-countX = 100;
-countY = 100;
+countX = 1;
+countY = 10;
 sizeX = 1;
 sizeY = 1;
 
@@ -48,6 +48,7 @@ greensMatrixApplicator = rooftopMoM.core.greensMatrix.FFTAcceleratedApplicator( 
 
 preconditionerApplicator = rooftopMoM.core.greensMatrix.preconditioner.FFTAcceleratedToeplitz( ...
     context, spectralGreensMatrix, greensMatrix.rooftopContent());
+preconditionerApplicator.generate();
 
 solver = rooftopMoM.core.solver.PreconditionedConjugateGradient(greensMatrixApplicator, preconditionerApplicator);
 

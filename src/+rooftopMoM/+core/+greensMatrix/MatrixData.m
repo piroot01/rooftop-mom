@@ -30,19 +30,23 @@ classdef MatrixData < handle
     methods
         function spectralMatrixData = generateSpectralGreensMatrix(obj, options)
             if nargin < 2 || (~isfield(options, 'kernelSizeX') && ~isfield(options, 'kernelSizeY'))
-                % Size Extraction
                 if ~isempty(obj.electric_)
-                    [kernelSizeX, kernelSizeY] = size(obj.electric_);
-                elseif ~isempty(obj.magneticXX_)
-                    [kernelSizeX, kernelSizeY] = size(obj.magneticXX_);
-                elseif ~isempty(obj.magneticYY_)
-                    [kernelSizeX, kernelSizeY] = size(obj.magneticYY_);
+                    [options.kernelSizeX, options.kernelSizeY] = size(obj.electric_);
                 else
-                    error('At least one of the kernels must be nonempty!');
+                    switch obj.rooftopContent_
+                        case rooftopMoM.basisFunctions.RooftopContent.XONLY
+                            options.kernelSizeX = size(obj.magneticXX_, 1);
+                            options.kernelSizeY = 1;
+                        case rooftopMoM.basisFunctions.RooftopContent.YONLY
+                            options.kernelSizeX = 1;
+                            options.kernelSizeY = size(obj.magneticYY_, 2);
+                        case rooftopMoM.basisFunctions.RooftopContent.BOTH
+                            options.kernelSizeX = size(obj.magneticXX_, 2);
+                            options.kernelSizeY = size(obj.magneticYY_, 1);
+                        otherwise
+                            error('Unknown rooftop content: %s', rooftopContent);
+                    end
                 end
-
-                options.kernelSizeX = kernelSizeX;
-                options.kernelSizeY = kernelSizeY;
             end
 
             if nargin < 2 || (~isfield(options, 'faceSizeX') && ~isfield(options, 'faceSizeY'))
