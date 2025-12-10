@@ -51,7 +51,7 @@ function context = prepareSolverContext(varargin)
     assembler = rooftopMoM.core.greensMatrix.FullAssembler(planner);
 
     % Generate the Green's matrix
-    greensMatrix = assembler.generateFull(context);
+    greensMatrix = assembler.generate(context);
 
     TRACE("solveAntennaCurrent: Green's matrix assembled.");
 

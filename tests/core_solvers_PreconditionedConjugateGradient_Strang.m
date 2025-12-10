@@ -37,7 +37,7 @@ rooftops.generate();
 
 planner = rooftopMoM.core.greensMatrix.AssemblerChunkPlanner(elementCount);
 context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
-assembler = rooftopMoM.core.greensMatrix.ElectricPartAssembler(planner);
+assembler = rooftopMoM.core.greensMatrix.FullAssembler(planner);
 
 greensMatrix = assembler.generate(context);
 
@@ -47,25 +47,9 @@ greensMatrixApplicator = rooftopMoM.core.greensMatrix.FFTAcceleratedApplicator( 
     context, spectralGreensMatrix, greensMatrix.rooftopContent());
 
 % Generate the Strangs preconditioner
-function preconditioner = generatePrecondditioner(matrixData, faceSizeX, faceSizeY)
-    fieldNames = {'magneticXX', 'magneticYY', 'electric'};
-
-    circulantApprox = cell(1, 3);
-    for n = 1:numel(fieldNames)
-        currentPart = matrixData.(fieldNames{n});
-
-        [kernelSizeX, kernelSizeY] = matrixData.minimalKernelSize();
-
-        currentPartPadded = rooftopMoM.core.greensMatrix.preconditioner.utils.padWithZeros(currentPart, kernelSizeX, kernelSizeY);
-
-        circulantApprox{n} = rooftopMoM.core.greensMatrix.preconditioner.utils.generateStrangPreconditionerKernel(currentPartPadded);
-    end
-
-    preconditioner = rooftopMoM.core.greensMatrix.utils.generateSpectralGreensMatrix( ...
-        circulantApprox{1}, circulantApprox{2}, circulantApprox{3}, matrixData.rooftopContent(), faceSizeX, faceSizeY);
-end
-
-preconditioner = generatePrecondditioner(greensMatrix, sizeX, sizeY);
+preconditioner = rooftopMoM.core.greensMatrix.preconditioner.utils.generatePreconditioner1( ...
+    @rooftopMoM.core.greensMatrix.preconditioner.utils.generateStrangPreconditionerKernel, ...
+    greensMatrix, sizeX, sizeY);
 
 preconditionerApplicator = rooftopMoM.core.greensMatrix.preconditioner.FFTAcceleratedApplicator( ...
     context, preconditioner, greensMatrix.rooftopContent());

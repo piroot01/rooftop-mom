@@ -1,17 +1,12 @@
-function circulantKernel = generateHucklePreconditionerKernel(toeplitzKernel, pX, pY, centerScale)
+function circulantKernel = generateHucklePreconditionerKernel(toeplitzKernel, pX, pY)
     if isempty(toeplitzKernel)
         circulantKernel = [];
         return;
     end
 
-    if nargin < 4
-        centerScale = 1;
-    end
-
     [countX, countY] = size(toeplitzKernel);
     circulantKernel = zeros(countX, countY, 'like', toeplitzKernel);
 
-    % safe iteration limits (matches intent of original, but prevents OOB)
     maxI = min(pX - 1, countX - 1);
     maxJ = min(pY - 1, countY - 1);
 
@@ -20,9 +15,6 @@ function circulantKernel = generateHucklePreconditionerKernel(toeplitzKernel, pX
     C = circulantKernel;
     invPX = 1.0 / pX;
     invPY = 1.0 / pY;
-
-    % center
-    C(1,1) = centerScale * T(1,1);
 
     % first row contributions (i = 0)
     for j = 1:maxJ
@@ -59,7 +51,6 @@ function circulantKernel = generateHucklePreconditionerKernel(toeplitzKernel, pX
         end
     end
 
-    % return result
     circulantKernel = C;
 end
 

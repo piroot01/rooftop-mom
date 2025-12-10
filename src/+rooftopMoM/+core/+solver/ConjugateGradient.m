@@ -23,11 +23,9 @@ classdef ConjugateGradient < handle
 
             TRACE("ConjugateGradient.solve: Initialized solving procedure.");
 
-            [inputSizeX, inputSizeY] = obj.matrixApplicator_.inputSize();
-
             p = inputParser();
 
-            addParameter(p, 'initCurrent', complex(zeros(inputSizeX, inputSizeY)));
+            addParameter(p, 'initCurrent', []);
             addParameter(p, 'excitation', []);
             addParameter(p, 'tolerance', 1e-6);
             addParameter(p, 'maxIterCount', 1000);
@@ -39,7 +37,7 @@ classdef ConjugateGradient < handle
             end
 
             DEBUG("ConjugateGradient.solve: Parsed inputs: rooftop count = %d, tolerance = %g, maxIterCount = %d", ...
-                inputSizeX * inputSizeY, p.Results.tolerance, p.Results.maxIterCount);
+                numel(p.Results.initCurrent), p.Results.tolerance, p.Results.maxIterCount);
 
             output = obj.solveImpl_( ...
                 p.Results.initCurrent, ...
@@ -65,10 +63,16 @@ classdef ConjugateGradient < handle
 
             TRACE("ConjugateGradient.solveImpl_: Starting CG solver core.");
 
+            if isa(obj.matrixApplicator_, 'function_handle')
+                applyHandle = obj.matrixApplicator_;
+            else
+                applyHandle = @(x) obj.matrixApplicator_.apply(x);
+            end
+
             output = rooftopMoM.core.solver.ConjugateGradientOutput();
 
             current = initCurrent;
-            residue = excitation - obj.matrixApplicator_.apply(current);
+            residue = excitation - applyHandle(current);
             direction = residue;
             rTr = residue.' * residue;
             excitationNorm = norm(excitation);
@@ -81,7 +85,7 @@ classdef ConjugateGradient < handle
             for iteration = 1:maxIterCount
                 t1 = tic;
 
-                gDirection = obj.matrixApplicator_.apply(direction);
+                gDirection = applyHandle(direction);
                 alpha = rTr / (direction.' * gDirection);
                 current = current + alpha * direction;
                 residue = residue - alpha * gDirection;

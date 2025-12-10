@@ -23,11 +23,9 @@ classdef PreconditionedConjugateGradient < handle
 
             TRACE("PreconditionedConjugateGradient.solve: Initialized solving procedure.");
 
-            [inputSizeX, inputSizeY] = obj.matrixApplicator_.inputSize();
-
             p = inputParser();
 
-            addParameter(p, 'initCurrent', complex(zeros(inputSizeX, inputSizeY)));
+            addParameter(p, 'initCurrent', 0);
             addParameter(p, 'excitation', []);
             addParameter(p, 'tolerance', 1e-6);
             addParameter(p, 'maxIterCount', 1000);
@@ -39,7 +37,7 @@ classdef PreconditionedConjugateGradient < handle
             end
 
             DEBUG("PreconditionedConjugateGradient.solve: Parsed inputs: rooftop count = %d, tolerance = %g, maxIterCount = %d", ...
-                inputSizeX * inputSizeY, p.Results.tolerance, p.Results.maxIterCount);
+                numel(p.Results.initCurrent), p.Results.tolerance, p.Results.maxIterCount);
 
             output = obj.solveImpl_( ...
                 p.Results.initCurrent, ...
@@ -65,11 +63,24 @@ classdef PreconditionedConjugateGradient < handle
 
             TRACE("PreconditionedConjugateGradient.solveImpl_: Starting CG solver core.");
 
+            if isa(obj.matrixApplicator_, 'function_handle')
+                applyHandle = obj.matrixApplicator_;
+            else
+                applyHandle = @(x) obj.matrixApplicator_.apply(x);
+            end
+
+            if isa(obj.preconditionerApplicator_, 'function_handle')
+                applyPrecondHandle = obj.preconditionerApplicator_;
+            else
+                applyPrecondHandle = @(x) obj.preconditionerApplicator_.apply(x);
+            end
+
+
             output = rooftopMoM.core.solver.ConjugateGradientOutput();
 
             current = initCurrent;
-            residue = excitation - obj.matrixApplicator_.apply(current);
-            preconditionedResidue = obj.preconditionerApplicator_.apply(residue);
+            residue = excitation - applyHandle(current);
+            preconditionedResidue = applyPrecondHandle(residue);
             direction = preconditionedResidue;
             rTr = residue.' * preconditionedResidue;
             excitationNorm = norm(excitation);
@@ -82,11 +93,11 @@ classdef PreconditionedConjugateGradient < handle
             for iteration = 1:maxIterCount
                 t1 = tic;
 
-                gDirection = obj.matrixApplicator_.apply(direction);
+                gDirection = applyHandle(direction);
                 alpha = rTr / (direction.' * gDirection);
                 current = current + alpha * direction;
                 residue = residue - alpha * gDirection;
-                preconditionedResidue = obj.preconditionerApplicator_.apply(residue);
+                preconditionedResidue = applyPrecondHandle(residue);
                 rTrNew = residue.' * preconditionedResidue;
                 residueNorm = abs(sqrt(rTrNew) / excitationNorm);
 

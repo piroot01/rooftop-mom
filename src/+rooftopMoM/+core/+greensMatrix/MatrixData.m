@@ -58,19 +58,23 @@ classdef MatrixData < handle
                 options.faceSizeY = 1;
             end
 
-            [magneticXXCirc, magneticYYCirc, electricCirc] = obj.generateCirculants_(options.kernelSizeX, options.kernelSizeY);
+            fieldNames = {'magneticXX_', 'magneticYY_', 'electric_'};
+
+            circulants = cell(1, 3);
+            for n = 1:numel(fieldNames)
+                currentPart = obj.(fieldNames{n});
+
+                if isfield(options, 'modifier')
+                    currentPart = options.modifier(currentPart);
+                end
+
+                circulants{n} = rooftopMoM.core.greensMatrix.utils.embedToeplitz4ToCirculant(currentPart, options.kernelSizeX, options.kernelSizeY);
+            end
+
 
             spectralMatrixData = rooftopMoM.core.greensMatrix.utils.generateSpectralGreensMatrix( ...
-                magneticXXCirc, magneticYYCirc, electricCirc, obj.rooftopContent_, options.faceSizeX, options.faceSizeY ...
+                circulants{1}, circulants{2}, circulants{3}, obj.rooftopContent_, options.faceSizeX, options.faceSizeY ...
             );
-        end
-    end
-
-    methods (Access = private)
-        function [magneticXXCirc, magneticYYCirc, electricCirc] = generateCirculants_(obj, kernelSizeX, kernelSizeY)
-            magneticXXCirc = rooftopMoM.core.greensMatrix.utils.embedToeplitz4ToCirculant(obj.magneticXX_, kernelSizeX, kernelSizeY);
-            magneticYYCirc = rooftopMoM.core.greensMatrix.utils.embedToeplitz4ToCirculant(obj.magneticYY_, kernelSizeX, kernelSizeY);
-            electricCirc = rooftopMoM.core.greensMatrix.utils.embedToeplitz4ToCirculant(obj.electric_, kernelSizeX, kernelSizeY);
         end
     end
 
