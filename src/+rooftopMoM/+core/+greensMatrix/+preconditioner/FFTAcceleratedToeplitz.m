@@ -1,87 +1,77 @@
 classdef FFTAcceleratedToeplitz < rooftopMoM.core.greensMatrix.preconditioner.PreconditionerInterface
     properties (Access = private)
-        spectralMatrixData_ rooftopMoM.core.greensMatrix.SpectralMatrixData;
-
-        determinant_;
+        rooftopContent_ rooftopMoM.basisFunctions.RooftopContent;
     end
 
     methods
-        function obj = FFTAcceleratedToeplitz(context, spectralMatrixData)
-            obj@rooftopMoM.core.greensMatrix.preconditioner.PreconditionerInterface(context);
+        function obj = FFTAcceleratedToeplitz(context, spectralMatrixData, rooftopContent)
+            obj@rooftopMoM.core.greensMatrix.preconditioner.PreconditionerInterface(context, spectralMatrixData);
 
-            obj.spectralMatrixData_ = spectralMatrixData;
+            obj.rooftopContent_ = rooftopContent;
         end
     end
 
     methods
-        function generate(obj)
-            obj.determinant_ = rooftopMoM.core.greensMatrix.preconditioner.utils.generateSpectralGreensMatrixDeterminant( ...
-                obj.spectralMatrixData_.gxxf(), ...
-                obj.spectralMatrixData_.gxyf(), ...
-                obj.spectralMatrixData_.gyxf(), ...
-                obj.spectralMatrixData_.gyyf(), ...
-                obj.spectralMatrixData_.rooftopContent() ...
-            );
-        end
-
         function output = apply(obj, input)
-            sizeX = obj.context_.rooftops().countDir('x');
-            sizeY = obj.context_.rooftops().countDir('y');
+            basisSizeX = obj.context_.rooftops().countDir('x');
+            basisSizeY = obj.context_.rooftops().countDir('y');
 
-            switch obj.spectralMatrixData_.rooftopContent()
+            switch obj.rooftopContent_
                 case rooftopMoM.basisFunctions.RooftopContent.XONLY
-                    [circSizeX, circSizeY] = size(obj.spectralMatrixData_.gxxf());
-                    inputSpectr = fft2(input, circSizeX, circSizeY);
+                    [blockSizeX, blockSizeY] = obj.spectralMatrixData_.blockSize();
+                    inputSpectr = fft2(input, blockSizeX, blockSizeY);
 
-                    outputSpectr = inputSpectr ./ obj.spectralMatrixData_.gxxf();
+                    outputSpectr = inputSpectr ./ obj.spectralMatrixData_.blockXX();
                     clear inputSpectr;
 
                     output = ifft2(outputSpectr);
                     clear outputSpectr;
 
-                    output = output(1:sizeX, 1);
+                    output = output(1:basisSizeX, 1);
                 case rooftopMoM.basisFunctions.RooftopContent.YONLY
                     input = input.';
 
-                    [circSizeX, circSizeY] = size(obj.spectralMatrixData_.gyyf());
-                    inputSpectr = fft2(input, circSizeX, circSizeY);
+                    [blockSizeX, blockSizeY] = obj.spectralMatrixData_.blockSize();
+                    inputSpectr = fft2(input, blockSizeX, blockSizeY);
 
-                    outputSpectr = inputSpectr ./ obj.spectralMatrixData_.gyyf();
+                    outputSpectr = inputSpectr ./ obj.spectralMatrixData_.blockYY();
                     clear inputSpectr;
 
                     % Inverse FFT.
                     output = ifft2(outputSpectr);
                     clear outputSpectr;
 
-                    output = output(1, 1:sizeY).';
+                    output = output(1, 1:basisSizeY).';
                 case rooftopMoM.basisFunctions.RooftopContent.BOTH
                     primitive = obj.context_.rooftops().primitive();
                     countX = primitive.countX();
                     countY = primitive.countY();
 
                     % First we process the x direction of the input
-                    inputXReshaped = reshape(input(1:sizeX), countX - 1, countY);
+                    inputXReshaped = reshape(input(1:basisSizeX), countX - 1, countY);
 
-                    [circSizeX, circSizeY] = size(obj.spectralMatrixData_.gxxf());
-                    inputXSpectr = fft2(inputXReshaped, circSizeX, circSizeY);
+                    [blockSizeX, blockSizeY] = obj.spectralMatrixData_.blockSize();
+                    inputXSpectr = fft2(inputXReshaped, blockSizeX, blockSizeY);
                     clear inputXReshaped;
 
-                    outputXSpectr = obj.spectralMatrixData_.gyyf() .* inputXSpectr;
-                    outputYSpectr = (-1) * obj.spectralMatrixData_.gyxf() .* inputXSpectr;
+                    outputXSpectr = obj.spectralMatrixData_.blockYY() .* inputXSpectr;
+                    outputYSpectr = (-1) * obj.spectralMatrixData_.blockYX() .* inputXSpectr;
                     clear inputXSpectr;
 
                     % Secondly we process the y direction of the input
-                    inputYReshaped = reshape(input((sizeX + 1):end), countX, countY - 1);
+                    inputYReshaped = reshape(input((basisSizeX + 1):end), countX, countY - 1);
 
-                    inputYSpectr = fft2(inputYReshaped, circSizeX, circSizeY);
+                    inputYSpectr = fft2(inputYReshaped, blockSizeX, blockSizeY);
                     clear inputYReshaped;
 
-                    outputXSpectr = outputXSpectr - obj.spectralMatrixData_.gxyf() .* inputYSpectr;
-                    outputYSpectr = outputYSpectr + obj.spectralMatrixData_.gxxf() .* inputYSpectr;
+                    outputXSpectr = outputXSpectr - obj.spectralMatrixData_.blockXY() .* inputYSpectr;
+                    outputYSpectr = outputYSpectr + obj.spectralMatrixData_.blockXX() .* inputYSpectr;
                     clear inputYSpectr;
 
-                    outputXSpectr = outputXSpectr ./ obj.determinant_;
-                    outputYSpectr = outputYSpectr ./ obj.determinant_;
+                    determinant = obj.spectralMatrixData_.generateDeterminant(obj.rooftopContent_);
+
+                    outputXSpectr = outputXSpectr ./ determinant;
+                    outputYSpectr = outputYSpectr ./ determinant;
 
                     % And apply the inverse FFTs sequentially
                     outputX = ifft2(outputXSpectr);

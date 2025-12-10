@@ -25,6 +25,37 @@ classdef SpectralMatrixData < handle
     end
 
     methods
+        function determinant = generateDeterminant(obj, rooftopContent)
+            switch rooftopContent
+                case rooftopMoM.basisFunctions.RooftopContent.XONLY
+                    determinant = [];
+                case rooftopMoM.basisFunctions.RooftopContent.YONLY
+                    determinant = [];
+                case rooftopMoM.basisFunctions.RooftopContent.BOTH
+                    determinant = obj.blockXX_ .* obj.blockYY_ - obj.blockXY_ .* obj.blockYX_;
+                otherwise
+                    error('Unknown rooftop content: %s', rooftopContent);
+            end
+        end
+
+        function [sizeX, sizeY] = blockSize(obj)
+            fieldNames = {'blockXX_', 'blockXY_', 'blockYX_', 'blockYY_'};
+
+            for i = 1:numel(fieldNames)
+                currentBlock = obj.(fieldNames{i});
+
+                if ~isempty(currentBlock)
+                    [sizeX, sizeY] = size(currentBlock);
+                    return;
+                end
+            end
+
+            sizeX = 0; 
+            sizeY = 0;
+        end
+    end
+
+    methods
         function blockXX = blockXX(obj)
             blockXX = obj.blockXX_;
         end

@@ -25,8 +25,8 @@ classdef FFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApp
                     % X-only basis functions: inputs are already in the
                     % expected vector layout (no explicit reshape here).
                     % Zero-extend and FFT.
-                    [circSizeX, circSizeY] = size(obj.spectralMatrixData_.blockXX());
-                    inputSpectr = fft2(input, circSizeX, circSizeY);
+                    [blockSizeX, blockSizeY] = obj.spectralMatrixData_.blockSize();
+                    inputSpectr = fft2(input, blockSizeX, blockSizeY);
 
                     % Spectral multiplication: G_xx * FFT(input).
                     outputSpectr = obj.spectralMatrixData_.blockXX() .* inputSpectr;
@@ -43,8 +43,8 @@ classdef FFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApp
                     input = input.';
 
                     % Zero-extend and FFT (transpose handled above).
-                    [circSizeX, circSizeY] = size(obj.spectralMatrixData_.blockYY());
-                    inputSpectr = fft2(input, circSizeX, circSizeY);
+                    [blockSizeX, blockSizeY] = obj.spectralMatrixData_.blockSize();
+                    inputSpectr = fft2(input, blockSizeX, blockSizeY);
 
                     % Spectral multiplication.
                     outputSpectr = obj.spectralMatrixData_.blockYY() .* inputSpectr;
@@ -64,8 +64,8 @@ classdef FFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApp
                     % First we process the x direction of the input
                     inputXReshaped = reshape(input(1:basisSizeX), countX - 1, countY);
 
-                    [circSizeX, circSizeY] = size(obj.spectralMatrixData_.blockXX());
-                    inputXSpectr = fft2(inputXReshaped, circSizeX, circSizeY);
+                    [blockSizeX, blockSizeY] = obj.spectralMatrixData_.blockSize();
+                    inputXSpectr = fft2(inputXReshaped, blockSizeX, blockSizeY);
                     clear inputXReshaped;
 
                     outputXSpectr = obj.spectralMatrixData_.blockXX() .* inputXSpectr;
@@ -75,7 +75,7 @@ classdef FFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApp
                     % Secondly we process the y direction of the input
                     inputYReshaped = reshape(input((basisSizeX + 1):end), countX, countY - 1);
 
-                    inputYSpectr = fft2(inputYReshaped, circSizeX, circSizeY);
+                    inputYSpectr = fft2(inputYReshaped, blockSizeX, blockSizeY);
                     clear inputYReshaped;
 
                     outputXSpectr = outputXSpectr + obj.spectralMatrixData_.blockXY() .* inputYSpectr;
