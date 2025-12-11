@@ -25,6 +25,8 @@ function output = generateApplicators(solverContext, varargin)
 
     if strcmp(preconditionerType, 'TChan')
         preconditionerHandle = @rooftopMoM.core.greensMatrix.preconditioner.utils.generateTChanPreconditionerKernel;
+    elseif strcmp(preconditionerType, 'Strang')
+        preconditionerHandle = @rooftopMoM.core.greensMatrix.preconditioner.utils.generateStrangPreconditionerKernel;
     end
 
     preconditioner = rooftopMoM.core.greensMatrix.preconditioner.utils.generatePreconditioner1( ...
