@@ -20,13 +20,13 @@ logger.Logger.configure( ...
 );
 
 countX = 1000;
-countY = 1;
+countY = 100;
 sizeX = 1;
 sizeY = 1;
 
 order = 3;
 elementCount = 1e6;
-k = pi / (sizeY * countY);
+k = pi / (sizeX * countX);
 V = 1;
 
 quad = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
@@ -37,21 +37,19 @@ rooftops.generate();
 
 planner = rooftopMoM.core.greensMatrix.AssemblerChunkPlanner(elementCount);
 context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
-assembler = rooftopMoM.core.greensMatrix.ElectricPartAssembler(planner);
+assembler = rooftopMoM.core.greensMatrix.FullAssembler(planner);
 
 greensMatrix = assembler.generate(context);
 
-spectralGreensMatrix = greensMatrix.generateSpectralGreensMatrix();
+spectralGreensMatrix = greensMatrix.generateSpectralGreensMatrix(struct('modifier', @imag));
 
 greensMatrixApplicator = rooftopMoM.core.greensMatrix.FFTAcceleratedApplicator( ...
     context, spectralGreensMatrix, greensMatrix.rooftopContent());
 
-ifft2(spectralGreensMatrix.blockXX())
-
 % Generate the Strangs preconditioner
-preconditioner = rooftopMoM.core.greensMatrix.preconditioner.utils.generatePreconditioner2( ...
+preconditioner = rooftopMoM.core.greensMatrix.preconditioner.utils.generatePreconditioner3( ...
     @rooftopMoM.core.greensMatrix.preconditioner.utils.generateTChanPreconditionerKernel, ...
-    greensMatrix, sizeX, sizeY);
+    greensMatrix, sizeX, sizeY, struct('modifier', @imag));
 
 preconditionerApplicator = rooftopMoM.core.greensMatrix.preconditioner.FFTAcceleratedApplicator( ...
     context, preconditioner, greensMatrix.rooftopContent());
@@ -63,7 +61,7 @@ mode = rooftopMoM.operator.utils.generateMiddlePortMode(rooftops.count());
 excitation = rooftopMoM.operator.DeltaGapFeederExcitation.generate(rooftops.count(), mode, V);
 
 tolerance = 1e-6;
-maxIterCount = 10000;
+maxIterCount = 1e3;
 
 outputConvSolver = solver.solve( ...
     'excitation', excitation, ...
@@ -72,3 +70,5 @@ outputConvSolver = solver.solve( ...
 );
 
 fprintf('Number of the iterations: %d\n', outputConvSolver.count());
+
+norm(outputConvSolver.postRunInfo().current)

@@ -28,22 +28,22 @@ addpath(loggerDir);
 % Configure the logger.
 logger.Logger.configure( ...
     'timeFormat', 'ss.SSS', ...
-    'minLevel', logger.LogLevel.TRACE, ...
+    'minLevel', logger.LogLevel.DEBUG, ...
     'sinks', { ...
         logger.sink.ConsoleSink(), ...
     } ...
 );
 
 %% Prepare benchmark inputs
-electricalSize = 2;
+electricalSize = 10;
 
 % Number of requested eigenvalues
-eigCount = 10;
-whichEigs = 'smallestabs';
+eigCount = 500;
+whichEigs = 'largestabs';
 
 % Constants used to compute the wavenumber and antenna size.
 % Number of rooftops per wavelength to aim for.
-rooftopCountPerOneWavelength = 500;
+rooftopCountPerOneWavelength = 20;
 
 % Antennas with electrical size below this threshold will use the same
 % discretization as an antenna whose electrical size equals the threshold.
@@ -53,7 +53,7 @@ electricalSizeThreshold = 5;
 antennaSidesRatio = 2;
 
 % Order of the Gauss–Legendre quadrature.
-quadratureOrder = 5;
+quadratureOrder = 10;
 
 % Define the incident plane wave.
 direction = [0; 0; -1];
@@ -108,3 +108,29 @@ applicators = generateApplicators(solverContext, ...
 
 %% Display the eigenvalues
 disp(lambda);
+
+%% Comparison with reference data
+lambdaRef = [ ...
+   0.003674276647855e2; ...
+  -0.020072856748803e2; ...
+   0.053199894297259e2; ...
+  -0.071408911064240e2; ...
+  -0.089574441948060e2; ...
+   0.304952611989058e2; ...
+  -1.686742322387722e2; ...
+  -1.796098111244691e2; ...
+   2.119329913052550e2; ...
+  -2.923984125245223e2; ...
+];
+
+toLogScale = @(x) 10*log10(abs(x));
+
+figure
+title(sprintf('Characteristic modes accuracy comparison - %d rooftops', applicators.realGreensMatrix.inputSize()));
+hold on;
+plot(toLogScale(lambda), '--d', 'LineWidth', 2, 'MarkerSize', 8);
+plot(toLogScale(lambdaRef), '--x', 'LineWidth', 2, 'MarkerSize', 8);
+hold off;
+xlabel('modal index n [-]');
+ylabel('10log_{10}(|\lambda_n|) [-]')
+legend('\lambda_n', 'reference \lambda_n');

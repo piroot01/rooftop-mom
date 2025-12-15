@@ -1,22 +1,38 @@
-function spectralMatrixData = generatePreconditioner2(generatorHandle, matrixData, faceSizeX, faceSizeY)
+function spectralMatrixData = generatePreconditioner2(generatorHandle, matrixData, faceSizeX, faceSizeY, options)
     if nargin < 3
         faceSizeX = 1;
         faceSizeY = 1;
     end
 
-    electric = matrixData.electric();
-    blockXX = zeros(size(electric), 'like', electric);
+    if nargin > 4 && isfield(options, 'modifier')
+        magneticXX = options.modifier(matrixData.magneticXX());
+        magneticYY = options.modifier(matrixData.magneticYY());
+        electric = options.modifier(matrixData.electric());
+    else
+        magneticXX = matrixData.magneticXX();
+        magneticYY = matrixData.magneticYY();
+        electric = matrixData.electric();
+    end
 
-    blockXX(2:(end - 1), :) = 2 * electric(2:(end - 1), :) - electric(1:(end - 2), :) - electric(3:end, :);
-    blockXX(1, :) = 2 * (electric(1, :) - electric(2, :));
-    blockXX(end, :) = 2 * (electric(end, :) - electric(end - 1, :));
+    spatialMatrixData = rooftopMoM.core.greensMatrix.preconditioner.utils.generateSpatialGreensMatrix( ...
+        magneticXX, magneticYY, electric, ...
+        matrixData.rooftopContent(), faceSizeX, faceSizeY);
 
-    blockXXApprox = generatorHandle(blockXX);
+    blockNames = {'blockXX', 'blockXY', 'blockYX', 'blockYY'};
+
+    blocks = cell(1, 4);
+    for n = 1:numel(blockNames)
+        currentBlock = spatialMatrixData.(blockNames{n});
+
+        blockApprox = generatorHandle(currentBlock);
+
+        blocks{n} = fft2(blockApprox);
+    end
 
     spectralMatrixData = rooftopMoM.core.greensMatrix.SpectralMatrixData( ...
-        'blockXX', blockXXApprox, ...
-        'blockXY', [], ...
-        'blockYX', [], ...
-        'blockYY', [] ...
+        'blockXX', blocks{1}, ...
+       'blockXY', blocks{2}, ...
+        'blockYX', blocks{3}, ...
+        'blockYY', blocks{4} ...
     );
 end

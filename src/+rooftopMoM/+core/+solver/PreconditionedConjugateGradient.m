@@ -13,19 +13,19 @@ classdef PreconditionedConjugateGradient < handle
 
     methods
         function output = solve(obj, varargin)
-            % solve: High-level entry point for the solver.
-            %
-            %   Optional name-value inputs:
-            %       'initCurrent': Initial guess vector (complex, column).
-            %       'excitation': Right-hand side vector (required).
-            %       'tolerance': Relative residual tolerance (default 1e-6).
-            %       'maxIterCount': Maximum number of iterations (default 1000).
+        % solve: High-level entry point for the solver.
+        %
+        %   Optional name-value inputs:
+        %       'initCurrent': Initial guess vector (complex, column).
+        %       'excitation': Right-hand side vector (required).
+        %       'tolerance': Relative residual tolerance (default 1e-6).
+        %       'maxIterCount': Maximum number of iterations (default 1000).
 
             TRACE("PreconditionedConjugateGradient.solve: Initialized solving procedure.");
 
             p = inputParser();
 
-            addParameter(p, 'initCurrent', 0);
+            addParameter(p, 'initCurrent', []);
             addParameter(p, 'excitation', []);
             addParameter(p, 'tolerance', 1e-6);
             addParameter(p, 'maxIterCount', 1000);
@@ -36,11 +36,17 @@ classdef PreconditionedConjugateGradient < handle
                 error('The excitation is empty!');
             end
 
+            if isempty(p.Results.initCurrent)
+                initCurrent = zeros(size(p.Results.excitation));
+            else
+                initCurrent = p.Results.initCurrent;
+            end
+
             DEBUG("PreconditionedConjugateGradient.solve: Parsed inputs: rooftop count = %d, tolerance = %g, maxIterCount = %d", ...
-                numel(p.Results.initCurrent), p.Results.tolerance, p.Results.maxIterCount);
+                numel(initCurrent), p.Results.tolerance, p.Results.maxIterCount);
 
             output = obj.solveImpl_( ...
-                p.Results.initCurrent, ...
+                initCurrent, ...
                 p.Results.excitation, ...
                 p.Results.tolerance, ...
                 p.Results.maxIterCount ...
@@ -50,37 +56,24 @@ classdef PreconditionedConjugateGradient < handle
 
     methods (Access = protected)
         function output = solveImpl_(obj, initCurrent, excitation, tolerance, maxIterCount)
-            % solveImpl_: Core Spectrally Preconditioned Conjugate-Gradient loop.
-            %
-            %   Inputs:
-            %       initCurrent: Initial guess column vector.
-            %       excitation: Right-hand side column vector.
-            %       tolerance: Relative tolerance.
-            %       maxIterCount: Maximum iterations.
-            %
-            %   Returns:
-            %       output: Solution in form of the ConjugateGradientOutput.
+        % solveImpl_: Core Spectrally Preconditioned Conjugate-Gradient loop.
+        %
+        %   Inputs:
+        %       initCurrent: Initial guess column vector.
+        %       excitation: Right-hand side column vector.
+        %       tolerance: Relative tolerance.
+        %       maxIterCount: Maximum iterations.
+        %
+        %   Output:
+        %       output: Solution in form of the ConjugateGradientOutput.
 
             TRACE("PreconditionedConjugateGradient.solveImpl_: Starting CG solver core.");
-
-            if isa(obj.matrixApplicator_, 'function_handle')
-                applyHandle = obj.matrixApplicator_;
-            else
-                applyHandle = @(x) obj.matrixApplicator_.apply(x);
-            end
-
-            if isa(obj.preconditionerApplicator_, 'function_handle')
-                applyPrecondHandle = obj.preconditionerApplicator_;
-            else
-                applyPrecondHandle = @(x) obj.preconditionerApplicator_.apply(x);
-            end
-
 
             output = rooftopMoM.core.solver.ConjugateGradientOutput();
 
             current = initCurrent;
-            residue = excitation - applyHandle(current);
-            preconditionedResidue = applyPrecondHandle(residue);
+            residue = excitation - obj.matrixApplicator_.apply(current);
+            preconditionedResidue = obj.preconditionerApplicator_.apply(residue);
             direction = preconditionedResidue;
             rTr = residue.' * preconditionedResidue;
             excitationNorm = norm(excitation);
@@ -93,11 +86,11 @@ classdef PreconditionedConjugateGradient < handle
             for iteration = 1:maxIterCount
                 t1 = tic;
 
-                gDirection = applyHandle(direction);
+                gDirection = obj.matrixApplicator_.apply(direction);
                 alpha = rTr / (direction.' * gDirection);
                 current = current + alpha * direction;
                 residue = residue - alpha * gDirection;
-                preconditionedResidue = applyPrecondHandle(residue);
+                preconditionedResidue = obj.preconditionerApplicator_.apply(residue);
                 rTrNew = residue.' * preconditionedResidue;
                 residueNorm = abs(sqrt(rTrNew) / excitationNorm);
 

@@ -18,7 +18,7 @@ function [lambda, V, info] = solveEig1Problem(eigCount, applicators, options)
 %       V: n by k matrix of eigenvector.
 %       info: Structure with useful informations about the solution run.
 
-    if nargin < 5
+    if nargin < 3
         options = struct();
     end
 

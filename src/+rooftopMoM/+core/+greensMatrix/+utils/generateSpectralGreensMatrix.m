@@ -36,7 +36,6 @@ function spectralMatrixData = generateSpectralGreensMatrix(magneticXXCirc, magne
     isYActive = (rooftopContent == rooftopMoM.basisFunctions.RooftopContent.YONLY) || ...
         (rooftopContent == rooftopMoM.basisFunctions.RooftopContent.BOTH);
 
-    % Compute Blocks
     blockXX = []; blockXY = []; blockYX = []; blockYY = [];
 
     % Compute XX Component

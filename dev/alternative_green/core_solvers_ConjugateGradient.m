@@ -19,7 +19,7 @@ logger.Logger.configure( ...
     } ...
 );
 
-countX = 200000;
+countX = 10;
 countY = 1;
 sizeX = 1;
 sizeY = 1;
@@ -61,7 +61,7 @@ rooftops.generate();
 planner = rooftopMoM.core.greensMatrix.AssemblerChunkPlanner(elementCount);
 context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 assembler = rooftopMoM.core.greensMatrix.FullAssembler(planner);
-greensMatrix = assembler.generateFull(context);
+greensMatrix = assembler.generate(context);
 
 mode = rooftopMoM.operator.utils.generateMiddlePortMode(rooftops.count());
 excitation = rooftopMoM.operator.DeltaGapFeederExcitation.generate(rooftops.count(), mode, V);
@@ -197,7 +197,7 @@ fprintf('Norm difference is %g.\n', normDiff);
 %}
 % Generate the preconditioner from the ifft(gxx)
 
-G = greensMatrix.electric; 
+G = greensMatrix.electric;
 [cX, cY] = size(G);
 
 % 2. Allocate output
@@ -238,7 +238,7 @@ fprintf('Preconditioned variant gxx half: flag0 = %d, iteration count = %d, solv
 % USER PARAMETER: Control the width of the preconditioner here.
 % bandwidth = 1  -> Tridiagonal (Size 3 stencil: captures neighbors)
 % bandwidth = 5  -> Banded (Size 11 stencil: captures wider interactions)
-bandwidth = 10; 
+bandwidth = 1; 
 
 fprintf('Probing operator with bandwidth = %d...\n', bandwidth);
 
