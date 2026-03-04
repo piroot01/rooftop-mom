@@ -16,7 +16,7 @@ logger.Logger.configure( ...
     } ...
 );
 
-countX = 10000;
+countX = 100;
 countY = 1;
 sizeX = 1;
 sizeY = 1;
