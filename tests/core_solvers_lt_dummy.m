@@ -16,8 +16,8 @@ logger.Logger.configure( ...
     } ...
 );
 
-countX = 4;
-countY = 4;
+countX = 3;
+countY = 3;
 sizeX = 1;
 sizeY = 1;
 
@@ -31,7 +31,7 @@ rectPrimitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, size
 
 rooftops = rooftopMoM.basisFunctions.UniformRectPrimitiveUniformRooftops(rectPrimitive, quad);
 rooftops.generate();
-%{
+
 planner = rooftopMoM.core.greensMatrix.AssemblerChunkPlanner(elementCount);
 context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 assembler = rooftopMoM.core.greensMatrix.FullAssembler(planner);
@@ -42,7 +42,7 @@ spectralGreensMatrix = greensMatrix.generateSpectralGreensMatrix();
 
 greensMatrixApplicator = rooftopMoM.core.greensMatrix.FFTAcceleratedApplicator( ...
     context, spectralGreensMatrix, greensMatrix.rooftopContent());
-%}
+
 mode = rooftopMoM.operator.utils.generateMiddlePortMode(rooftops.count());
 excitation = rooftopMoM.operator.DeltaGapFeederExcitation.generate(rooftops.count(), mode, V);
 
@@ -51,19 +51,27 @@ loops = rooftopMoM.core.solver.altBasis.generateLoops(countX, countY);
 loopsConverted = rooftopMoM.core.solver.altBasis.convertLoopToRooftopIndices(loops, countX, countY);
 loopTransformation = rooftopMoM.core.solver.altBasis.generateRooftopToLoopTransformation(loopsConverted, sizeX, sizeY);
 
-L = loopTransformation.';
-
 tree = rooftopMoM.core.solver.altBasis.generateTree(countX, countY);
 treeConverted = rooftopMoM.core.solver.altBasis.convertTreeToRooftopIndices(tree, countX, countY);
 treeTransformation = rooftopMoM.core.solver.altBasis.generateRooftopToTreeTransformation(treeConverted, rooftops.count());
 
+L = loopTransformation.';
 T = treeTransformation.';
 
-stars = rooftopMoM.core.solver.altBasis.generateStarsInRooftopIndices(countX, countY);
-starsTransformation = rooftopMoM.core.solver.altBasis.generateRooftopToStarTransformation(stars, sizeX, sizeY);
+% Construct the coordinate transformation matrices.
+toRooftops = cat(2, L, T);
+fromRooftops = toRooftops.';
 
-% Temporarily we store the lambda as a transpose.
-Lambda = cat(2, L, T);
+% Now we tst if the matrix toRooftops is an orthogonal matrix.
+fromRooftops * toRooftops
+
+%{
+% test of the hypothesis that H_{Lambda Sigma} from the paper is an transformation from Loop/Stars to Rooftops
+e = zeros(rooftops.count(), 1);
+e(1) = 1;
+
+Lambda * e;
+%}
 
 tic;
 LambdaInv = inv(Lambda);
@@ -190,7 +198,6 @@ toc;
 
 all(x1 == x2)
 
-%}
 %{
 T = full(treeTransformation).';
 
@@ -273,14 +280,16 @@ inv(bottomLine);
 
 all(inv(Lambda) == LambdaInv, 'all');
 %}
-%{
-excitationLoopTree = LambdaInv * excitation
+
+%excitationLoopTree = Lambda.' * excitation;
+excitationLoopTree = excitation;
 
 function y = apply(x, greensMatrixApplicator, T, Tinv)
     y = Tinv * greensMatrixApplicator.apply(T * x);
+    %y = greensMatrixApplicator.apply(x);
 end
 
-applyHandle = @(x) apply(x, greensMatrixApplicator, Lambda, LambdaInv);
+applyHandle = @(x) apply(x, greensMatrixApplicator, Lambda, Lambda.');
 
 solver = rooftopMoM.core.solver.ConjugateGradient(applyHandle);
 
@@ -294,4 +303,3 @@ outputConvSolver = solver.solve( ...
 );
 
 fprintf('Number of the iterations: %d\n', outputConvSolver.count());
-%}
