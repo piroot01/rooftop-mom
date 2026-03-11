@@ -16,8 +16,8 @@ logger.Logger.configure( ...
     } ...
 );
 
-countX = 100;
-countY = 100;
+countX = 30;
+countY = 30;
 sizeX = 1;
 sizeY = 1;
 
@@ -131,9 +131,17 @@ tic;
 I2 = solveCurrentByList(list, Q, -1i);
 toc;
 
-all(I1 == I2)
+tic;
+I3 = solveCurrentByListOpt(list, Q, -1i);
+toc;
 
-%{
+%all(I1 == I2)
+
+% Let us compare the results with the build in K matrix applicator.
+Ii = rooftopMoM.core.solver.altBasis.utils.applyKInvMatrix(Q, tree);
+
+all(I1 == Ii)
+
 function I = solveCurrentByList(list, Q, omega)
     N = numel(Q);
     I = zeros(N, 1);
@@ -161,9 +169,9 @@ function I = solveCurrentByList(list, Q, omega)
         end
     end
 end
-%}
 
-function I = solveCurrentByList(list, Q, omega)
+
+function I = solveCurrentByListOpt(list, Q, omega)
     N = numel(Q);
     I = zeros(N, 1);
     
@@ -182,7 +190,7 @@ function I = solveCurrentByList(list, Q, omega)
 
     % Find the first occurrence where a list value exceeds N.
     % We only search up to N-1, matching the original loop's scope.
-    idx = find(list(1:N-1) > N, 1);
+    idx = find(list(2:N - 1) > N, 1);
 
     if isempty(idx)
         % No missing row: purely a forward cumulative sum.
@@ -209,6 +217,86 @@ function I = solveCurrentByList(list, Q, omega)
             Q_back = Q(break_n+1:N);
             I(N-1:-1:break_n) = I_N - i_omega * cumsum(Q_back(:));
         end
+    end
+end
+
+% Let us look at the transpose of the matrix K and how to solve it in O(N) time
+KT = K.';
+
+tic;
+IT1 = KT \ Q;
+toc;
+
+tic;
+IT2 = applyTransposedCurrentByListOpt(list, Q, -1i);
+toc;
+
+%all(IT1 == IT2)
+
+% And the internal one.
+ITi = rooftopMoM.core.solver.altBasis.utils.applyKTransposeInvMatrix(Q, tree);
+
+all(IT1 == ITi)
+
+function Y = applyTransposedCurrentByListOpt(list, X, omega)
+    % This function applies the exact mathematical transpose (M^T) of 
+    % the 'solveCurrentByList' operator to an input vector X.
+    
+    N = numel(X);
+    Y = zeros(N, 1);
+    
+    if N == 0
+        return;
+    end
+    
+    i_omega = 1i * omega;
+    
+    if N == 1
+        Y(1) = X(1);
+        return;
+    end
+    
+    % Find the break index just like the forward pass
+    idx = find(list(1:N-1) > N, 1);
+    
+    if isempty(idx)
+        break_n = N + 1; % No break
+    else
+        break_n = idx + 1;
+    end
+    
+    % --- 1. Transpose of the Forward Block (Reverse Cumulative Sum) ---
+    if break_n > 1
+        X_fwd = X(1:break_n-1);
+        
+        % Reverse the array, cumsum, then reverse back to get sum_{n=m}^{break_n-1}
+        S = flipud(cumsum(flipud(X_fwd(:)))); 
+        
+        % Q(1) contribution
+        Y(1) = S(1); 
+        
+        if break_n > 2
+            p_indices = list(1:break_n-2);
+            vals = i_omega * S(2:end);
+            
+            % accumarray safely and instantly sums values if 'list' 
+            % contains any duplicate target indices.
+            Y = Y + accumarray(p_indices(:), vals(:), [N, 1]);
+        end
+    end
+    
+    % --- 2. Transpose of the Backward Block (Forward Cumsum applied backwards) ---
+    if break_n <= N
+        X_back = X(break_n:N);
+        
+        % Standard cumsum for the backward block variables
+        S_back = cumsum(X_back(:));
+        
+        j_indices = break_n:N;
+        % Map the indices backwards mathematically
+        idx_S = N - j_indices + 1;
+        
+        Y(j_indices) = Y(j_indices) - i_omega * S_back(idx_S(:));
     end
 end
 
