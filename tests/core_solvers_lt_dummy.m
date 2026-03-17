@@ -16,8 +16,8 @@ logger.Logger.configure( ...
     } ...
 );
 
-countX = 30;
-countY = 30;
+countX = 3;
+countY = 3;
 sizeX = 1;
 sizeY = 1;
 
@@ -63,6 +63,9 @@ currentRef = outputConvSolverRef.postRunInfo().current;
 %}
 % Prepare the loop-tree transformation matrix.
 loops = rooftopMoM.core.solver.altBasis.generateLoops(countX, countY);
+
+size(loops, 2)
+
 loopsConverted = rooftopMoM.core.solver.altBasis.convertLoopToRooftopIndices(loops, countX, countY);
 loopTransformation = rooftopMoM.core.solver.altBasis.generateRooftopToLoopTransformation(loopsConverted, sizeX, sizeY);
 
@@ -77,7 +80,7 @@ T = treeTransformation.';
 toRooftops = cat(2, L, T);
 
 % Frequency normalization
-loopCount = size(L, 2);
+loopCount = size(L, 2)
 
 function omega = toOmega(k)
     omega = k * physconst('LightSpeed');
@@ -95,9 +98,18 @@ function y = applyPpo(x, omega, loopCount)
     y((loopCount + 1):end) = y((loopCount + 1):end) * omega;
 end
 
+% new function test
+current = ones(rooftops.count(), 1);
+current((loopCount + 1):end) = 2;
+
+rooftopMoM.core.solver.altBasis.utils.applyToTreeCurrent(current, loopCount, @(x) (1 * x))
+rooftopMoM.core.solver.altBasis.utils.applyForwardFreqNorm(current, loopCount, omega0)
+rooftopMoM.core.solver.altBasis.utils.applyBackwardFreqNorm(current, loopCount, omega0)
+
+
 % basis rearragement
 % 1. We assemble the K matrix K_{mn} = <P_m, div(R^{(T)}_N)>, where R^{(T)} are the tree basis functions.
-treeSize = size(T, 2)
+treeSize = size(T, 2);
 
 K = zeros(treeSize, treeSize);
 
