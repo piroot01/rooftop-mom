@@ -10,7 +10,7 @@ function [transformation, data] = generateLoopTreeToRooftopTransformation(countX
 %       transformation: NxN sparse matrix, where N is the total number of rooftops.
 %       data: Struct that contains export variables for further use.
 
-    rooftopCount = rooftopMoM.basisFunction.utils.generateRooftopCount(countX, countY);
+    rooftopCount = rooftopMoM.basisFunctions.utils.generateRooftopCount(countX, countY);
 
     % Loop basis
     loops = rooftopMoM.core.solver.altBasis.generateLoops(countX, countY);
