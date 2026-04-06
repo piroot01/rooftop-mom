@@ -4,7 +4,7 @@ clc;
 clc;
 
 countX = 4; % number of patches in the x-direction
-countY = 2; % number of patches in the y-direction
+countY = 5; % number of patches in the y-direction
 
 % Now let us introduce the indexing scheme:
 % For the vertices the scheme will be zig-zag from left bottom corner to the top
@@ -19,14 +19,97 @@ countY = 2; % number of patches in the y-direction
 % The dual basis made of BC (Buffa-Christiansen) functions live on the dual grid, but the patches
 % are vertices of the primary mesh without the boundary vertices (all vertices that coincide with
 % a boundary edge).
-[~, allBuffaChristiansen] = generateRectMeshGraph(countX, countY, true)
+[bCvertices, buffaChristiansen, info] = generateRectMeshGraph(countX, countY, true);
 
+% We need to implement following functions:
+% 1. Returns a list of vertices that are coindicent of a given vertex
+% 2. Returns true if given rooftop (edge) crosses BC basis
+% 3. Verifies if the given rooftop-tree is a spanning tree.
+% 4. Verifies if the given BC-tree is a spanning tree.
+% 5. Verifies if given rooftop-tree and BC-tree forms a complementary pair.
+%   - the rooftop-tree must have every vertex of its graph explored
+%   - the BC-tree mush have every internal vertex of the primary mesh graph
+%       explored
+%   - there must not be crossing pair of rooftop and BC function
 
+tic;
+[vert, edg] = generateRectMeshGraph(countX, countY);
+toc;
+
+tic;
+adjMat = generateAdjMatrix(vert, edg);
+toc;
+
+tic;
+tree = generateSpanningTreeDFS(adjMat, randi([1, numel(vert)], 1));
+toc;
+
+% Generates a symmetric sparse adjacency matrix for an undirected graph
+function adjMatrix = generateAdjMatrix(V, E)
+    vertexCount = numel(V);
+    
+    % Concatenate both directions to ensure the matrix is symmetric
+    fromNodes = [E(:, 1); E(:, 2)];
+    toNodes   = [E(:, 2); E(:, 1)];
+    
+    adjMatrix = sparse(fromNodes, toNodes, true, vertexCount, vertexCount);
+end
+
+% Function that for given graph performs a iterative DFS spanning tree generation
+function treeEdges = generateSpanningTreeDFS(adjMatrix, seedVertex)
+    vertexCount = size(adjMatrix, 1);
+    visitedVertices = false(1, vertexCount);
+
+    % Preallocate the stack.
+    stack = zeros(vertexCount, 1);
+    stackSize = 1;
+    stack(1) = seedVertex;
+
+    % Mark the seed vertex as visited.
+    visitedVertices(seedVertex) = true;
+
+    % Preallocate the tree.
+    treeEdges = zeros(vertexCount - 1, 2);
+    edgeCount = 0;
+
+    while stackSize > 0
+        % Obtain the vertex from the top of the stack.
+        currentVertex = stack(stackSize);
+
+        adjVertices = find(adjMatrix(:, currentVertex));
+
+        % Filter out the ones which are explored.
+        unvisitedAdjVertices = adjVertices(~visitedVertices(adjVertices));
+
+        if isempty(unvisitedAdjVertices)
+            % Dead branch, so we decrement the stackSize.
+            stackSize = stackSize - 1;
+        else
+            % Branch: we choose a random unvisited adjacent vertex.
+            %nextVertex = unvisitedAdjVertices(randi([1, numel(unvisitedAdjVertices)], 1));
+            %nextVertex = max(unvisitedAdjVertices);
+            nextVertex = min(unvisitedAdjVertices);
+
+            % Mark the nextVertex as visited.
+            visitedVertices(nextVertex) = true;
+
+            % Save the nextVertex as the next tree edge.
+            edgeCount = edgeCount + 1;
+            treeEdges(edgeCount, :) = [currentVertex, nextVertex];
+
+            % Increment the stack.
+            stackSize = stackSize + 1;
+            stack(stackSize) = nextVertex;
+        end
+    end
+end
 
 % Function that returns a graph of a rectangular 2D mesh grid.
 % V: Vector of vertex indices (1 to total vertices).
 % E: Nx2 matrix of edges connecting the vertices.
-function [V, E] = generateRectMeshGraph(countX, countY, removeBoundaryEdges)
+function [V, E, info] = generateRectMeshGraph(countX, countY, removeBoundaryEdges)
+    info = [];
+
     if nargin < 3
         removeBoundaryEdges = false;
     end
@@ -49,6 +132,8 @@ function [V, E] = generateRectMeshGraph(countX, countY, removeBoundaryEdges)
         % Keep only start nodes that are strictly greater than the first row 
         % and less than or equal to the start of the last row.
         startNodesX = startNodesX(startNodesX > vertexCountX & startNodesX <= vertexCountX * countY);
+
+        info.internalVertices = startNodesX(2:end);
     end
 
     edgeX = [startNodesX, startNodesX + 1];
@@ -74,15 +159,45 @@ end
 sizeX = 1; % size of the single patch in the x-direction
 sizeY = 1; % and the in the y-direction
 
+% Generate the coordinates
 [xs, ys] = meshgrid(0:sizeX:(countX * sizeX), 0:sizeY:(countY * sizeY));
 
-% Now we would like to make a dual graph mesh that will be for the
-% rooftops.
+% CRITICAL FIX: Transpose the matrices so that 1D indexing (xs(:)) 
+% moves left-to-right first, matching your edge generation logic!
+xs = xs';
+ys = ys';
+
+% Now we would like to make a dual graph mesh that will be for the rooftops.
 [xsRoofops, ysRooftop] = meshgrid((0.5 * sizeX):sizeX:(countX * sizeX), ...
     (0.5 * sizeY):sizeY:(countY * sizeY));
 
+xsRoofops = xsRoofops';
+ysRooftop = ysRooftop';
+
 figure;
-plot(xs(:), ys(:), "g*", "MarkerSize", 10, "LineWidth", 2);
+% Plot the grid vertices
+plot(xs(:), ys(:), "g.", "MarkerSize", 10, "LineWidth", 2);
 hold on;
-plot(xsRoofops(:), ysRooftop(:), "y*", "MarkerSize", 10, "LineWidth", 2);
+
+% Plot the rooftop (dual) vertices
+plot(xsRoofops(:), ysRooftop(:), "y.", "MarkerSize", 10, "LineWidth", 2);
+
+% Get the 1D indices for the start and end of every edge
+startNodes = tree(:, 1);
+endNodes   = tree(:, 2);
+
+% Extract the actual X and Y coordinates for those nodes
+xStarts = xs(startNodes);
+xEnds = xs(endNodes);
+yStarts = ys(startNodes);
+yEnds = ys(endNodes);
+
+% When plotted, MATLAB stops drawing at a NaN, allowing us to 
+% draw thousands of separate line segments in one incredibly fast command.
+xNan = [xStarts, xEnds, nan(size(xStarts))]';
+yNan = [yStarts, yEnds, nan(size(yStarts))]';
+
+plot(xNan(:), yNan(:), 'w-', 'LineWidth', 3);
+
 axis equal;
+hold off;
