@@ -1,10 +1,8 @@
-clc;
-
 %% Fist we generate the primary graph
-clc;
+clc; close all;
 
-countX = 4; % number of patches in the x-direction
-countY = 5; % number of patches in the y-direction
+countX = 10; % number of patches in the x-direction
+countY = 10; % number of patches in the y-direction
 
 % Now let us introduce the indexing scheme:
 % For the vertices the scheme will be zig-zag from left bottom corner to the top
@@ -19,7 +17,38 @@ countY = 5; % number of patches in the y-direction
 % The dual basis made of BC (Buffa-Christiansen) functions live on the dual grid, but the patches
 % are vertices of the primary mesh without the boundary vertices (all vertices that coincide with
 % a boundary edge).
-[bCvertices, buffaChristiansen, info] = generateRectMeshGraph(countX, countY, true);
+%[bCVertices, buffaChristiansen, info] = generateRectMeshGraph(countX, countY, true);
+
+% Main grid
+[mainVerts, mainEdges, mainInfo] = generateRectMeshGraph(countX, countY);
+
+% Extract the internal sub-grid
+[interVerts, interEdges, interInfo] = extractInteriorGrid(mainVerts, mainEdges, countX + 1, countY + 1);
+
+% Choose random point on the internal mesh boundary.
+interTreeSeedVertex = interInfo.boundaryVertices(randi([1, numel(interInfo.boundaryVertices)], 1));
+
+% Generate full mesh adjacency matrix.
+mainAdjMatrix = generateAdjMatrix(mainVerts, mainEdges);
+
+% Generate the adjacency matrix of the internal mesh.
+mainVertCount = numel(mainVerts);
+interAdjMatrix = sparse(mainVertCount, mainVertCount);
+% Reindex
+interAdjMatrix(interVerts, interVerts) = mainAdjMatrix(interVerts, interVerts);
+
+% Generate the interior spanning tree.
+interTree = generateSpanningTreeDFS(interAdjMatrix, interTreeSeedVertex);
+
+% Crop the zero elements of the interior tree.
+interVertCount = numel(interVerts);
+interTree = interTree(1:interVertCount - 1, :);
+
+% Prepend the tree witth the intial internal tree edge.
+firstInterVert = intersect(mainVerts(mainAdjMatrix(:, interTreeSeedVertex)), mainInfo.boundaryVertices);
+% If more neighboring vertices are available, choose random one.
+firstInterVert = firstInterVert(randi([1, numel(firstInterVert)], 1));
+interTree = cat(1, [firstInterVert, interTree(1, 1)], interTree);
 
 % We need to implement following functions:
 % 1. Returns a list of vertices that are coindicent of a given vertex
@@ -32,6 +61,8 @@ countY = 5; % number of patches in the y-direction
 %       explored
 %   - there must not be crossing pair of rooftop and BC function
 
+%{
+% Simple pipeline for a tree generation
 tic;
 [vert, edg] = generateRectMeshGraph(countX, countY);
 toc;
@@ -43,6 +74,36 @@ toc;
 tic;
 tree = generateSpanningTreeDFS(adjMat, randi([1, numel(vert)], 1));
 toc;
+%}
+
+% Function that extracts the interior sub-graph from an M x N grid.
+function [intV, intE, info] = extractInteriorGrid(V, E, countX, countY)
+    % Map 1D vertex indices to 2D coordinates (xs, ys).
+    xs = mod(V - 1, countX) + 1;
+    ys = floor((V - 1) / countX) + 1;
+
+    % Find vertices that are strictly inside the boundary
+    % They must be greater than 1, and less than the max dimensions.
+    isInterior = (xs > 1) & (xs < countX) & (ys > 1) & (ys < countY);
+
+    % Extract the interior vertices (retaining their original graph
+    % indices).
+    intV = V(isInterior);
+
+    % xtract the boundary of the internal grid:
+    % The internal boundary is the outermost ring of the interior vertices.
+    isInternalBoundary = isInterior & ...
+        (xs == 2 | xs == (countX - 1) | ys == 2 | ys == (countY - 1));
+    info.boundaryVertices = V(isInternalBoundary);
+
+    % Filter the edges:
+    % Create a boolean lookup array for the interior status of any node.
+    isInteriorLookup = false(max(V), 1);
+    isInteriorLookup(intV) = true;
+
+    validEdges = isInteriorLookup(E(:, 1)) & isInteriorLookup(E(:, 2));
+    intE = E(validEdges, :);
+end
 
 % Generates a symmetric sparse adjacency matrix for an undirected graph
 function adjMatrix = generateAdjMatrix(V, E)
@@ -86,9 +147,9 @@ function treeEdges = generateSpanningTreeDFS(adjMatrix, seedVertex)
             stackSize = stackSize - 1;
         else
             % Branch: we choose a random unvisited adjacent vertex.
-            %nextVertex = unvisitedAdjVertices(randi([1, numel(unvisitedAdjVertices)], 1));
+            nextVertex = unvisitedAdjVertices(randi([1, numel(unvisitedAdjVertices)], 1));
             %nextVertex = max(unvisitedAdjVertices);
-            nextVertex = min(unvisitedAdjVertices);
+            %nextVertex = min(unvisitedAdjVertices);
 
             % Mark the nextVertex as visited.
             visitedVertices(nextVertex) = true;
@@ -104,9 +165,8 @@ function treeEdges = generateSpanningTreeDFS(adjMatrix, seedVertex)
     end
 end
 
-% Function that returns a graph of a rectangular 2D mesh grid.
-% V: Vector of vertex indices (1 to total vertices).
-% E: Nx2 matrix of edges connecting the vertices.
+% Function that returns a graph of a rectangular 2D mesh grid of size
+% countX by countY patches.
 function [V, E, info] = generateRectMeshGraph(countX, countY, removeBoundaryEdges)
     info = [];
 
@@ -117,9 +177,9 @@ function [V, E, info] = generateRectMeshGraph(countX, countY, removeBoundaryEdge
     % Calculate the total number of vertices in each direction.
     vertexCountX = countX + 1;
     vertexCountY = countY + 1;
-    totalVertices = vertexCountX * vertexCountY;
+    vertexCount = vertexCountX * vertexCountY;
 
-    V = (1:totalVertices).';
+    V = (1:vertexCount).';
 
     % Edges in the x-direction (horizontal):
     % Connect nodes to their rightward neighbor (k, k + 1).
@@ -148,6 +208,12 @@ function [V, E, info] = generateRectMeshGraph(countX, countY, removeBoundaryEdge
         % Keep only start nodes where the modulo is neither 1 (left) nor 0 (right).
         startNodesY = startNodesY(mod(startNodesY, vertexCountX) ~= 1 & mod(startNodesY, vertexCountX) ~= 0);
     end
+
+    % Store the boundary vertices.
+    boundaryVerticesY = (vertexCountX + 1):vertexCountX:(vertexCount - vertexCountX);
+    info.boundaryVertices = [1:vertexCountX, (vertexCount - vertexCountX + 1):vertexCount, ...
+        boundaryVerticesY, ...
+        boundaryVerticesY + vertexCountX - 1].';
 
     edgeY = [startNodesY, startNodesY + vertexCountX];
 
@@ -183,8 +249,8 @@ hold on;
 plot(xsRoofops(:), ysRooftop(:), "y.", "MarkerSize", 10, "LineWidth", 2);
 
 % Get the 1D indices for the start and end of every edge
-startNodes = tree(:, 1);
-endNodes   = tree(:, 2);
+startNodes = interTree(:, 1);
+endNodes = interTree(:, 2);
 
 % Extract the actual X and Y coordinates for those nodes
 xStarts = xs(startNodes);
