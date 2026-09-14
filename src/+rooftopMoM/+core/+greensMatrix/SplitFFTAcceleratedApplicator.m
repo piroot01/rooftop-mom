@@ -1,604 +1,168 @@
 classdef SplitFFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApplicator
+% SplitFFTAcceleratedApplicator: Applies the Green's matrix using the split (subband) FFT. It works with the subband
+%   spectra from MatrixData.generateSplitSpectralGreensMatrix, so only arrays of the (fast FFT) grid size are
+%   transformed and no zero-padding to the doubled circulant is needed.
+
     properties (Access = private)
-        gxxf_;
-        gxyf_;
-        gyxf_;
-        gyyf_;
-
-        determinant_;
-
-        % phase-shift arrays
-        pr_;
-        pc_;
-        prc_;
-        pcc_;
+        % Odd subband modulations in the x (column) and the y (row) direction and their complex conjugates.
+        modulationX_;
+        modulationY_;
+        demodulationX_;
+        demodulationY_;
     end
 
     methods
-        function obj = SplitFFTAcceleratedApplicator(context, matrixData)
-            obj@rooftopMoM.core.greensMatrix.GreensMatrixApplicator(context, matrixData);
+        function obj = SplitFFTAcceleratedApplicator(context, spectralMatrixData, rooftopContent)
+            obj@rooftopMoM.core.greensMatrix.GreensMatrixApplicator(context, spectralMatrixData, rooftopContent);
         end
     end
 
     methods
         function generate(obj)
-            primitive = obj.context_.rooftops().primitive();
-            [gridSizeX, gridSizeY] = primitive.gridSize();
+            [fftSizeX, fftSizeY] = obj.spectralMatrixData_(1).blockSize();
 
-            [magneticXXCirc, magneticYYCirc, electricCirc] = rooftopMoM.core.greensMatrix.utils.generateGreensMatrixCirculants(obj.matrixData_, gridSizeX + 1, gridSizeY + 1);
+            obj.modulationX_ = rooftopMoM.core.greensMatrix.utils.generateSubbandModulation(fftSizeX, 1);
+            obj.modulationY_ = rooftopMoM.core.greensMatrix.utils.generateSubbandModulation(fftSizeY, 2);
 
-            [gxxf, gxyf, gyxf, gyyf, determinant] = rooftopMoM.core.greensMatrix.utils.generateSpectralGreensMatrix( ...
-                magneticXXCirc, magneticYYCirc, electricCirc, ...
-                obj.matrixData_.rooftopContent(), ...
-                primitive.sizeX(), ...
-                primitive.sizeY() ...
-            );
-
-            % Subsample each of the matrices.
-            obj.gxxf_ = rooftopMoM.core.greensMatrix.utils.subsampleMatrix(gxxf);
-            clear gxxf;
-
-            obj.gxyf_ = rooftopMoM.core.greensMatrix.utils.subsampleMatrix(gxyf);
-            clear gxyf;
-
-            obj.gyxf_ = rooftopMoM.core.greensMatrix.utils.subsampleMatrix(gyxf);
-            clear gyxf;
-
-            obj.gyyf_ = rooftopMoM.core.greensMatrix.utils.subsampleMatrix(gyyf);
-            clear gyyf;
-
-            obj.determinant_ = rooftopMoM.core.greensMatrix.utils.subsampleMatrix(determinant);
-            clear determinant;
-
-            M = double(gridSizeX);
-            N = double(gridSizeY);
-
-            % Generate the phase-shift arrays.
-            kr = (0:(M - 1)).';
-            kc = (0:(N - 1));
-
-            obj.pr_ = exp(-1i * pi * kr / M);
-            obj.pc_ = exp(-1i * pi * kc / N);
-            obj.prc_ = conj(obj.pr_);
-            obj.pcc_ = conj(obj.pc_);
+            obj.demodulationX_ = conj(obj.modulationX_);
+            obj.demodulationY_ = conj(obj.modulationY_);
         end
 
         function output = apply(obj, input)
-            primitive = obj.context_.rooftops().primitive();
-            countX = primitive.countX();
-            countY = primitive.countY();
-
-            % all blocks of the greens matrix have same size
-            sizeX = obj.context_.rooftops().countDir('x');
-            sizeY = obj.context_.rooftops().countDir('y');
-
-            switch obj.matrixData_.rooftopContent()
+            switch obj.rooftopContent_
                 case rooftopMoM.basisFunctions.RooftopContent.XONLY
-                    inputXReshaped = zeros(countX, countY);
-                    inputXReshaped(1:(end - 1)) = input;
-
-                    inputXReshapedSpectr_e = fft(inputXReshaped, [], 1);
-                    inputXReshapedSpectr_o = fft(inputXReshaped .* obj.pr_, [], 1);
-                    clear inputXReshaped;
-
-                    % outputX = gxxf .* inputX
-                    outputXSpectr_ee = obj.gxxf_.ee .* inputXReshapedSpectr_e;
-                    outputXSpectr_eo = obj.gxxf_.eo .* inputXReshapedSpectr_e;
-                    clear inputXReshapedSpectr_e;
-                    outputXSpectr_oe = obj.gxxf_.oe .* inputXReshapedSpectr_o;
-                    outputXSpectr_oo = obj.gxxf_.oo .* inputXReshapedSpectr_o;
-                    clear inputXReshapedSpectr_o;
-
-                    outputXSpectr_e = outputXSpectr_ee + outputXSpectr_eo;
-                    clear outputXSpectr_ee outputXSpectr_eo;
-
-                    outputXSpectr_o = outputXSpectr_oe + outputXSpectr_oo;
-                    clear outputXSpectr_oe outputXSpectr_oo;
-
-                    outputX = 0.25 * (ifft(outputXSpectr_e, [], 1) + ifft(outputXSpectr_o, [], 1) .* obj.prc_);
-                    clear outputXSpectr_e outputXSpectr_o;
-
-                    output = outputX(1:sizeX);
+                    output = obj.applySingleDir_(input, ...
+                        obj.spectralMatrixData_(1).blockXX(), obj.spectralMatrixData_(2).blockXX(), ...
+                        obj.modulationX_, obj.demodulationX_);
                 case rooftopMoM.basisFunctions.RooftopContent.YONLY
-                    input = input.';
-                    inputYReshaped = zeros(countX, countY);
-                    inputYReshaped(1:(end - 1)) = input;
-
-                    inputYReshapedSpectr_e = fft(inputYReshaped, [], 2);
-                    inputYReshapedSpectr_o = fft(inputYReshaped .* obj.pc_, [], 2);
-
-                    outputYSpectr_ee = obj.gyyf_.ee .* inputYReshapedSpectr_e;
-                    outputYSpectr_oe = obj.gyyf_.oe .* inputYReshapedSpectr_e;
-                    clear inputYReshapedSpectr_e;
-                    outputYSpectr_eo = obj.gyyf_.eo .* inputYReshapedSpectr_o;
-                    outputYSpectr_oo = obj.gyyf_.oo .* inputYReshapedSpectr_o;
-                    clear inputYReshapedSpectr_o;
-
-                    outputYSpectr_e = outputYSpectr_ee + outputYSpectr_oe;
-                    clear outputYSpectr_ee outputYSpectr_oe;
-
-                    outputYSpectr_o = outputYSpectr_eo + outputYSpectr_oo;
-                    clear outputYSpectr_eo outputYSpectr_oo;
-
-                    outputY = 0.25 * (ifft(outputYSpectr_e, [], 2) + ifft(outputYSpectr_o, [], 2) .* obj.pcc_);
-                    clear outputYSpectr_e outputYSpectr_o;
-
-                    output = outputY(1:sizeY).';
+                    output = obj.applySingleDir_(input, ...
+                        obj.spectralMatrixData_(1).blockYY(), obj.spectralMatrixData_(2).blockYY(), ...
+                        obj.modulationY_, obj.demodulationY_);
                 case rooftopMoM.basisFunctions.RooftopContent.BOTH
-                    if countX >= countY
-                        % First we process the x direction of the input
-                        % We extend the input in x direction such that the size matches the subsampled greens matrix
-                        inputXReshaped = zeros(countX, countY);
-                        inputXReshaped(1:(end - 1), 1:end) = reshape(input(1:sizeX), countX - 1, countY);
-
-                        inputXReshapedSpectr_e = fft(inputXReshaped, [], 1);
-
-                        inputXReshapedSpectr_ee = fft(inputXReshapedSpectr_e, [], 2);
-                        inputXReshapedSpectr_eo = fft(inputXReshapedSpectr_e .* obj.pc_, [], 2);
-                        clear inputXReshapedSpectr_e;
-
-                        inputXReshapedSpectr_o = fft(inputXReshaped .* obj.pr_, [], 1);
-                        clear inputXReshaped;
-
-                        inputXReshapedSpectr_oe = fft(inputXReshapedSpectr_o, [], 2);
-                        inputXReshapedSpectr_oo = fft(inputXReshapedSpectr_o .* obj.pc_, [], 2);
-                        clear inputXReshapedSpectr_o;
-
-                        % outputX = gxxf .* inputX
-                        outputXSpectr_ee = obj.gxxf_.ee .* inputXReshapedSpectr_ee;
-                        outputXSpectr_eo = obj.gxxf_.eo .* inputXReshapedSpectr_eo;
-                        outputXSpectr_oe = obj.gxxf_.oe .* inputXReshapedSpectr_oe;
-                        outputXSpectr_oo = obj.gxxf_.oo .* inputXReshapedSpectr_oo;
-
-                        % outputY = gyxf .* inputX
-                        outputYSpectr_ee = obj.gyxf_.ee .* inputXReshapedSpectr_ee;
-                        clear inputXReshapedSpectr_ee;
-                        outputYSpectr_eo = obj.gyxf_.eo .* inputXReshapedSpectr_eo;
-                        clear inputXReshapedSpectr_eo;
-                        outputYSpectr_oe = obj.gyxf_.oe .* inputXReshapedSpectr_oe;
-                        clear inputXReshapedSpectr_oe;
-                        outputYSpectr_oo = obj.gyxf_.oo .* inputXReshapedSpectr_oo;
-                        clear inputXReshapedSpectr_oo;
-
-                        % Secondly we process the y direction of the input
-                        % The same logic as in x direction case
-                        inputYReshaped = zeros(countX, countY);
-                        inputYReshaped(1:end, 1:(end - 1)) = reshape(input((sizeX + 1):end), countX, countY - 1);
-
-                        inputYReshapedSpectr_e = fft(inputYReshaped, [], 1);
-
-                        inputYReshapedSpectr_ee = fft(inputYReshapedSpectr_e, [], 2);
-                        inputYReshapedSpectr_eo = fft(inputYReshapedSpectr_e .* obj.pc_, [], 2);
-                        clear inputYReshapedSpectr_e;
-
-                        inputYReshapedSpectr_o = fft(inputYReshaped .* obj.pr_, [], 1);
-                        clear inputYReshaped;
-
-                        inputYReshapedSpectr_oe = fft(inputYReshapedSpectr_o, [], 2);
-                        inputYReshapedSpectr_oo = fft(inputYReshapedSpectr_o .* obj.pc_, [], 2);
-                        clear inputYReshapedSpectr_o;
-
-                        % outputX = outputX + gxyf .* inputX;
-                        outputXSpectr_ee = outputXSpectr_ee + obj.gxyf_.ee .* inputYReshapedSpectr_ee;
-                        outputXSpectr_eo = outputXSpectr_eo + obj.gxyf_.eo .* inputYReshapedSpectr_eo;
-                        outputXSpectr_oe = outputXSpectr_oe + obj.gxyf_.oe .* inputYReshapedSpectr_oe;
-                        outputXSpectr_oo = outputXSpectr_oo + obj.gxyf_.oo .* inputYReshapedSpectr_oo;
-
-                        % outputY = gyyf .* inputY
-                        outputYSpectr_ee = outputYSpectr_ee + obj.gyyf_.ee .* inputYReshapedSpectr_ee;
-                        clear inputYReshapedSpectr_ee;
-                        outputYSpectr_eo = outputYSpectr_eo + obj.gyyf_.eo .* inputYReshapedSpectr_eo;
-                        clear inputYReshapedSpectr_eo;
-                        outputYSpectr_oe = outputYSpectr_oe + obj.gyyf_.oe .* inputYReshapedSpectr_oe;
-                        clear inputYReshapedSpectr_oe;
-                        outputYSpectr_oo = outputYSpectr_oo + obj.gyyf_.oo .* inputYReshapedSpectr_oo;
-                        clear inputYReshapedSpectr_oo;
-
-                        outputXSpectr_e = ifft(outputXSpectr_ee, [], 2) + ifft(outputXSpectr_eo, [], 2) .* obj.pcc_;
-                        clear outputXSpectr_ee outputXSpectr_eo;
-
-                        outputXSpectr_o = ifft(outputXSpectr_oe, [], 2) + ifft(outputXSpectr_oo, [], 2) .* obj.pcc_;
-                        clear outputXSpectr_oe outputXSpectr_oo;
-
-                        outputX = 0.25 * (ifft(outputXSpectr_e, [], 1) + ifft(outputXSpectr_o, [], 1) .* obj.prc_);
-                        clear outputXSpectr_e outputXSpectr_o;
-
-                        outputYSpectr_e = ifft(outputYSpectr_ee, [], 2) + ifft(outputYSpectr_eo, [], 2) .* obj.pcc_;
-                        clear outputYSpectr_ee outputYSpectr_eo;
-
-                        outputYSpectr_o = ifft(outputYSpectr_oe, [], 2) + ifft(outputYSpectr_oo, [], 2) .* obj.pcc_;
-                        clear outputYSpectr_oe outputYSpectr_oo;
-
-                        outputY = 0.25 * (ifft(outputYSpectr_e, [], 1) + ifft(outputYSpectr_o, [], 1) .* obj.prc_);
-                        clear outputYSpectr_e outputYSpectr_o;
-
-                        % Reshape back to column vectors
-                        outputX = outputX(1:(end - 1), 1:end);
-                        outputY = outputY(1:end, 1:(end - 1));
-
-                        output = [outputX(:); outputY(:)];
-                    else
-                        % First we process the x direction of the input
-                        % We extend the input in x direction such that the size matches the subsampled greens matrix
-                        inputXReshaped = zeros(countX, countY);
-                        inputXReshaped(1:(end - 1), 1:end) = reshape(input(1:sizeX), countX - 1, countY);
-
-                        inputXReshapedSpectr_e = fft(inputXReshaped, [], 2);
-
-                        inputXReshapedSpectr_ee = fft(inputXReshapedSpectr_e, [], 1);
-                        inputXReshapedSpectr_oe = fft(inputXReshapedSpectr_e .* obj.pr_, [], 1);
-                        clear inputXReshapedSpectr_e;
-
-                        inputXReshapedSpectr_o = fft(inputXReshaped .* obj.pc_, [], 2);
-                        clear inputXReshaped;
-
-                        inputXReshapedSpectr_eo = fft(inputXReshapedSpectr_o, [], 1);
-                        inputXReshapedSpectr_oo = fft(inputXReshapedSpectr_o .* obj.pr_, [], 1);
-                        clear inputXReshapedSpectr_o;
-
-                        % outputX = gxxf .* inputX
-                        outputXSpectr_ee = obj.gxxf_.ee .* inputXReshapedSpectr_ee;
-                        outputXSpectr_eo = obj.gxxf_.eo .* inputXReshapedSpectr_eo;
-                        outputXSpectr_oe = obj.gxxf_.oe .* inputXReshapedSpectr_oe;
-                        outputXSpectr_oo = obj.gxxf_.oo .* inputXReshapedSpectr_oo;
-
-                        % outputY = gyxf .* inputX
-                        outputYSpectr_ee = obj.gyxf_.ee .* inputXReshapedSpectr_ee;
-                        clear inputXReshapedSpectr_ee;
-                        outputYSpectr_eo = obj.gyxf_.eo .* inputXReshapedSpectr_eo;
-                        clear inputXReshapedSpectr_eo;
-                        outputYSpectr_oe = obj.gyxf_.oe .* inputXReshapedSpectr_oe;
-                        clear inputXReshapedSpectr_oe;
-                        outputYSpectr_oo = obj.gyxf_.oo .* inputXReshapedSpectr_oo;
-                        clear inputXReshapedSpectr_oo;
-
-                        % Secondly we process the y direction of the input
-                        % The same logic as in x direction case
-                        inputYReshaped = zeros(countX, countY);
-                        inputYReshaped(1:end, 1:(end - 1)) = reshape(input((sizeX + 1):end), countX, countY - 1);
-
-                        inputYReshapedSpectr_e = fft(inputYReshaped, [], 2);
-
-                        inputYReshapedSpectr_ee = fft(inputYReshapedSpectr_e, [], 1);
-                        inputYReshapedSpectr_oe = fft(inputYReshapedSpectr_e .* obj.pr_, [], 1);
-                        clear inputYReshapedSpectr_e;
-
-                        inputYReshapedSpectr_o = fft(inputYReshaped .* obj.pc_, [], 2);
-                        clear inputYReshaped;
-
-                        inputYReshapedSpectr_eo = fft(inputYReshapedSpectr_o, [], 1);
-                        inputYReshapedSpectr_oo = fft(inputYReshapedSpectr_o .* obj.pr_, [], 1);
-                        clear inputYReshapedSpectr_o;
-
-                        % outputX = outputX + gxyf .* inputX;
-                        outputXSpectr_ee = outputXSpectr_ee + obj.gxyf_.ee .* inputYReshapedSpectr_ee;
-                        outputXSpectr_eo = outputXSpectr_eo + obj.gxyf_.eo .* inputYReshapedSpectr_eo;
-                        outputXSpectr_oe = outputXSpectr_oe + obj.gxyf_.oe .* inputYReshapedSpectr_oe;
-                        outputXSpectr_oo = outputXSpectr_oo + obj.gxyf_.oo .* inputYReshapedSpectr_oo;
-
-                        % outputY = gyyf .* inputY
-                        outputYSpectr_ee = outputYSpectr_ee + obj.gyyf_.ee .* inputYReshapedSpectr_ee;
-                        clear inputYReshapedSpectr_ee;
-                        outputYSpectr_eo = outputYSpectr_eo + obj.gyyf_.eo .* inputYReshapedSpectr_eo;
-                        clear inputYReshapedSpectr_eo;
-                        outputYSpectr_oe = outputYSpectr_oe + obj.gyyf_.oe .* inputYReshapedSpectr_oe;
-                        clear inputYReshapedSpectr_oe;
-                        outputYSpectr_oo = outputYSpectr_oo + obj.gyyf_.oo .* inputYReshapedSpectr_oo;
-                        clear inputYReshapedSpectr_oo;
-
-                        outputXSpectr_e = ifft(outputXSpectr_ee, [], 1) + ifft(outputXSpectr_oe, [], 1) .* obj.prc_;
-                        clear outputXSpectr_ee outputXSpectr_oe;
-
-                        outputXSpectr_o = ifft(outputXSpectr_eo, [], 1) + ifft(outputXSpectr_oo, [], 1) .* obj.prc_;
-                        clear outputXSpectr_eo outputXSpectr_oo;
-
-                        outputX = 0.25 * (ifft(outputXSpectr_e, [], 2) + ifft(outputXSpectr_o, [], 2) .* obj.pcc_);
-                        clear outputXSpectr_e outputXSpectr_o;
-
-                        outputYSpectr_e = ifft(outputYSpectr_ee, [], 1) + ifft(outputYSpectr_oe, [], 1) .* obj.prc_;
-                        clear outputYSpectr_ee outputYSpectr_oe;
-
-                        outputYSpectr_o = ifft(outputYSpectr_eo, [], 1) + ifft(outputYSpectr_oo, [], 1) .* obj.prc_;
-                        clear outputYSpectr_eo outputYSpectr_oo;
-
-                        outputY = 0.25 * (ifft(outputYSpectr_e, [], 2) + ifft(outputYSpectr_o, [], 2) .* obj.pcc_);
-                        clear outputYSpectr_e outputYSpectr_o;
-
-                        % Reshape back to column vectors
-                        outputX = outputX(1:(end - 1), 1:end);
-                        outputY = outputY(1:end, 1:(end - 1));
-
-                        output = [outputX(:); outputY(:)];
-
-                    end
+                    output = obj.applyBothDirs_(input);
                 otherwise
-                    error('Unknown rooftop content: %s', rooftopContent);
+                    error('Unknown rooftop content: %s', char(obj.rooftopContent_));
             end
         end
+    end
 
-        function output = applyPreconditioner(obj, input)
+    methods (Access = private)
+        function output = applySingleDir_(~, input, evenBlock, oddBlock, modulation, demodulation)
+        % applySingleDir_: Applies the Green's matrix of the rooftops oriented in a single direction.
+        %
+        %   Inputs:
+        %       input: Nx1 vector of the rooftop coefficients.
+        %       evenBlock: Spectral block of the even subband (column vector for XONLY, row vector for YONLY).
+        %       oddBlock: Spectral block of the odd subband with the same shape as evenBlock.
+        %       modulation: Odd subband modulation with the same shape as evenBlock.
+        %       demodulation: Complex conjugate of the modulation.
+        %
+        %   Output:
+        %       output: Nx1 vector of the Green's matrix product.
+
+            count = numel(input);
+
+            % Zero-extend the input to the subband size and orient it as the blocks.
+            input(numel(evenBlock)) = 0;
+            input = reshape(input, size(evenBlock));
+
+            output = ifft(evenBlock .* fft(input));
+
+            input = input .* modulation;
+            output = output + ifft(oddBlock .* fft(input)) .* demodulation;
+
+            output = reshape(output(1:count), [], 1);
+        end
+
+        function output = applyBothDirs_(obj, input)
+        % applyBothDirs_: Applies the Green's matrix of the x- and y-directed rooftops.
+        %
+        %   Input:
+        %       input: Nx1 vector of the rooftop coefficients, the x-directed rooftops first.
+        %
+        %   Output:
+        %       output: Nx1 vector of the Green's matrix product.
+        %
+        %   NOTE: The y direction is split first (2 FFTs per component) and the x direction second (4 FFTs per
+        %       component along the contiguous columns), which is the faster order. Both components are written
+        %       out explicitly and the arrays are cleared as soon as possible to keep the operations in place.
+
             primitive = obj.context_.rooftops().primitive();
-            countX = primitive.countX();
-            countY = primitive.countY();
+            countX = double(primitive.countX());
+            countY = double(primitive.countY());
 
-            % all blocks of the greens matrix have same size
-            sizeX = obj.context_.rooftops().countDir('x');
-            sizeY = obj.context_.rooftops().countDir('y');
+            [fftSizeX, fftSizeY] = obj.spectralMatrixData_(1).blockSize();
+            inputCountX = (countX - 1) * countY;
 
-            switch obj.matrixData_.rooftopContent()
-                case rooftopMoM.basisFunctions.RooftopContent.XONLY
-                    inputXReshaped = zeros(countX, countY);
-                    inputXReshaped(1:(end - 1)) = input;
+            % Zero-extend both components to the subband grid.
+            inputX = reshape(input(1:inputCountX), countX - 1, countY);
+            inputX(fftSizeX, fftSizeY) = 0;
 
-                    inputXReshapedSpectr_e = fft(inputXReshaped, [], 1);
-                    inputXReshapedSpectr_o = fft(inputXReshaped .* obj.pr_, [], 1);
-                    clear inputXReshaped;
+            inputY = reshape(input((inputCountX + 1):end), countX, countY - 1);
+            inputY(fftSizeX, fftSizeY) = 0;
 
-                    % outputX = gxxf .* inputX
-                    outputXSpectr_ee = inputXReshapedSpectr_e ./ obj.gxxf_.ee;
-                    outputXSpectr_eo = inputXReshapedSpectr_e ./ obj.gxxf_.eo;
-                    clear inputXReshapedSpectr_e;
-                    outputXSpectr_oe = inputXReshapedSpectr_o ./ obj.gxxf_.oe;
-                    outputXSpectr_oo = inputXReshapedSpectr_o ./ obj.gxxf_.oo;
-                    clear inputXReshapedSpectr_o;
+            for parityY = 0:1
+                if parityY
+                    inputX = inputX .* obj.modulationY_;
+                    inputY = inputY .* obj.modulationY_;
+                end
 
-                    outputXSpectr_e = outputXSpectr_ee + outputXSpectr_eo;
-                    clear outputXSpectr_ee outputXSpectr_eo;
+                spectrumX = fft(inputX, [], 2);
+                spectrumY = fft(inputY, [], 2);
 
-                    outputXSpectr_o = outputXSpectr_oe + outputXSpectr_oo;
-                    clear outputXSpectr_oe outputXSpectr_oo;
+                if parityY
+                    clear inputX inputY;
+                end
 
-                    outputX = 0.25 * (ifft(outputXSpectr_e, [], 1) + ifft(outputXSpectr_o, [], 1) .* obj.prc_);
-                    clear outputXSpectr_e outputXSpectr_o;
-
-                    output = outputX(1:sizeX);
-                case rooftopMoM.basisFunctions.RooftopContent.YONLY
-                    input = input.';
-                    inputYReshaped = zeros(countX, countY);
-                    inputYReshaped(1:(end - 1)) = input;
-
-                    inputYReshapedSpectr_e = fft(inputYReshaped, [], 2);
-                    inputYReshapedSpectr_o = fft(inputYReshaped .* obj.pc_, [], 2);
-
-                    outputYSpectr_ee = inputYReshapedSpectr_e ./ obj.gyyf_.ee;
-                    outputYSpectr_oe = inputYReshapedSpectr_e ./ obj.gyyf_.oe;
-                    clear inputYReshapedSpectr_e;
-                    outputYSpectr_eo = inputYReshapedSpectr_o ./ obj.gyyf_.eo;
-                    outputYSpectr_oo = inputYReshapedSpectr_o ./ obj.gyyf_.oo;
-                    clear inputYReshapedSpectr_o;
-
-                    outputYSpectr_e = outputYSpectr_ee + outputYSpectr_oe;
-                    clear outputYSpectr_ee outputYSpectr_oe;
-
-                    outputYSpectr_o = outputYSpectr_eo + outputYSpectr_oo;
-                    clear outputYSpectr_eo outputYSpectr_oo;
-
-                    outputY = 0.25 * (ifft(outputYSpectr_e, [], 2) + ifft(outputYSpectr_o, [], 2) .* obj.pcc_);
-                    clear outputYSpectr_e outputYSpectr_o;
-
-                    output = outputY(1:sizeY).';
-                case rooftopMoM.basisFunctions.RooftopContent.BOTH
-                    if countX >= countY
-                        % First we process the x direction of the input
-                        % We extend the input in x direction such that the size matches the subsampled greens matrix
-                        inputXReshaped = zeros(countX, countY);
-                        inputXReshaped(1:(end - 1), 1:end) = reshape(input(1:sizeX), countX - 1, countY);
-
-                        inputXReshapedSpectr_e = fft(inputXReshaped, [], 1);
-
-                        inputXReshapedSpectr_ee = fft(inputXReshapedSpectr_e, [], 2);
-                        inputXReshapedSpectr_eo = fft(inputXReshapedSpectr_e .* obj.pc_, [], 2);
-                        clear inputXReshapedSpectr_e;
-
-                        inputXReshapedSpectr_o = fft(inputXReshaped .* obj.pr_, [], 1);
-                        clear inputXReshaped;
-
-                        inputXReshapedSpectr_oe = fft(inputXReshapedSpectr_o, [], 2);
-                        inputXReshapedSpectr_oo = fft(inputXReshapedSpectr_o .* obj.pc_, [], 2);
-                        clear inputXReshapedSpectr_o;
-
-                        % outputX = gxxf .* inputX
-                        outputXSpectr_ee = obj.gyyf_.ee .* inputXReshapedSpectr_ee;
-                        outputXSpectr_eo = obj.gyyf_.eo .* inputXReshapedSpectr_eo;
-                        outputXSpectr_oe = obj.gyyf_.oe .* inputXReshapedSpectr_oe;
-                        outputXSpectr_oo = obj.gyyf_.oo .* inputXReshapedSpectr_oo;
-
-                        % outputY = gyxf .* inputX
-                        outputYSpectr_ee = (-1) * obj.gyxf_.ee .* inputXReshapedSpectr_ee;
-                        clear inputXReshapedSpectr_ee;
-                        outputYSpectr_eo = (-1) * obj.gyxf_.eo .* inputXReshapedSpectr_eo;
-                        clear inputXReshapedSpectr_eo;
-                        outputYSpectr_oe = (-1) * obj.gyxf_.oe .* inputXReshapedSpectr_oe;
-                        clear inputXReshapedSpectr_oe;
-                        outputYSpectr_oo = (-1) * obj.gyxf_.oo .* inputXReshapedSpectr_oo;
-                        clear inputXReshapedSpectr_oo;
-
-                        % Secondly we process the y direction of the input
-                        % The same logic as in x direction case
-                        inputYReshaped = zeros(countX, countY);
-                        inputYReshaped(1:end, 1:(end - 1)) = reshape(input((sizeX + 1):end), countX, countY - 1);
-
-                        inputYReshapedSpectr_e = fft(inputYReshaped, [], 1);
-
-                        inputYReshapedSpectr_ee = fft(inputYReshapedSpectr_e, [], 2);
-                        inputYReshapedSpectr_eo = fft(inputYReshapedSpectr_e .* obj.pc_, [], 2);
-                        clear inputYReshapedSpectr_e;
-
-                        inputYReshapedSpectr_o = fft(inputYReshaped .* obj.pr_, [], 1);
-                        clear inputYReshaped;
-
-                        inputYReshapedSpectr_oe = fft(inputYReshapedSpectr_o, [], 2);
-                        inputYReshapedSpectr_oo = fft(inputYReshapedSpectr_o .* obj.pc_, [], 2);
-                        clear inputYReshapedSpectr_o;
-
-                        % outputX = outputX + gxyf .* inputX;
-                        outputXSpectr_ee = outputXSpectr_ee - obj.gxyf_.ee .* inputYReshapedSpectr_ee;
-                        outputXSpectr_eo = outputXSpectr_eo - obj.gxyf_.eo .* inputYReshapedSpectr_eo;
-                        outputXSpectr_oe = outputXSpectr_oe - obj.gxyf_.oe .* inputYReshapedSpectr_oe;
-                        outputXSpectr_oo = outputXSpectr_oo - obj.gxyf_.oo .* inputYReshapedSpectr_oo;
-
-                        % outputY = gyyf .* inputY
-                        outputYSpectr_ee = outputYSpectr_ee + obj.gxxf_.ee .* inputYReshapedSpectr_ee;
-                        clear inputYReshapedSpectr_ee;
-                        outputYSpectr_eo = outputYSpectr_eo + obj.gxxf_.eo .* inputYReshapedSpectr_eo;
-                        clear inputYReshapedSpectr_eo;
-                        outputYSpectr_oe = outputYSpectr_oe + obj.gxxf_.oe .* inputYReshapedSpectr_oe;
-                        clear inputYReshapedSpectr_oe;
-                        outputYSpectr_oo = outputYSpectr_oo + obj.gxxf_.oo .* inputYReshapedSpectr_oo;
-                        clear inputYReshapedSpectr_oo;
-
-                        outputXSpectr_ee = outputXSpectr_ee ./ obj.determinant_.ee;
-                        outputXSpectr_eo = outputXSpectr_eo ./ obj.determinant_.eo;
-                        outputXSpectr_oe = outputXSpectr_oe ./ obj.determinant_.oe;
-                        outputXSpectr_oo = outputXSpectr_oo ./ obj.determinant_.oo;
-
-                        outputYSpectr_ee = outputYSpectr_ee ./ obj.determinant_.ee;
-                        outputYSpectr_eo = outputYSpectr_eo ./ obj.determinant_.eo;
-                        outputYSpectr_oe = outputYSpectr_oe ./ obj.determinant_.oe;
-                        outputYSpectr_oo = outputYSpectr_oo ./ obj.determinant_.oo;
-
-                        outputXSpectr_e = ifft(outputXSpectr_ee, [], 2) + ifft(outputXSpectr_eo, [], 2) .* obj.pcc_;
-                        clear outputXSpectr_ee outputXSpectr_eo;
-
-                        outputXSpectr_o = ifft(outputXSpectr_oe, [], 2) + ifft(outputXSpectr_oo, [], 2) .* obj.pcc_;
-                        clear outputXSpectr_oe outputXSpectr_oo;
-
-                        outputX = 0.25 * (ifft(outputXSpectr_e, [], 1) + ifft(outputXSpectr_o, [], 1) .* obj.prc_);
-                        clear outputXSpectr_e outputXSpectr_o;
-
-                        outputYSpectr_e = ifft(outputYSpectr_ee, [], 2) + ifft(outputYSpectr_eo, [], 2) .* obj.pcc_;
-                        clear outputYSpectr_ee outputYSpectr_eo;
-
-                        outputYSpectr_o = ifft(outputYSpectr_oe, [], 2) + ifft(outputYSpectr_oo, [], 2) .* obj.pcc_;
-                        clear outputYSpectr_oe outputYSpectr_oo;
-
-                        outputY = 0.25 * (ifft(outputYSpectr_e, [], 1) + ifft(outputYSpectr_o, [], 1) .* obj.prc_);
-                        clear outputYSpectr_e outputYSpectr_o;
-
-                        % Reshape back to column vectors
-                        outputX = outputX(1:(end - 1), 1:end);
-                        outputY = outputY(1:end, 1:(end - 1));
-
-                        output = [outputX(:); outputY(:)];
-                    else
-                        % First we process the x direction of the input
-                        % We extend the input in x direction such that the size matches the subsampled greens matrix
-                        inputXReshaped = zeros(countX, countY);
-                        inputXReshaped(1:(end - 1), 1:end) = reshape(input(1:sizeX), countX - 1, countY);
-
-                        inputXReshapedSpectr_e = fft(inputXReshaped, [], 2);
-
-                        inputXReshapedSpectr_ee = fft(inputXReshapedSpectr_e, [], 1);
-                        inputXReshapedSpectr_oe = fft(inputXReshapedSpectr_e .* obj.pr_, [], 1);
-                        clear inputXReshapedSpectr_e;
-
-                        inputXReshapedSpectr_o = fft(inputXReshaped .* obj.pc_, [], 2);
-                        clear inputXReshaped;
-
-                        inputXReshapedSpectr_eo = fft(inputXReshapedSpectr_o, [], 1);
-                        inputXReshapedSpectr_oo = fft(inputXReshapedSpectr_o .* obj.pr_, [], 1);
-                        clear inputXReshapedSpectr_o;
-
-                        % outputX = gxxf .* inputX
-                        outputXSpectr_ee = obj.gyyf_.ee .* inputXReshapedSpectr_ee;
-                        outputXSpectr_eo = obj.gyyf_.eo .* inputXReshapedSpectr_eo;
-                        outputXSpectr_oe = obj.gyyf_.oe .* inputXReshapedSpectr_oe;
-                        outputXSpectr_oo = obj.gyyf_.oo .* inputXReshapedSpectr_oo;
-
-                        % outputY = gyxf .* inputX
-                        outputYSpectr_ee = (-1) * obj.gyxf_.ee .* inputXReshapedSpectr_ee;
-                        clear inputXReshapedSpectr_ee;
-                        outputYSpectr_eo = (-1) * obj.gyxf_.eo .* inputXReshapedSpectr_eo;
-                        clear inputXReshapedSpectr_eo;
-                        outputYSpectr_oe = (-1) * obj.gyxf_.oe .* inputXReshapedSpectr_oe;
-                        clear inputXReshapedSpectr_oe;
-                        outputYSpectr_oo = (-1) * obj.gyxf_.oo .* inputXReshapedSpectr_oo;
-                        clear inputXReshapedSpectr_oo;
-
-                        % Secondly we process the y direction of the input
-                        % The same logic as in x direction case
-                        inputYReshaped = zeros(countX, countY);
-                        inputYReshaped(1:end, 1:(end - 1)) = reshape(input((sizeX + 1):end), countX, countY - 1);
-
-                        inputYReshapedSpectr_e = fft(inputYReshaped, [], 2);
-
-                        inputYReshapedSpectr_ee = fft(inputYReshapedSpectr_e, [], 1);
-                        inputYReshapedSpectr_oe = fft(inputYReshapedSpectr_e .* obj.pr_, [], 1);
-                        clear inputYReshapedSpectr_e;
-
-                        inputYReshapedSpectr_o = fft(inputYReshaped .* obj.pc_, [], 2);
-                        clear inputYReshaped;
-
-                        inputYReshapedSpectr_eo = fft(inputYReshapedSpectr_o, [], 1);
-                        inputYReshapedSpectr_oo = fft(inputYReshapedSpectr_o .* obj.pr_, [], 1);
-                        clear inputYReshapedSpectr_o;
-
-                        % outputX = outputX + gxyf .* inputX;
-                        outputXSpectr_ee = outputXSpectr_ee - obj.gxyf_.ee .* inputYReshapedSpectr_ee;
-                        outputXSpectr_eo = outputXSpectr_eo - obj.gxyf_.eo .* inputYReshapedSpectr_eo;
-                        outputXSpectr_oe = outputXSpectr_oe - obj.gxyf_.oe .* inputYReshapedSpectr_oe;
-                        outputXSpectr_oo = outputXSpectr_oo - obj.gxyf_.oo .* inputYReshapedSpectr_oo;
-
-                        % outputY = gyyf .* inputY
-                        outputYSpectr_ee = outputYSpectr_ee + obj.gxxf_.ee .* inputYReshapedSpectr_ee;
-                        clear inputYReshapedSpectr_ee;
-                        outputYSpectr_eo = outputYSpectr_eo + obj.gxxf_.eo .* inputYReshapedSpectr_eo;
-                        clear inputYReshapedSpectr_eo;
-                        outputYSpectr_oe = outputYSpectr_oe + obj.gxxf_.oe .* inputYReshapedSpectr_oe;
-                        clear inputYReshapedSpectr_oe;
-                        outputYSpectr_oo = outputYSpectr_oo + obj.gxxf_.oo .* inputYReshapedSpectr_oo;
-                        clear inputYReshapedSpectr_oo;
-
-                        outputXSpectr_ee = outputXSpectr_ee ./ obj.determinant_.ee;
-                        outputXSpectr_eo = outputXSpectr_eo ./ obj.determinant_.eo;
-                        outputXSpectr_oe = outputXSpectr_oe ./ obj.determinant_.oe;
-                        outputXSpectr_oo = outputXSpectr_oo ./ obj.determinant_.oo;
-
-                        outputYSpectr_ee = outputYSpectr_ee ./ obj.determinant_.ee;
-                        outputYSpectr_eo = outputYSpectr_eo ./ obj.determinant_.eo;
-                        outputYSpectr_oe = outputYSpectr_oe ./ obj.determinant_.oe;
-                        outputYSpectr_oo = outputYSpectr_oo ./ obj.determinant_.oo;
-
-                        outputXSpectr_e = ifft(outputXSpectr_ee, [], 1) + ifft(outputXSpectr_oe, [], 1) .* obj.prc_;
-                        clear outputXSpectr_ee outputXSpectr_oe;
-
-                        outputXSpectr_o = ifft(outputXSpectr_eo, [], 1) + ifft(outputXSpectr_oo, [], 1) .* obj.prc_;
-                        clear outputXSpectr_eo outputXSpectr_oo;
-
-                        outputX = 0.25 * (ifft(outputXSpectr_e, [], 2) + ifft(outputXSpectr_o, [], 2) .* obj.pcc_);
-                        clear outputXSpectr_e outputXSpectr_o;
-
-                        outputYSpectr_e = ifft(outputYSpectr_ee, [], 1) + ifft(outputYSpectr_oe, [], 1) .* obj.prc_;
-                        clear outputYSpectr_ee outputYSpectr_oe;
-
-                        outputYSpectr_o = ifft(outputYSpectr_eo, [], 1) + ifft(outputYSpectr_oo, [], 1) .* obj.prc_;
-                        clear outputYSpectr_eo outputYSpectr_oo;
-
-                        outputY = 0.25 * (ifft(outputYSpectr_e, [], 2) + ifft(outputYSpectr_o, [], 2) .* obj.pcc_);
-                        clear outputYSpectr_e outputYSpectr_o;
-
-                        % Reshape back to column vectors
-                        outputX = outputX(1:(end - 1), 1:end);
-                        outputY = outputY(1:end, 1:(end - 1));
-
-                        output = [outputX(:); outputY(:)];
+                for parityX = 0:1
+                    if parityX
+                        spectrumX = spectrumX .* obj.modulationX_;
+                        spectrumY = spectrumY .* obj.modulationX_;
                     end
-                otherwise
-                    error('Unknown rooftop content: %s', rooftopContent);
-            end
-        end
 
-        function varargout = inputSize(obj)
-            if nargout <= 1
-                varargout{1} = obj.context_.rooftops().count();
-            elseif nargout == 2
-                varargout{1} = obj.context_.rooftops().count();
-                varargout{2} = 1;
-            end
-        end
+                    subbandX = fft(spectrumX, [], 1);
+                    subbandY = fft(spectrumY, [], 1);
 
-        function memory = memory(obj)
-            % TODO: implement
+                    if parityX
+                        clear spectrumX spectrumY;
+                    end
+
+                    blocks = obj.spectralMatrixData_(1 + parityX + 2 * parityY);
+
+                    subbandOutputX = ifft(blocks.blockXX() .* subbandX + blocks.blockXY() .* subbandY, [], 1);
+                    subbandOutputY = ifft(blocks.blockYX() .* subbandX + blocks.blockYY() .* subbandY, [], 1);
+
+                    clear subbandX subbandY;
+
+                    if parityX
+                        spectrumOutputX = spectrumOutputX + subbandOutputX .* obj.demodulationX_;
+                        spectrumOutputY = spectrumOutputY + subbandOutputY .* obj.demodulationX_;
+                    else
+                        spectrumOutputX = subbandOutputX;
+                        spectrumOutputY = subbandOutputY;
+                    end
+
+                    clear subbandOutputX subbandOutputY;
+                end
+
+                spectrumOutputX = ifft(spectrumOutputX, [], 2);
+                spectrumOutputY = ifft(spectrumOutputY, [], 2);
+
+                if parityY
+                    outputX = outputX + spectrumOutputX .* obj.demodulationY_;
+                    outputY = outputY + spectrumOutputY .* obj.demodulationY_;
+                else
+                    outputX = spectrumOutputX;
+                    outputY = spectrumOutputY;
+                end
+
+                clear spectrumOutputX spectrumOutputY;
+            end
+
+            outputX = outputX(1:(countX - 1), 1:countY);
+            outputY = outputY(1:countX, 1:(countY - 1));
+
+            output = [outputX(:); outputY(:)];
         end
     end
 end

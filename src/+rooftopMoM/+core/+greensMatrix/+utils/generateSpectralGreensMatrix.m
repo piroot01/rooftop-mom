@@ -1,4 +1,18 @@
 function spectralMatrixData = generateSpectralGreensMatrix(magneticXXCirc, magneticYYCirc, electricCirc, rooftopContent, faceSizeX, faceSizeY)
+% generateSpectralGreensMatrix: Generates the spectral blocks of the Green's matrix from the circulant embeddings
+%   of its parts.
+%
+%   Inputs:
+%       magneticXXCirc: Circulant embedding of the magnetic part of the x-directed rooftops (may be empty).
+%       magneticYYCirc: Circulant embedding of the magnetic part of the y-directed rooftops (may be empty).
+%       electricCirc: Circulant embedding of the electric part (may be empty).
+%       rooftopContent: RooftopContent specifying which blocks are generated.
+%       faceSizeX: Face size in the x direction.
+%       faceSizeY: Face size in the y direction.
+%
+%   Output:
+%       spectralMatrixData: SpectralMatrixData with the blocks XX, XY, YX and YY.
+
     if ~isempty(electricCirc)
         [circSizeX, circSizeY] = size(electricCirc);
     elseif ~isempty(magneticXXCirc)
@@ -9,59 +23,11 @@ function spectralMatrixData = generateSpectralGreensMatrix(magneticXXCirc, magne
         error('At least one of the circulants must be nonempty!');
     end
 
-    % Compute Spectra (FFT) & Sanitize
-    magneticXXCircSpectr = fft2(magneticXXCirc);
-    if isempty(magneticXXCircSpectr)
-        magneticXXCircSpectr = 0;
-    end
+    [forwardShiftX, ~, forwardShiftY, ~] = ...
+        rooftopMoM.core.greensMatrix.utils.generateSpectralShiftVectors(circSizeX, circSizeY, 0, 0);
 
-    magneticYYCircSpectr = fft2(magneticYYCirc);
-    if isempty(magneticYYCircSpectr)
-        magneticYYCircSpectr = 0;
-    end
-
-    electricCircSpectr = fft2(electricCirc);
-    if isempty(electricCircSpectr)
-        electricCircSpectr = 0;
-    end
-
-    % Generate Shift Operators (Calculate once, use everywhere)
-    [forwardShiftX, backwardShiftX, forwardShiftY, backwardShiftY] = ...
-        rooftopMoM.core.greensMatrix.utils.generateSpectralShiftOperators(circSizeX, circSizeY);
-
-    % Determine Active Modes
-    isXActive = (rooftopContent == rooftopMoM.basisFunctions.RooftopContent.XONLY) || ...
-        (rooftopContent == rooftopMoM.basisFunctions.RooftopContent.BOTH);
-
-    isYActive = (rooftopContent == rooftopMoM.basisFunctions.RooftopContent.YONLY) || ...
-        (rooftopContent == rooftopMoM.basisFunctions.RooftopContent.BOTH);
-
-    blockXX = []; blockXY = []; blockYX = []; blockYY = [];
-
-    % Compute XX Component
-    if isXActive
-        termMagnetic = magneticXXCircSpectr;
-        termElectric = (1 / faceSizeX)^2 .* (1 - forwardShiftX) .* (backwardShiftX - 1) .* electricCircSpectr;
-        blockXX = termMagnetic + termElectric;
-    end
-
-    % Compute YY Component
-    if isYActive
-        termMagnetic = magneticYYCircSpectr;
-        termElectric = (1 / faceSizeY)^2 .* (1 - forwardShiftY) .* (backwardShiftY - 1) .* electricCircSpectr;
-        blockYY = termMagnetic + termElectric;
-    end
-
-    % Compute Cross-Coupling (XY / YX)
-    if isXActive && isYActive
-        blockXY = (1 / (faceSizeX * faceSizeY)) .* (1 - forwardShiftX) .* (backwardShiftY - 1) .* electricCircSpectr;
-        blockYX = (1 / (faceSizeY * faceSizeX)) .* (1 - forwardShiftY) .* (backwardShiftX - 1) .* electricCircSpectr;
-    end
-
-    spectralMatrixData = rooftopMoM.core.greensMatrix.SpectralMatrixData( ...
-        'blockXX', blockXX, ...
-        'blockXY', blockXY, ...
-        'blockYX', blockYX, ...
-        'blockYY', blockYY ...
+    spectralMatrixData = rooftopMoM.core.greensMatrix.utils.generateSpectralMatrixData( ...
+        fft2(magneticXXCirc), fft2(magneticYYCirc), fft2(electricCirc), ...
+        rooftopContent, faceSizeX, faceSizeY, forwardShiftX, forwardShiftY ...
     );
 end

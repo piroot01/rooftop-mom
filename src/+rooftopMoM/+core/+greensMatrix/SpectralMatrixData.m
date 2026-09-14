@@ -53,6 +53,31 @@ classdef SpectralMatrixData < handle
             sizeX = 0; 
             sizeY = 0;
         end
+
+        function memory = memory(obj)
+        % memory: Returns the memory occupied by the spectral blocks.
+        %
+        %   Output:
+        %       memory: rooftopMoM.Memory of the blocks of all elements of the (array) object.
+
+            bytes = 0;
+
+            for n = 1:numel(obj)
+                blocks = {obj(n).blockXX_, obj(n).blockXY_, obj(n).blockYX_, obj(n).blockYY_};
+
+                for m = 1:numel(blocks)
+                    if isreal(blocks{m})
+                        dataType = rooftopMoM.DataTypeMemory.Double;
+                    else
+                        dataType = rooftopMoM.DataTypeMemory.ComplexDouble;
+                    end
+
+                    bytes = bytes + numel(blocks{m}) * rooftopMoM.DataTypeMemory.memory(dataType).bytes();
+                end
+            end
+
+            memory = rooftopMoM.Memory(bytes, 'B');
+        end
     end
 
     methods

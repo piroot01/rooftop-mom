@@ -1,13 +1,7 @@
 classdef FFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApplicator
-    properties
-        rooftopContent_ rooftopMoM.basisFunctions.RooftopContent;
-    end
-
     methods
         function obj = FFTAcceleratedApplicator(context, spectralMatrixData, rooftopContent)
-            obj@rooftopMoM.core.greensMatrix.GreensMatrixApplicator(context, spectralMatrixData);
-
-            obj.rooftopContent_ = rooftopContent;
+            obj@rooftopMoM.core.greensMatrix.GreensMatrixApplicator(context, spectralMatrixData, rooftopContent);
         end
     end
 
@@ -100,23 +94,6 @@ classdef FFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApp
                 otherwise
                     error('Unknown rooftop content: %s', rooftopContent);
             end
-        end
-
-        function varargout = inputSize(obj)
-            if nargout <= 1
-                varargout{1} = obj.context_.rooftops().count();
-            elseif nargout == 2
-                varargout{1} = obj.context_.rooftops().count();
-                varargout{2} = 1;
-            end
-        end
-
-        function memory = memory(obj)
-            % TODO: implement
-        end
-
-        function rooftopContent = rooftopContent(obj)
-            rooftopContent = obj.rooftopContent_;
         end
     end
 end

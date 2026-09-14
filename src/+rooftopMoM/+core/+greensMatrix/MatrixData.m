@@ -49,32 +49,68 @@ classdef MatrixData < handle
         end
 
         function spectralMatrixData = generateSpectralGreensMatrix(obj, options)
-            if nargin < 2 || (~isfield(options, 'kernelSizeX') && ~isfield(options, 'kernelSizeY'))
+            if nargin < 2
+                options = struct();
+            end
+
+            if ~isfield(options, 'kernelSizeX') && ~isfield(options, 'kernelSizeY')
                 [options.kernelSizeX, options.kernelSizeY] = obj.minimalKernelSize();
             end
 
-            if nargin < 2 || (~isfield(options, 'faceSizeX') && ~isfield(options, 'faceSizeY'))
-                options.faceSizeX = 1;
-                options.faceSizeY = 1;
+            [parts, options] = obj.prepareParts_(options);
+
+            circulants = cell(1, numel(parts));
+            for n = 1:numel(parts)
+                circulants{n} = rooftopMoM.core.greensMatrix.utils.embedToeplitz4ToCirculant(parts{n}, options.kernelSizeX, options.kernelSizeY);
             end
-
-            fieldNames = {'magneticXX_', 'magneticYY_', 'electric_'};
-
-            circulants = cell(1, 3);
-            for n = 1:numel(fieldNames)
-                currentPart = obj.(fieldNames{n});
-
-                if isfield(options, 'modifier')
-                    currentPart = options.modifier(currentPart);
-                end
-
-                circulants{n} = rooftopMoM.core.greensMatrix.utils.embedToeplitz4ToCirculant(currentPart, options.kernelSizeX, options.kernelSizeY);
-            end
-
 
             spectralMatrixData = rooftopMoM.core.greensMatrix.utils.generateSpectralGreensMatrix( ...
                 circulants{1}, circulants{2}, circulants{3}, obj.rooftopContent_, options.faceSizeX, options.faceSizeY ...
             );
+        end
+
+        function spectralMatrixData = generateSplitSpectralGreensMatrix(obj, options)
+        % generateSplitSpectralGreensMatrix: Generates the subband spectra for the SplitFFTAcceleratedApplicator.
+        %
+        %   Input:
+        %       options: Optional struct with the fields modifier (applied to every part), faceSizeX and faceSizeY.
+        %
+        %   Output:
+        %       spectralMatrixData: 1xS array of SpectralMatrixData (see utils.generateSplitSpectralGreensMatrix).
+
+            if nargin < 2
+                options = struct();
+            end
+
+            [parts, options] = obj.prepareParts_(options);
+
+            spectralMatrixData = rooftopMoM.core.greensMatrix.utils.generateSplitSpectralGreensMatrix( ...
+                parts{1}, parts{2}, parts{3}, obj.rooftopContent_, options.faceSizeX, options.faceSizeY ...
+            );
+        end
+    end
+
+    methods (Access = private)
+        function [parts, options] = prepareParts_(obj, options)
+        % prepareParts_: Applies the optional modifier to the Toeplitz generators and defaults the face sizes.
+        %
+        %   Input:
+        %       options: Struct with the optional fields modifier, faceSizeX and faceSizeY.
+        %
+        %   Outputs:
+        %       parts: 1x3 cell of the (modified) generators {magneticXX, magneticYY, electric}.
+        %       options: The input options with both face sizes set to 1 if neither was given.
+
+            if ~isfield(options, 'faceSizeX') && ~isfield(options, 'faceSizeY')
+                options.faceSizeX = 1;
+                options.faceSizeY = 1;
+            end
+
+            parts = {obj.magneticXX_, obj.magneticYY_, obj.electric_};
+
+            if isfield(options, 'modifier')
+                parts = cellfun(options.modifier, parts, 'UniformOutput', false);
+            end
         end
     end
 
