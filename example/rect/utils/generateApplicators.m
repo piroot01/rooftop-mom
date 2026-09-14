@@ -1,42 +1,53 @@
 function output = generateApplicators(solverContext, varargin)
+% generateApplicators: Generates the applicators of the characteristic mode problem, i.e. real(Z), imag(Z) and the
+%   circulant preconditioner of imag(Z).
+%
+%   Inputs:
+%       solverContext: Struct from prepareSolverContext with the fields context and greensMatrix.
+%       varargin: Name-value pairs:
+%           'sizeX': Face size in the x direction (default 1).
+%           'sizeY': Face size in the y direction (default 1).
+%           'preconditionerType': Circulant approximation, 'TChan' or 'Strang' (default 'TChan').
+%           'useSplitFFT': Logical flag selecting the split-FFT greens matrix applicators (default true).
+%
+%   Output:
+%       output: Struct with the fields realGreensMatrix, imagGreensMatrix and imagPreconditioner.
+
     p = inputParser();
 
     addParameter(p, 'sizeX', 1);
     addParameter(p, 'sizeY', 1);
     addParameter(p, 'preconditionerType', 'TChan');
+    addParameter(p, 'useSplitFFT', true);
 
     parse(p, varargin{:});
 
     sizeX = p.Results.sizeX;
     sizeY = p.Results.sizeY;
-    preconditionerType = p.Results.preconditionerType;
 
     % real(Z) applicator
-    spectralRealGreensMatrix = solverContext.greensMatrix.generateSpectralGreensMatrix(struct('modifier', @real));
-
-    realGreensMatrixApplicator = rooftopMoM.core.greensMatrix.FFTAcceleratedApplicator( ...
-        solverContext.context, spectralRealGreensMatrix, solverContext.greensMatrix.rooftopContent());
+    realGreensMatrixApplicator = generateGreensMatrixApplicator(solverContext, ...
+        'sizeX', sizeX, ...
+        'sizeY', sizeY, ...
+        'useSplitFFT', p.Results.useSplitFFT, ...
+        'modifier', @real ...
+    );
 
     % imag(Z) applicator
-    spectralImagGreensMatrix = solverContext.greensMatrix.generateSpectralGreensMatrix(struct('modifier', @imag));
+    imagGreensMatrixApplicator = generateGreensMatrixApplicator(solverContext, ...
+        'sizeX', sizeX, ...
+        'sizeY', sizeY, ...
+        'useSplitFFT', p.Results.useSplitFFT, ...
+        'modifier', @imag ...
+    );
 
-    imagGreensMatrixApplicator = rooftopMoM.core.greensMatrix.FFTAcceleratedApplicator( ...
-        solverContext.context, spectralImagGreensMatrix, solverContext.greensMatrix.rooftopContent());
-
-    if strcmp(preconditionerType, 'TChan')
-        preconditionerHandle = @rooftopMoM.core.greensMatrix.preconditioner.utils.generateTChanPreconditionerKernel;
-    elseif strcmp(preconditionerType, 'Strang')
-        preconditionerHandle = @rooftopMoM.core.greensMatrix.preconditioner.utils.generateStrangPreconditionerKernel;
-    end
-
-    preconditioner = rooftopMoM.core.greensMatrix.preconditioner.utils.generatePreconditioner1( ...
-        preconditionerHandle, ...
-        solverContext.greensMatrix, sizeX, sizeY, ...
-        struct('modifier', @imag));
-
-    preconditionerApplicator = rooftopMoM.core.greensMatrix.preconditioner.FFTAcceleratedApplicator( ...
-        solverContext.context, preconditioner, solverContext.greensMatrix.rooftopContent());
-    preconditionerApplicator.generate();
+    % imag(Z) preconditioner applicator
+    preconditionerApplicator = generatePreconditionerApplicator(solverContext, ...
+        'sizeX', sizeX, ...
+        'sizeY', sizeY, ...
+        'preconditionerType', p.Results.preconditionerType, ...
+        'modifier', @imag ...
+    );
 
     output = struct( ...
         'realGreensMatrix', realGreensMatrixApplicator, ...

@@ -60,11 +60,19 @@ context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quad, rooftops, k);
 % FullAssembler efficiently composes magnetic and electric parts for us.
 fullAssembler = rooftopMoM.core.greensMatrix.FullAssembler(planner);
 
-% Start assembly (result stored in 'output'; matrix accessible via output.value())
+% Start assembly (only the Toeplitz kernels are stored, the full matrix is never formed).
 tic;
-output = fullAssembler.generateFull(context);
+greensMatrix = fullAssembler.generate(context);
 elapsed = toc;
 fprintf('Assembly finished in %.2f s.\n', elapsed);
+
+%% Greens matrix applicator:
+% The split-FFT applicator multiplies by the greens matrix using the subband spectra of its kernels.
+spectralGreensMatrix = greensMatrix.generateSplitSpectralGreensMatrix(struct('faceSizeX', sizeX, 'faceSizeY', sizeY));
+
+greensMatrixApplicator = rooftopMoM.core.greensMatrix.SplitFFTAcceleratedApplicator( ...
+    context, spectralGreensMatrix, greensMatrix.rooftopContent());
+greensMatrixApplicator.generate();
 
 %% Currents for delta-gap feeder.
 % Compute the surface-current distribution produced by a delta-gap feed.
@@ -76,10 +84,10 @@ fprintf('Assembly finished in %.2f s.\n', elapsed);
 % Create the excitation vector of the delta-gap feeder with an input voltage V = 1 V.
 V = 1;
 
-mode = rooftopMoM.operators.utils.generateMiddlePortMode(rooftops);
-excitation = rooftopMoM.operators.DeltaGapFeederExcitation.generate(rooftops, mode, V);
+mode = rooftopMoM.operator.utils.generateMiddlePortMode(rooftops.count());
+excitation = rooftopMoM.operator.DeltaGapFeederExcitation.generate(rooftops.count(), mode, V);
 
-conjugateGradientSolver = rooftopMoM.core.solver.ConjugateGradient(context, output);
+conjugateGradientSolver = rooftopMoM.core.solver.ConjugateGradient(greensMatrixApplicator);
 
 % We choose the tolerance and the maximal number of iterations that the solver does.
 tolerance = 1e-4;

@@ -47,8 +47,8 @@ maxIterCount = 1000;
 
 % Create the excitation vector for the delta-gap feeder.
 count = rooftopMoM.basisFunctions.utils.generateRooftopCount(countX, countY);
-mode = rooftopMoM.operators.utils.generateMiddlePortMode(count);
-excitation = rooftopMoM.operators.DeltaGapFeederExcitation.generate(count, mode, V);
+mode = rooftopMoM.operator.utils.generateMiddlePortMode(count);
+excitation = rooftopMoM.operator.DeltaGapFeederExcitation.generate(count, mode, V);
 
 %% Naive MoM implementation:
 % Generate a primitive description of the mesh. This is a lightweight
@@ -152,9 +152,14 @@ fullAssembler = rooftopMoM.core.greensMatrix.FullAssembler(planner);
 
 strategyConjugateGradient = tic;
 
-output = fullAssembler.generateFull(context);
+% Assemble the greens matrix kernels and prepare the split-FFT applicator.
+greensMatrix = fullAssembler.generate(context);
 
-conjugateGradientSolver = rooftopMoM.core.solver.ConjugateGradient(context, output);
+greensMatrixApplicator = rooftopMoM.core.greensMatrix.SplitFFTAcceleratedApplicator( ...
+    context, greensMatrix.generateSplitSpectralGreensMatrix(struct('faceSizeX', sizeX, 'faceSizeY', sizeY)), greensMatrix.rooftopContent());
+greensMatrixApplicator.generate();
+
+conjugateGradientSolver = rooftopMoM.core.solver.ConjugateGradient(greensMatrixApplicator);
 
 % Run the solver.
 % The current and other info is stored within the outputSolver.
@@ -191,9 +196,23 @@ fullAssembler = rooftopMoM.core.greensMatrix.FullAssembler(planner);
 
 strategyPreconditionedConjugateGradient = tic;
 
-output = fullAssembler.generateFull(context);
+% Assemble the greens matrix kernels and prepare the split-FFT applicator.
+greensMatrix = fullAssembler.generate(context);
 
-spectrallyPreconditionedConjugateGradientSolver = rooftopMoM.core.solver.SpectrallyPreconditionedConjugateGradient(context, output);
+greensMatrixApplicator = rooftopMoM.core.greensMatrix.SplitFFTAcceleratedApplicator( ...
+    context, greensMatrix.generateSplitSpectralGreensMatrix(struct('faceSizeX', sizeX, 'faceSizeY', sizeY)), greensMatrix.rooftopContent());
+greensMatrixApplicator.generate();
+
+% The Strang's circulant approximation of the greens matrix is inverted in the spectral domain.
+preconditioner = rooftopMoM.core.greensMatrix.preconditioner.utils.generatePreconditioner1( ...
+    @rooftopMoM.core.greensMatrix.preconditioner.utils.generateStrangPreconditionerKernel, ...
+    greensMatrix, sizeX, sizeY);
+
+preconditionerApplicator = rooftopMoM.core.greensMatrix.preconditioner.FFTAcceleratedApplicator( ...
+    context, preconditioner, greensMatrix.rooftopContent());
+preconditionerApplicator.generate();
+
+spectrallyPreconditionedConjugateGradientSolver = rooftopMoM.core.solver.PreconditionedConjugateGradient(greensMatrixApplicator, preconditionerApplicator);
 
 % Run the solver.
 % The current and other info is stored within the outputSolver.

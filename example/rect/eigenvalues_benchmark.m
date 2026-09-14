@@ -38,12 +38,12 @@ logger.Logger.configure( ...
 electricalSize = 10;
 
 % Number of requested eigenvalues
-eigCount = 500;
+eigCount = 10;
 whichEigs = 'largestabs';
 
 % Constants used to compute the wavenumber and antenna size.
-% Number of rooftops per wavelength to aim for.
-rooftopCountPerOneWavelength = 20;
+% Number of rooftops per wavelength to aim for (10 keeps the problem below 1000 rooftops).
+rooftopCountPerOneWavelength = 10;
 
 % Antennas with electrical size below this threshold will use the same
 % discretization as an antenna whose electrical size equals the threshold.
