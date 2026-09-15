@@ -10,6 +10,33 @@ classdef FFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApp
             % NOTE: Nothing has to be prepared
         end
 
+        function memory = workingMemory(obj)
+        % workingMemory: Returns the peak memory of the arrays alive during one application (output included).
+        %
+        %   Output:
+        %       memory: rooftopMoM.Memory of the peak working arrays.
+
+            [blockSizeX, blockSizeY] = obj.spectralMatrixData_.blockSize();
+            complexBytes = rooftopMoM.DataTypeMemory.memory(rooftopMoM.DataTypeMemory.ComplexDouble).bytes();
+            blockBytes = blockSizeX * blockSizeY * complexBytes;
+
+            switch obj.rooftopContent_
+                case rooftopMoM.basisFunctions.RooftopContent.XONLY
+                    % Output spectrum and ifft2 of the n-by-2 block, which needs one and a half blocks.
+                    memory = rooftopMoM.Memory(2.5 * blockBytes, 'B');
+                case rooftopMoM.basisFunctions.RooftopContent.YONLY
+                    % Output spectrum and ifft2 of the 2-by-n block, which needs two blocks.
+                    memory = rooftopMoM.Memory(3 * blockBytes, 'B');
+                case rooftopMoM.basisFunctions.RooftopContent.BOTH
+                    % Both output spectra, the padded spectrum of the y-directed input and its slice.
+                    primitive = obj.context_.rooftops().primitive();
+                    sliceBytes = double(primitive.countX()) * double(primitive.countY() - 1) * complexBytes;
+                    memory = rooftopMoM.Memory(3 * blockBytes + sliceBytes, 'B');
+                otherwise
+                    error('Unknown rooftop content: %s', char(obj.rooftopContent_));
+            end
+        end
+
         function output = apply(obj, input)
             basisSizeX = obj.context_.rooftops().countDir('x');
             basisSizeY = obj.context_.rooftops().countDir('y');

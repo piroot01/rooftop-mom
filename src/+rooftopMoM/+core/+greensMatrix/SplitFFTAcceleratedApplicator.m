@@ -1,9 +1,11 @@
 classdef SplitFFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatrixApplicator
-% SplitFFTAcceleratedApplicator: Applies the Green's matrix using the split (subband) FFT. It works with the subband
-%   spectra from MatrixData.generateSplitSpectralGreensMatrix, so only arrays of the (fast FFT) grid size are
-%   transformed and no zero-padding to the doubled circulant is needed.
+% SplitFFTAcceleratedApplicator: Applies the Green's matrix using the split (subband) FFT with the fewest operations.
+%   It works with the subband spectra from MatrixData.generateSplitSpectralGreensMatrix, so only arrays of the (fast
+%   FFT) grid size are transformed and no zero-padding to the doubled circulant is needed. In 2D the transforms of
+%   the first split direction are shared by two subbands (24 FFTs in total), which keeps more arrays alive than the
+%   MemoryEfficientSplitFFTAcceleratedApplicator.
 
-    properties (Access = private)
+    properties (Access = protected)
         % Odd subband modulations in the x (column) and the y (row) direction and their complex conjugates.
         modulationX_;
         modulationY_;
@@ -44,9 +46,28 @@ classdef SplitFFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatr
                     error('Unknown rooftop content: %s', char(obj.rooftopContent_));
             end
         end
+
+        function memory = workingMemory(obj)
+        % workingMemory: Returns the peak memory of the arrays alive during one application (output included).
+        %
+        %   Output:
+        %       memory: rooftopMoM.Memory of the peak working arrays.
+
+            [fftSizeX, fftSizeY] = obj.spectralMatrixData_(1).blockSize();
+            gridBytes = fftSizeX * fftSizeY * ...
+                rooftopMoM.DataTypeMemory.memory(rooftopMoM.DataTypeMemory.ComplexDouble).bytes();
+
+            if obj.rooftopContent_ == rooftopMoM.basisFunctions.RooftopContent.BOTH
+                % Both inputs, level-1 spectra and subbands, the mixed x output and the mixing temporary of y.
+                memory = rooftopMoM.Memory(8 * gridBytes, 'B');
+            else
+                % Input copy, its transform and the output of the even subband.
+                memory = rooftopMoM.Memory(3 * gridBytes, 'B');
+            end
+        end
     end
 
-    methods (Access = private)
+    methods (Access = protected)
         function output = applySingleDir_(~, input, evenBlock, oddBlock, modulation, demodulation)
         % applySingleDir_: Applies the Green's matrix of the rooftops oriented in a single direction.
         %
@@ -68,8 +89,10 @@ classdef SplitFFTAcceleratedApplicator < rooftopMoM.core.greensMatrix.GreensMatr
 
             output = ifft(evenBlock .* fft(input));
 
-            input = input .* modulation;
-            output = output + ifft(oddBlock .* fft(input)) .* demodulation;
+            % The odd subband is transformed in the input buffer, which is not needed afterwards.
+            input = ifft(oddBlock .* fft(input .* modulation)) .* demodulation;
+            output = output + input;
+            clear input;
 
             output = reshape(output(1:count), [], 1);
         end

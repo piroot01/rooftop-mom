@@ -43,5 +43,8 @@ classdef GreensMatrixApplicator < handle
         generate(obj);
 
         output = apply(obj, input);
+
+        % workingMemory: Returns the peak memory of the arrays alive during one application (output included).
+        memory = workingMemory(obj);
     end
 end

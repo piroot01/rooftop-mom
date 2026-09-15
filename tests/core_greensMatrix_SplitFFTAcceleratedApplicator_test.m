@@ -50,16 +50,26 @@ for n = 1:size(grids, 1)
             context, greensMatrix.generateSpectralGreensMatrix(options), greensMatrix.rooftopContent());
         fftApplicator.generate();
 
+        splitSpectralGreensMatrix = greensMatrix.generateSplitSpectralGreensMatrix(options);
+
         splitApplicator = rooftopMoM.core.greensMatrix.SplitFFTAcceleratedApplicator( ...
-            context, greensMatrix.generateSplitSpectralGreensMatrix(options), greensMatrix.rooftopContent());
+            context, splitSpectralGreensMatrix, greensMatrix.rooftopContent());
         splitApplicator.generate();
+
+        memoryEfficientApplicator = rooftopMoM.core.greensMatrix.MemoryEfficientSplitFFTAcceleratedApplicator( ...
+            context, splitSpectralGreensMatrix, greensMatrix.rooftopContent());
+        memoryEfficientApplicator.generate();
 
         yFFT = fftApplicator.apply(x);
         ySplit = splitApplicator.apply(x);
+        yMemoryEfficient = memoryEfficientApplicator.apply(x);
 
         relativeError = norm(ySplit - yFFT) / norm(yFFT);
-        fprintf('%dx%d, modifier %d: relative error = %.2e\n', grids(n, 1), grids(n, 2), m, relativeError);
+        relativeErrorMemoryEfficient = norm(yMemoryEfficient - yFFT) / norm(yFFT);
+        fprintf('%dx%d, modifier %d: relative error = %.2e (memory efficient %.2e)\n', ...
+            grids(n, 1), grids(n, 2), m, relativeError, relativeErrorMemoryEfficient);
 
         assert(relativeError < 1e-12, 'Split-FFT product differs from the FFT product.');
+        assert(relativeErrorMemoryEfficient < 1e-12, 'Memory efficient split-FFT product differs from the FFT product.');
     end
 end
