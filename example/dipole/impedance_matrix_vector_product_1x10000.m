@@ -101,10 +101,17 @@ fftApplicator = rooftopMoM.core.greensMatrix.FFTAcceleratedApplicator( ...
     greensContext, greensMatrix.generateSpectralGreensMatrix(spectralOptions), greensMatrix.rooftopContent());
 fftApplicator.generate();
 
-% Split-FFT accelerated applicator (subband spectra of the grid size).
+% Split-FFT accelerated applicators (subband spectra of the grid size): the fast one shares
+% transforms between the subbands, the memory efficient one keeps a single grid array.
+splitSpectralGreensMatrix = greensMatrix.generateSplitSpectralGreensMatrix(spectralOptions);
+
 splitFFTApplicator = rooftopMoM.core.greensMatrix.SplitFFTAcceleratedApplicator( ...
-    greensContext, greensMatrix.generateSplitSpectralGreensMatrix(spectralOptions), greensMatrix.rooftopContent());
+    greensContext, splitSpectralGreensMatrix, greensMatrix.rooftopContent());
 splitFFTApplicator.generate();
+
+memoryEfficientApplicator = rooftopMoM.core.greensMatrix.MemoryEfficientSplitFFTAcceleratedApplicator( ...
+    greensContext, splitSpectralGreensMatrix, greensMatrix.rooftopContent());
+memoryEfficientApplicator.generate();
 
 %% Random input vector:
 basisSize = rooftops.count();
@@ -140,33 +147,74 @@ for n = 1:repetitionCount
 end
 timeSplitFFT = toc / repetitionCount;
 
+%% Memory efficient split-FFT accelerated application:
+% Warm-up application.
+outputMemoryEfficient = memoryEfficientApplicator.apply(randomVector);
+
+tic;
+for n = 1:repetitionCount
+    outputMemoryEfficient = memoryEfficientApplicator.apply(randomVector);
+end
+timeMemoryEfficient = toc / repetitionCount;
+
+%% Memory of the multiplications:
+% Memory of the stored operators: the dense matrix versus the spectra of the kernels.
+impedanceMatrixInfo = whos('impedanceMatrix');
+storedMemory = [ ...
+    impedanceMatrixInfo.bytes, ...
+    fftApplicator.memory().bytes(), ...
+    splitFFTApplicator.memory().bytes(), ...
+    memoryEfficientApplicator.memory().bytes() ...
+];
+
+% Peak working memory of one multiplication (output included), the dense product allocates just its output.
+outputInfo = whos('outputRaw');
+peakMemory = [ ...
+    outputInfo.bytes, ...
+    fftApplicator.workingMemory().bytes(), ...
+    splitFFTApplicator.workingMemory().bytes(), ...
+    memoryEfficientApplicator.workingMemory().bytes() ...
+];
+
 %% Summary table
-% Prints a compact Linux-style ASCII table summarizing each application strategy.
+% Prints a compact table summarizing each application strategy.
 
 % Prepare rows
-names = {'Raw', 'FFT', 'Split FFT'};
+names = {'Raw', 'FFT', 'Split FFT', 'Split FFT (memory)'};
 methods = { ...
     'Dense impedance matrix product', ...
     'Zero-padded circulant embedding', ...
-    'Subband spectra of the grid size' ...
+    'Subbands sharing transforms', ...
+    'One grid array per contribution' ...
 };
 
 % Collect times and relative errors with respect to the raw product.
-times = [timeRaw, timeFFT, timeSplitFFT];
+times = [timeRaw, timeFFT, timeSplitFFT, timeMemoryEfficient];
 errors = [ ...
     0, ...
     norm(outputFFT - outputRaw) / norm(outputRaw), ...
-    norm(outputSplitFFT - outputRaw) / norm(outputRaw) ...
+    norm(outputSplitFFT - outputRaw) / norm(outputRaw), ...
+    norm(outputMemoryEfficient - outputRaw) / norm(outputRaw) ...
 ];
 
 % Print ASCII table
 fprintf('Applying the impedance matrix of %d rooftops.\n', basisSize);
 
-line = '+------------+----------------------------------+------------+------------+------------+';
+line = '+--------------------+----------------------------------+------------+------------+------------+';
 fprintf('%s\n', line);
-fprintf('| %-10s | %-32s | %-10s | %-10s | %-10s |\n', 'Strategy', 'Method', 'Time (ms)', 'Speed-up', 'Rel. error');
+fprintf('| %-18s | %-32s | %-10s | %-10s | %-10s |\n', 'Strategy', 'Method', 'Time (ms)', 'Speed-up', 'Rel. error');
 fprintf('%s\n', line);
 for i = 1:length(names)
-    fprintf('| %-10s | %-32s | %10.4f | %10.2f | %10.2e |\n', names{i}, methods{i}, 1e3 * times(i), times(1) / times(i), errors(i));
+    fprintf('| %-18s | %-32s | %10.4f | %10.2f | %10.2e |\n', names{i}, methods{i}, 1e3 * times(i), times(1) / times(i), errors(i));
+end
+fprintf('%s\n', line);
+
+% Print memory table
+line = '+--------------------+----------------------------------+-----------------+-------------------+';
+fprintf('%s\n', line);
+fprintf('| %-18s | %-32s | %-15s | %-17s |\n', 'Strategy', 'Method', 'Stored (MB)', 'Peak working (MB)');
+fprintf('%s\n', line);
+for i = 1:length(names)
+    fprintf('| %-18s | %-32s | %15.3f | %17.3f |\n', names{i}, methods{i}, storedMemory(i) / 2^20, peakMemory(i) / 2^20);
 end
 fprintf('%s\n', line);

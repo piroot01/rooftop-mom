@@ -7,6 +7,7 @@ function greensMatrixApplicator = generateGreensMatrixApplicator(solverContext, 
 %           'sizeX': Face size in the x direction (default 1).
 %           'sizeY': Face size in the y direction (default 1).
 %           'useSplitFFT': Logical flag selecting the split-FFT applicator instead of the FFT one (default false).
+%           'memoryEfficient': Logical flag selecting the memory efficient split-FFT applicator (default false).
 %           'modifier': Optional function handle applied to the greens matrix parts, e.g. @real (default none).
 %
 %   Output:
@@ -17,6 +18,7 @@ function greensMatrixApplicator = generateGreensMatrixApplicator(solverContext, 
     addParameter(p, 'sizeX', 1);
     addParameter(p, 'sizeY', 1);
     addParameter(p, 'useSplitFFT', false);
+    addParameter(p, 'memoryEfficient', false);
     addParameter(p, 'modifier', []);
 
     parse(p, varargin{:});
@@ -29,7 +31,10 @@ function greensMatrixApplicator = generateGreensMatrixApplicator(solverContext, 
 
     greensMatrix = solverContext.greensMatrix;
 
-    if p.Results.useSplitFFT
+    if p.Results.useSplitFFT && p.Results.memoryEfficient
+        greensMatrixApplicator = rooftopMoM.core.greensMatrix.MemoryEfficientSplitFFTAcceleratedApplicator( ...
+            solverContext.context, greensMatrix.generateSplitSpectralGreensMatrix(options), greensMatrix.rooftopContent());
+    elseif p.Results.useSplitFFT
         greensMatrixApplicator = rooftopMoM.core.greensMatrix.SplitFFTAcceleratedApplicator( ...
             solverContext.context, greensMatrix.generateSplitSpectralGreensMatrix(options), greensMatrix.rooftopContent());
     else

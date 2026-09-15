@@ -8,13 +8,13 @@ function printApplicationSummary(names, methods, times, errors)
 %       times: 1xM vector of the mean application times in seconds.
 %       errors: 1xM vector of the relative errors with respect to the reference application.
 
-    line = '+------------+----------------------------------+------------+------------+------------+';
+    line = '+--------------------+----------------------------------+------------+------------+------------+';
     fprintf('%s\n', line);
-    fprintf('| %-10s | %-32s | %-10s | %-10s | %-10s |\n', 'Strategy', 'Method', 'Time (ms)', 'Speed-up', 'Rel. error');
+    fprintf('| %-18s | %-32s | %-10s | %-10s | %-10s |\n', 'Strategy', 'Method', 'Time (ms)', 'Speed-up', 'Rel. error');
     fprintf('%s\n', line);
 
     for n = 1:numel(names)
-        fprintf('| %-10s | %-32s | %10.4f | %10.2f | %10.2e |\n', ...
+        fprintf('| %-18s | %-32s | %10.4f | %10.2f | %10.2e |\n', ...
             names{n}, methods{n}, 1e3 * times(n), times(1) / times(n), errors(n));
     end
 
