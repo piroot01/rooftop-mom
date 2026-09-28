@@ -1,0 +1,743 @@
+% Literature behind the trig-algebra preconditioner (TAP), its low-frequency loop-star form, the edge-aware
+% deflation and the characteristic-mode test problem. Grouped by the role each work played.
+
+% ---------------------------------------------------------------------------------------------------------------
+% 1. Discretization and the fast (FFT) operator the preconditioner builds on
+% ---------------------------------------------------------------------------------------------------------------
+
+@book{harrington1968field,
+  author    = {Harrington, Roger F.},
+  title     = {Field Computation by Moment Methods},
+  publisher = {Macmillan},
+  address   = {New York},
+  year      = {1968}
+}
+
+@article{glisson1980simple,
+  author  = {Glisson, Allen W. and Wilton, Donald R.},
+  title   = {Simple and efficient numerical methods for problems of electromagnetic radiation and scattering from surfaces},
+  journal = {IEEE Transactions on Antennas and Propagation},
+  volume  = {28},
+  number  = {5},
+  pages   = {593--603},
+  year    = {1980}
+}
+
+@article{rao1982electromagnetic,
+  author  = {Rao, Sadasiva M. and Wilton, Donald R. and Glisson, Allen W.},
+  title   = {Electromagnetic scattering by surfaces of arbitrary shape},
+  journal = {IEEE Transactions on Antennas and Propagation},
+  volume  = {30},
+  number  = {3},
+  pages   = {409--418},
+  year    = {1982}
+}
+
+@article{zwamborn1991weak,
+  author  = {Zwamborn, A. P. M. and van den Berg, P. M.},
+  title   = {A weak form of the conjugate gradient {FFT} method for plate problems},
+  journal = {IEEE Transactions on Antennas and Propagation},
+  volume  = {39},
+  number  = {2},
+  pages   = {224--228},
+  year    = {1991}
+}
+
+@book{catedra1995cgfft,
+  author    = {C{\'a}tedra, Manuel F. and Torres, Rafael P. and Basterrechea, Jos{\'e} and Gago, Emilio},
+  title     = {The {CG-FFT} Method: Application of Signal Processing Techniques to Electromagnetics},
+  publisher = {Artech House},
+  address   = {Boston},
+  year      = {1995}
+}
+
+% ---------------------------------------------------------------------------------------------------------------
+% 2. Conditioning of the EFIE: the low-frequency and dense-discretization breakdowns, operator preconditioning
+% ---------------------------------------------------------------------------------------------------------------
+
+@article{adrian2021electromagnetic,
+  author  = {Adrian, Simon B. and D{\'e}ly, Alexandre and Consoli, Davide and Merlini, Adrien and Andriulli, Francesco P.},
+  title   = {Electromagnetic integral equations: Insights in conditioning and preconditioning},
+  journal = {IEEE Open Journal of Antennas and Propagation},
+  volume  = {2},
+  pages   = {1143--1174},
+  year    = {2021}
+}
+
+@article{steinbach1998construction,
+  author  = {Steinbach, Olaf and Wendland, Wolfgang L.},
+  title   = {The construction of some efficient preconditioners in the boundary element method},
+  journal = {Advances in Computational Mathematics},
+  volume  = {9},
+  pages   = {191--216},
+  year    = {1998}
+}
+
+@article{hiptmair2006operator,
+  author  = {Hiptmair, Ralf},
+  title   = {Operator preconditioning},
+  journal = {Computers \& Mathematics with Applications},
+  volume  = {52},
+  number  = {5},
+  pages   = {699--706},
+  year    = {2006}
+}
+
+@article{meixner1972behavior,
+  author  = {Meixner, Josef},
+  title   = {The behavior of electromagnetic fields at edges},
+  journal = {IEEE Transactions on Antennas and Propagation},
+  volume  = {20},
+  number  = {4},
+  pages   = {442--446},
+  year    = {1972}
+}
+
+% ---------------------------------------------------------------------------------------------------------------
+% 3. Matrix-algebra (circulant, tau, sine/cosine) preconditioners for Toeplitz systems: the core of the TAP
+% ---------------------------------------------------------------------------------------------------------------
+
+@article{strang1986proposal,
+  author  = {Strang, Gilbert},
+  title   = {A proposal for {Toeplitz} matrix calculations},
+  journal = {Studies in Applied Mathematics},
+  volume  = {74},
+  number  = {2},
+  pages   = {171--176},
+  year    = {1986}
+}
+
+@article{chan1988optimal,
+  author  = {Chan, Tony F.},
+  title   = {An optimal circulant preconditioner for {Toeplitz} systems},
+  journal = {SIAM Journal on Scientific and Statistical Computing},
+  volume  = {9},
+  number  = {4},
+  pages   = {766--771},
+  year    = {1988}
+}
+
+@article{tyrtyshnikov1992optimal,
+  author  = {Tyrtyshnikov, Eugene E.},
+  title   = {Optimal and superoptimal circulant preconditioners},
+  journal = {SIAM Journal on Matrix Analysis and Applications},
+  volume  = {13},
+  number  = {2},
+  pages   = {459--473},
+  year    = {1992}
+}
+
+@article{bini1983spectral,
+  author  = {Bini, Dario and Capovani, Milvio},
+  title   = {Spectral and computational properties of band symmetric {Toeplitz} matrices},
+  journal = {Linear Algebra and its Applications},
+  volume  = {52},
+  pages   = {99--126},
+  year    = {1983}
+}
+
+@inproceedings{bini1990new,
+  author    = {Bini, Dario and Di Benedetto, Fabio},
+  title     = {A new preconditioner for the parallel solution of positive definite {Toeplitz} systems},
+  booktitle = {Proceedings of the 2nd Annual ACM Symposium on Parallel Algorithms and Architectures (SPAA)},
+  pages     = {220--223},
+  publisher = {ACM},
+  year      = {1990}
+}
+
+@article{boman1995fast,
+  author  = {Boman, Erik and Koltracht, Israel},
+  title   = {Fast transform based preconditioners for {Toeplitz} equations},
+  journal = {SIAM Journal on Matrix Analysis and Applications},
+  volume  = {16},
+  number  = {2},
+  pages   = {628--645},
+  year    = {1995}
+}
+
+@article{chan1996conjugate,
+  author  = {Chan, Raymond H. and Ng, Michael K.},
+  title   = {Conjugate gradient methods for {Toeplitz} systems},
+  journal = {SIAM Review},
+  volume  = {38},
+  number  = {3},
+  pages   = {427--482},
+  year    = {1996}
+}
+
+@article{chan1996sine,
+  author  = {Chan, Raymond H. and Ng, Michael K. and Wong, C. K.},
+  title   = {Sine transform based preconditioners for symmetric {Toeplitz} systems},
+  journal = {Linear Algebra and its Applications},
+  volume  = {232},
+  pages   = {237--259},
+  year    = {1996}
+}
+
+@article{kailath2005displacement,
+  author  = {Kailath, Thomas and Olshevsky, Vadim},
+  title   = {Displacement structure approach to discrete-trigonometric-transform based preconditioners of {G. Strang} type and of {T. Chan} type},
+  journal = {SIAM Journal on Matrix Analysis and Applications},
+  volume  = {26},
+  number  = {3},
+  pages   = {706--734},
+  year    = {2005}
+}
+
+@article{potts1998optimal,
+  author  = {Potts, Daniel and Steidl, Gabriele},
+  title   = {Optimal trigonometric preconditioners for nonsymmetric {Toeplitz} systems},
+  journal = {Linear Algebra and its Applications},
+  volume  = {281},
+  pages   = {265--292},
+  year    = {1998}
+}
+
+@incollection{potts1997trigonometric,
+  author    = {Potts, Daniel and Steidl, Gabriele and Tasche, Manfred},
+  title     = {Trigonometric preconditioners for block {Toeplitz} systems},
+  booktitle = {Multivariate Approximation and Splines},
+  publisher = {Birkh{\"a}user},
+  address   = {Basel},
+  pages     = {219--234},
+  year      = {1997}
+}
+
+@article{dibenedetto1999unifying,
+  author  = {Di Benedetto, Fabio and Serra Capizzano, Stefano},
+  title   = {A unifying approach to abstract matrix algebra preconditioning},
+  journal = {Numerische Mathematik},
+  volume  = {82},
+  pages   = {57--90},
+  year    = {1999}
+}
+
+@article{serracapizzano1999any,
+  author  = {Serra Capizzano, Stefano and Tyrtyshnikov, Eugene},
+  title   = {Any circulant-like preconditioner for multilevel matrices is not superlinear},
+  journal = {SIAM Journal on Matrix Analysis and Applications},
+  volume  = {21},
+  number  = {2},
+  pages   = {431--439},
+  year    = {1999},
+  doi     = {10.1137/S0895479897331941}
+}
+
+@article{serracapizzano2002matrix,
+  author  = {Serra-Capizzano, Stefano},
+  title   = {Matrix algebra preconditioners for multilevel {Toeplitz} matrices are not superlinear},
+  journal = {Linear Algebra and its Applications},
+  volume  = {343--344},
+  pages   = {303--319},
+  year    = {2002}
+}
+
+@article{chan1992family,
+  author  = {Chan, Raymond H. and Jin, Xiao-Qing},
+  title   = {A family of block preconditioners for block systems},
+  journal = {SIAM Journal on Scientific and Statistical Computing},
+  volume  = {13},
+  number  = {5},
+  pages   = {1218--1235},
+  year    = {1992}
+}
+
+@article{chan1994circulant,
+  author  = {Chan, Tony F. and Olkin, Julia A.},
+  title   = {Circulant preconditioners for {Toeplitz}-block matrices},
+  journal = {Numerical Algorithms},
+  volume  = {6},
+  pages   = {89--101},
+  year    = {1994},
+  doi     = {10.1007/BF02149764}
+}
+
+% ---------------------------------------------------------------------------------------------------------------
+% 4. Sine and cosine transforms: which transform diagonalizes which boundary condition (the discrete de Rham
+%    complex of the rooftop grid), fast algorithms, and the structure of the discrete complex
+% ---------------------------------------------------------------------------------------------------------------
+
+@article{strang1999discrete,
+  author  = {Strang, Gilbert},
+  title   = {The discrete cosine transform},
+  journal = {SIAM Review},
+  volume  = {41},
+  number  = {1},
+  pages   = {135--147},
+  year    = {1999}
+}
+
+@article{martucci1994symmetric,
+  author  = {Martucci, Stephen A.},
+  title   = {Symmetric convolution and the discrete sine and cosine transforms},
+  journal = {IEEE Transactions on Signal Processing},
+  volume  = {42},
+  number  = {5},
+  pages   = {1038--1051},
+  year    = {1994}
+}
+
+@article{sanchez1995diagonalizing,
+  author  = {S{\'a}nchez, Victoria and Garc{\'i}a, Pedro and Peinado, Antonio M. and Segura, Jos{\'e} C. and Rubio, Antonio J.},
+  title   = {Diagonalizing properties of the discrete cosine transforms},
+  journal = {IEEE Transactions on Signal Processing},
+  volume  = {43},
+  number  = {11},
+  pages   = {2631--2641},
+  year    = {1995}
+}
+
+@article{makhoul1980fast,
+  author  = {Makhoul, John},
+  title   = {A fast cosine transform in one and two dimensions},
+  journal = {IEEE Transactions on Acoustics, Speech, and Signal Processing},
+  volume  = {28},
+  number  = {1},
+  pages   = {27--34},
+  year    = {1980}
+}
+
+@article{bossavit1988whitney,
+  author  = {Bossavit, Alain},
+  title   = {Whitney forms: A class of finite elements for three-dimensional computations in electromagnetism},
+  journal = {IEE Proceedings A},
+  volume  = {135},
+  number  = {8},
+  pages   = {493--500},
+  year    = {1988}
+}
+
+@article{hiptmair2002finite,
+  author  = {Hiptmair, Ralf},
+  title   = {Finite elements in computational electromagnetism},
+  journal = {Acta Numerica},
+  volume  = {11},
+  pages   = {237--339},
+  year    = {2002}
+}
+
+% ---------------------------------------------------------------------------------------------------------------
+% 5. Low frequency: quasi-Helmholtz (loop-star, loop-tree) decompositions and basis rearrangement
+% ---------------------------------------------------------------------------------------------------------------
+
+@inproceedings{wilton1981improving,
+  author    = {Wilton, Donald R. and Glisson, Allen W.},
+  title     = {On improving the electric field integral equation at low frequencies},
+  booktitle = {URSI Radio Science Meeting Digest},
+  address   = {Los Angeles, CA},
+  month     = jun,
+  year      = {1981}
+}
+
+@article{wu1995study,
+  author  = {Wu, Wen-Liang and Glisson, Allen W. and Kajfez, Darko},
+  title   = {A study of two numerical solution procedures for the electric field integral equation at low frequency},
+  journal = {Applied Computational Electromagnetics Society Journal},
+  volume  = {10},
+  number  = {3},
+  pages   = {69--80},
+  year    = {1995}
+}
+
+@article{vecchi1999loop,
+  author  = {Vecchi, Giuseppe},
+  title   = {Loop-star decomposition of basis functions in the discretization of the {EFIE}},
+  journal = {IEEE Transactions on Antennas and Propagation},
+  volume  = {47},
+  number  = {2},
+  pages   = {339--346},
+  year    = {1999},
+  doi     = {10.1109/8.761074}
+}
+
+@article{zhao2000integral,
+  author  = {Zhao, Jun-Sheng and Chew, Weng Cho},
+  title   = {Integral equation solution of {Maxwell's} equations from zero frequency to microwave frequencies},
+  journal = {IEEE Transactions on Antennas and Propagation},
+  volume  = {48},
+  number  = {10},
+  pages   = {1635--1645},
+  year    = {2000}
+}
+
+@book{chew2008integral,
+  author    = {Chew, Weng Cho and Tong, Mei Song and Hu, Bin},
+  title     = {Integral Equation Methods for Electromagnetic and Elastic Waves},
+  series    = {Synthesis Lectures on Computational Electromagnetics},
+  publisher = {Morgan \& Claypool},
+  year      = {2008},
+  note      = {Chapter 5: low-frequency problems, loop-tree decomposition, frequency normalization and basis rearrangement}
+}
+
+@article{andriulli2012loop,
+  author  = {Andriulli, Francesco P.},
+  title   = {Loop-star and loop-tree decompositions: Analysis and efficient algorithms},
+  journal = {IEEE Transactions on Antennas and Propagation},
+  volume  = {60},
+  number  = {5},
+  pages   = {2347--2356},
+  year    = {2012}
+}
+
+@article{andriulli2013well,
+  author  = {Andriulli, Francesco P. and Cools, Kristof and Bogaert, Ignace and Michielssen, Eric},
+  title   = {On a well-conditioned electric field integral operator for multiply connected geometries},
+  journal = {IEEE Transactions on Antennas and Propagation},
+  volume  = {61},
+  number  = {4},
+  pages   = {2077--2087},
+  year    = {2013}
+}
+
+@misc{merlini2022laplacian,
+  author        = {Merlini, Adrien and Henry, Cl{\'e}ment and Consoli, Davide and Rahmouni, Lyes and D{\'e}ly, Alexandre and Andriulli, Francesco P.},
+  title         = {Laplacian Filtered Loop-Star Decompositions and Quasi-{Helmholtz} {Laplacian} Filters: Definitions, Analysis, and Efficient Algorithms},
+  year          = {2022},
+  eprint        = {2211.07704},
+  archivePrefix = {arXiv},
+  note          = {Journal version in IEEE Transactions on Antennas and Propagation, 2023}
+}
+
+@article{qian2008augmented,
+  author  = {Qian, Zhi-Guo and Chew, Weng Cho},
+  title   = {An augmented electric field integral equation for high-speed interconnect analysis},
+  journal = {Microwave and Optical Technology Letters},
+  volume  = {50},
+  number  = {10},
+  pages   = {2658--2662},
+  year    = {2008},
+  doi     = {10.1002/mop.23736}
+}
+
+@article{qian2010enhanced,
+  author  = {Qian, Zhi-Guo and Chew, Weng Cho},
+  title   = {Enhanced {A-EFIE} with perturbation method},
+  journal = {IEEE Transactions on Antennas and Propagation},
+  volume  = {58},
+  number  = {10},
+  pages   = {3256--3264},
+  year    = {2010},
+  doi     = {10.1109/TAP.2010.2055795}
+}
+
+% ---------------------------------------------------------------------------------------------------------------
+% 6. State of the art the TAP is compared against: Calderon, hierarchical and screen preconditioners
+% ---------------------------------------------------------------------------------------------------------------
+
+@article{andriulli2008multiplicative,
+  author  = {Andriulli, Francesco P. and Cools, Kristof and Ba{\u{g}}c{\i}, Hakan and Olyslager, Femke and Buffa, Annalisa and Christiansen, Snorre and Michielssen, Eric},
+  title   = {A multiplicative {Calder\'on} preconditioner for the electric field integral equation},
+  journal = {IEEE Transactions on Antennas and Propagation},
+  volume  = {56},
+  number  = {8},
+  pages   = {2398--2412},
+  year    = {2008}
+}
+
+@article{buffa2007dual,
+  author  = {Buffa, Annalisa and Christiansen, Snorre H.},
+  title   = {A dual finite element complex on the barycentric refinement},
+  journal = {Mathematics of Computation},
+  volume  = {76},
+  pages   = {1743--1769},
+  year    = {2007}
+}
+
+@article{yan2010efie,
+  author  = {Yan, Su and Jin, Jian-Ming and Nie, Zaiping},
+  title   = {{EFIE} analysis of low-frequency problems with loop-star decomposition and {Calder\'on} multiplicative preconditioner},
+  journal = {IEEE Transactions on Antennas and Propagation},
+  volume  = {58},
+  number  = {3},
+  pages   = {857--867},
+  year    = {2010}
+}
+
+@article{adrian2019refinement,
+  author  = {Adrian, Simon B. and Andriulli, Francesco P. and Eibert, Thomas F.},
+  title   = {On a refinement-free {Calder\'on} multiplicative preconditioner for the electric field integral equation},
+  journal = {Journal of Computational Physics},
+  volume  = {376},
+  pages   = {1232--1252},
+  year    = {2019}
+}
+
+@misc{hofmann2026explicit,
+  author        = {Hofmann, Bernd and Eibert, Thomas F. and Andriulli, Francesco P. and Adrian, Simon B.},
+  title         = {An Explicit Higher-Order Dual Basis for a Multiplicatively {Calder\'on} Preconditioned Electric Field Integral Equation},
+  year          = {2026},
+  eprint        = {2607.08848},
+  archivePrefix = {arXiv}
+}
+
+@article{andriulli2010solving,
+  author  = {Andriulli, Francesco P. and Tabacco, Anita and Vecchi, Giuseppe},
+  title   = {Solving the {EFIE} at low frequencies with a conditioning that grows only logarithmically with the number of unknowns},
+  journal = {IEEE Transactions on Antennas and Propagation},
+  volume  = {58},
+  number  = {5},
+  pages   = {1614--1624},
+  year    = {2010}
+}
+
+@article{adrian2017hierarchical,
+  author  = {Adrian, Simon B. and Andriulli, Francesco P. and Eibert, Thomas F.},
+  title   = {A hierarchical preconditioner for the electric field integral equation on unstructured meshes based on primal and dual {Haar} bases},
+  journal = {Journal of Computational Physics},
+  volume  = {330},
+  pages   = {365--379},
+  year    = {2017}
+}
+
+@article{pirinoli2001multiresolution,
+  author  = {Pirinoli, Paola and Vecchi, Giuseppe and Matekovits, Ladislau},
+  title   = {Multiresolution analysis of printed antennas and circuits: A dual-isoscalar approach},
+  journal = {IEEE Transactions on Antennas and Propagation},
+  volume  = {49},
+  number  = {6},
+  pages   = {858--874},
+  year    = {2001}
+}
+
+@article{chang2013quadrilateral,
+  author  = {Chang, Rui and Lomakin, Vitaliy},
+  title   = {Quadrilateral barycentric basis functions for surface integral equations},
+  journal = {IEEE Transactions on Antennas and Propagation},
+  volume  = {61},
+  number  = {12},
+  pages   = {6039--6050},
+  year    = {2013}
+}
+
+@inproceedings{abazi2025calderon,
+  author    = {Abazi, A. and Cavillot, J. and Craeye, C.},
+  title     = {A {Calder\'on} preconditioner for large ground planes with arbitrary contours},
+  booktitle = {International Conference on Electromagnetics in Advanced Applications (ICEAA)},
+  pages     = {423--425},
+  year      = {2025},
+  doi       = {10.1109/ICEAA65662.2025.11305763}
+}
+
+@article{hiptmair2020compact,
+  author  = {Hiptmair, Ralf and Urz{\'u}a-Torres, Carolina},
+  title   = {Compact equivalent inverse of the electric field integral operator on screens},
+  journal = {Integral Equations and Operator Theory},
+  volume  = {92},
+  pages   = {9},
+  year    = {2020}
+}
+
+@article{hiptmair2020preconditioning,
+  author  = {Hiptmair, Ralf and Urz{\'u}a-Torres, Carolina},
+  title   = {Preconditioning the {EFIE} on screens},
+  journal = {Mathematical Models and Methods in Applied Sciences},
+  volume  = {30},
+  pages   = {1705--1726},
+  year    = {2020}
+}
+
+@article{hiptmair2020optimal,
+  author  = {Hiptmair, Ralf and Jerez-Hanckes, Carlos and Urz{\'u}a-Torres, Carolina},
+  title   = {Optimal operator preconditioning for {Galerkin} boundary element methods on 3-dimensional screens},
+  journal = {SIAM Journal on Numerical Analysis},
+  volume  = {58},
+  pages   = {834--857},
+  year    = {2020}
+}
+
+@article{cools2024block,
+  author  = {Cools, Kristof and Urz{\'u}a-Torres, Carolina},
+  title   = {Block diagonal {Calder\'on} preconditioning for scattering at multi-screens},
+  journal = {BIT Numerical Mathematics},
+  volume  = {64},
+  number  = {4},
+  pages   = {34},
+  year    = {2024},
+  doi     = {10.1007/s10543-024-01034-9}
+}
+
+@article{bruno2013high,
+  author  = {Bruno, Oscar P. and Lintner, St{\'e}phane K.},
+  title   = {A high-order integral solver for scalar problems of diffraction by screens and apertures in three-dimensional space},
+  journal = {Journal of Computational Physics},
+  volume  = {252},
+  pages   = {250--274},
+  year    = {2013}
+}
+
+@article{alouges2021new,
+  author  = {Alouges, Fran{\c{c}}ois and Averseng, Martin},
+  title   = {New preconditioners for the {Laplace} and {Helmholtz} integral equations on open curves},
+  journal = {Numerische Mathematik},
+  volume  = {148},
+  pages   = {255--292},
+  year    = {2021}
+}
+
+% ---------------------------------------------------------------------------------------------------------------
+% 7. Edge-aware mode: deflation and two-level spectral corrections, Krylov recycling, edge (Wiener-Hopf) waves
+% ---------------------------------------------------------------------------------------------------------------
+
+@article{nicolaides1987deflation,
+  author  = {Nicolaides, Roy A.},
+  title   = {Deflation of conjugate gradients with applications to boundary value problems},
+  journal = {SIAM Journal on Numerical Analysis},
+  volume  = {24},
+  number  = {2},
+  pages   = {355--365},
+  year    = {1987}
+}
+
+@article{frank2001construction,
+  author  = {Frank, Jason and Vuik, Cornelis},
+  title   = {On the construction of deflation-based preconditioners},
+  journal = {SIAM Journal on Scientific Computing},
+  volume  = {23},
+  number  = {2},
+  pages   = {442--462},
+  year    = {2001}
+}
+
+@article{carpentieri2003class,
+  author  = {Carpentieri, Bruno and Duff, Iain S. and Giraud, Luc},
+  title   = {A class of spectral two-level preconditioners},
+  journal = {SIAM Journal on Scientific Computing},
+  volume  = {25},
+  number  = {2},
+  pages   = {749--765},
+  year    = {2003}
+}
+
+@article{tang2009comparison,
+  author  = {Tang, J. M. and Nabben, R. and Vuik, C. and Erlangga, Y. A.},
+  title   = {Comparison of two-level preconditioners derived from deflation, domain decomposition and multigrid methods},
+  journal = {Journal of Scientific Computing},
+  volume  = {39},
+  pages   = {340--370},
+  year    = {2009}
+}
+
+@article{parks2006recycling,
+  author  = {Parks, Michael L. and de Sturler, Eric and Mackey, Greg and Johnson, Duane D. and Maiti, Spandan},
+  title   = {Recycling {Krylov} subspaces for sequences of linear systems},
+  journal = {SIAM Journal on Scientific Computing},
+  volume  = {28},
+  number  = {5},
+  pages   = {1651--1674},
+  year    = {2006}
+}
+
+@book{noble1958methods,
+  author    = {Noble, Ben},
+  title     = {Methods Based on the {Wiener--Hopf} Technique for the Solution of Partial Differential Equations},
+  publisher = {Pergamon Press},
+  address   = {London},
+  year      = {1958}
+}
+
+% ---------------------------------------------------------------------------------------------------------------
+% 8. Krylov solvers and eigensolvers
+% ---------------------------------------------------------------------------------------------------------------
+
+@article{vandervorst1990petrov,
+  author  = {van der Vorst, Henk A. and Melissen, Jan B. M.},
+  title   = {A {Petrov--Galerkin} type method for solving {$Ax = b$}, where {$A$} is symmetric complex},
+  journal = {IEEE Transactions on Magnetics},
+  volume  = {26},
+  number  = {2},
+  pages   = {706--708},
+  year    = {1990}
+}
+
+@article{saad1986gmres,
+  author  = {Saad, Youcef and Schultz, Martin H.},
+  title   = {{GMRES}: A generalized minimal residual algorithm for solving nonsymmetric linear systems},
+  journal = {SIAM Journal on Scientific and Statistical Computing},
+  volume  = {7},
+  number  = {3},
+  pages   = {856--869},
+  year    = {1986}
+}
+
+@book{saad2003iterative,
+  author    = {Saad, Yousef},
+  title     = {Iterative Methods for Sparse Linear Systems},
+  edition   = {2nd},
+  publisher = {SIAM},
+  address   = {Philadelphia},
+  year      = {2003}
+}
+
+@book{saad2011numerical,
+  author    = {Saad, Yousef},
+  title     = {Numerical Methods for Large Eigenvalue Problems},
+  edition   = {Revised},
+  publisher = {SIAM},
+  address   = {Philadelphia},
+  year      = {2011}
+}
+
+% ---------------------------------------------------------------------------------------------------------------
+% 9. Characteristic modes (the test problem) and randomized range finding
+% ---------------------------------------------------------------------------------------------------------------
+
+@article{harrington1971theory,
+  author  = {Harrington, Roger F. and Mautz, Joseph R.},
+  title   = {Theory of characteristic modes for conducting bodies},
+  journal = {IEEE Transactions on Antennas and Propagation},
+  volume  = {19},
+  number  = {5},
+  pages   = {622--628},
+  year    = {1971}
+}
+
+@article{gustafsson2022unified,
+  author  = {Gustafsson, Mats and Jelinek, Lukas and Schab, Kurt and Capek, Miloslav},
+  title   = {Unified theory of characteristic modes---{Part I}: Fundamentals},
+  journal = {IEEE Transactions on Antennas and Propagation},
+  volume  = {70},
+  pages   = {11801--11813},
+  year    = {2022},
+  doi     = {10.1109/TAP.2022.3211338}
+}
+
+@article{lundgren2023iterative,
+  author  = {Lundgren, Johan and Schab, Kurt and Capek, Miloslav and Gustafsson, Mats and Jelinek, Lukas},
+  title   = {Iterative calculation of characteristic modes using arbitrary full-wave solvers},
+  journal = {IEEE Antennas and Wireless Propagation Letters},
+  volume  = {22},
+  number  = {4},
+  pages   = {799--803},
+  year    = {2023}
+}
+
+@misc{capek2021computational,
+  author        = {Capek, Miloslav and Schab, Kurt},
+  title         = {Computational Aspects of Characteristic Mode Decomposition -- An Overview},
+  year          = {2021},
+  eprint        = {2107.03538},
+  archivePrefix = {arXiv}
+}
+
+@article{halko2011finding,
+  author  = {Halko, Nathan and Martinsson, Per-Gunnar and Tropp, Joel A.},
+  title   = {Finding structure with randomness: Probabilistic algorithms for constructing approximate matrix decompositions},
+  journal = {SIAM Review},
+  volume  = {53},
+  number  = {2},
+  pages   = {217--288},
+  year    = {2011}
+}
+
+% ---------------------------------------------------------------------------------------------------------------
+% 10. Physical validation (physical-optics backscatter of a plate, Rayleigh scattering)
+% ---------------------------------------------------------------------------------------------------------------
+
+@book{balanis2012advanced,
+  author    = {Balanis, Constantine A.},
+  title     = {Advanced Engineering Electromagnetics},
+  edition   = {2nd},
+  publisher = {Wiley},
+  address   = {Hoboken, NJ},
+  year      = {2012}
+}
