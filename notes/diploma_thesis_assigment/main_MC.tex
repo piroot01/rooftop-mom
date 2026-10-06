@@ -1,0 +1,87 @@
+\documentclass[11pt, a4paper]{article}
+
+\usepackage[english, czech]{babel}
+\usepackage{amsmath}
+\usepackage{tabularx}
+\usepackage{geometry}
+\usepackage[hidelinks]{hyperref}
+
+\geometry{
+    margin = 2cm
+}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+
+% Údaje zadání.
+\newcommand{\kod}{B2MPROJ6}
+\newcommand{\program}{Elektronika a komunikace --- Radiové komunikace a systémy}
+\newcommand{\student}{Tomáš Macháček}
+\newcommand{\skolitel}{Miloslav Čapek (miloslav.capek@fel.cvut.cz)}
+
+% Tady prosim dopln termin, do ktereho mam ten projekt odevzdat. Nepodarilo se mi ho zjistit.
+\newcommand{\termin}{5. 1. 2027}
+
+\begin{document}
+
+\begin{center}
+    {\Large\bfseries ČESKÉ VYSOKÉ UČENÍ TECHNICKÉ V PRAZE} \\[0.5ex]
+    \rule{\linewidth}{0.4pt} \\[0.5ex]
+    {\large Fakulta elektrotechnická --- Katedra elektromagnetického pole} \\[3ex]
+    {\LARGE\bfseries \kod{} --- DIPLOMOVÁ PRÁCE} \\[1ex]
+    {\large \program}
+\end{center}
+
+\vspace{2ex}
+
+\begin{tabularx}{\linewidth}{@{} p{0.25\linewidth} X @{}}
+    Student: & \textbf{\student} \\[2ex]
+    Název projektu: & \raggedright\textbf{\foreignlanguage{english}{Towards a Faster FFT-Accelerated Full-Wave Solver and Its Integration into Shape Optimization Strategies}}
+\end{tabularx}
+
+\vspace{2ex}
+
+Pokyny pro vypracování: \\[0.5ex]
+\begin{otherlanguage}{english}
+	This thesis is a follow-up of the previous bachelor's thesis and elaborates on a topic from computational electromagnetism. In particular:
+	\begin{enumerate}
+		\item Propose a faster application of the impedance matrix based on the fast Fourier transform (FFT) that exploits the symmetries of the circulant embedding. Compare the requirements of the contemporary FFT-based method of moments with the improved implementation, both in terms of computational time and memory usage.
+		\item Further, propose a memory-lean variant that is even more memory efficient and allows us to solve problems with four times as many unknowns as before. Consider the use of an appropriate preconditioner based on the discrete sine and cosine transforms, which diagonalize the discrete curl and divergence operators on the rectangular grid. This allows the preconditioner to compensate for the opposite differential orders of the vector and scalar potential operators. 
+		\item To maintain the accuracy of the solver at very low frequencies, solve the system in an explicit loop/star basis in which the scalar potential acts only on the charges. Since the discrete sine and cosine transforms can be computed via the FFT, the preconditioner can be applied in $\mathcal{O}(N \log N)$ time with $\mathcal{O}(N)$ memory, so the solver retains its original complexity. 
+		\item Test the performance of the preconditioner on the eigenvalue problem of the characteristic mode decomposition, which places high demands on its quality, and its strengths will be discussed. The second part of the thesis addresses the application of the solver to the optimization of end-fire arrays, where we will leverage the matrix structure to accelerate the selection of optimal candidates.
+	\end{enumerate}
+\end{otherlanguage}
+
+\vspace{2ex}
+
+\begin{tabularx}{\linewidth}{@{} p{0.25\linewidth} X @{}}
+    Školitel: & \skolitel
+\end{tabularx}
+
+\vspace{2ex}
+
+Doporučená literatura:
+\renewcommand{\section}[2]{}
+\let\oldbibliography\thebibliography
+\renewcommand{\thebibliography}[1]{\small\oldbibliography{#1}\setlength{\itemsep}{0pt}\setlength{\parsep}{0pt}}
+\nocite{harrington1968field, catedra1995cgfft, chan1996sine, strang1999discrete, vecchi1999loop, andriulli2013well, adrian2019refinement, harrington1971theory}
+\bibliographystyle{ieeetr}
+\begin{otherlanguage}{english}
+\bibliography{references}
+\end{otherlanguage}
+
+\vspace{2ex}
+
+\begin{tabularx}{\linewidth}{@{} p{0.25\linewidth} X @{}}
+    Termín odevzdání: & \termin
+\end{tabularx}
+
+\vspace{2ex}
+
+V Praze, \today \hfill Podpis vedoucího katedry: \hspace{3cm}
+
+\vspace{2ex}
+
+Zadání převzato -- podpis: \dotfill
+
+\end{document}

@@ -1,0 +1,43 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{upgreek}
+\usepackage{hyperref}
+\usepackage{tabu}
+\usepackage{geometry}
+
+\geometry{
+    margin = 2cm
+}
+
+\begin{document}
+
+\section{Diploma thesis assignment}
+
+\tabulinesep = 2mm
+\begin{tabu} to \linewidth {| >{\raggedleft\arraybackslash}X[0.1] | X[0.9] |}
+    \hline
+    \textbf{Topic:} & Towards a Faster FFT-Accelerated Full-Wave Solver and Its Integration into Shape Optimization Strategies \\ \hline
+    \textbf{Synopsis:} & The method of moments formulation of the EFIE leads to a linear system of equations written in matrix form $\mathbf{Z}\mathbf{I} = \mathbf{V}$. For very large numbers of unknowns, the memory demands become prohibitive, so we have developed a method that compresses the impedance matrix by exploiting the inherent symmetries of the underlying mesh. With this strategy, only the necessary rooftop interactions (mutual impedances) are computed, and the impedance matrix can then be applied very efficiently in its reduced form via the FFT. The solution vector $\mathbf{I}$ is therefore found with an iterative solver (we use COCG, but GMRES is also feasible). The problem we are currently facing lies in the convergence of these solvers for densely discretized meshes and at low excitation frequencies. In computational electromagnetics, these problems are commonly referred to as the dense-discretization and low-frequency breakdowns. The low-frequency breakdown is caused by the different frequency scaling of the vector and scalar potentials, while the dense-discretization breakdown arises because these potentials are pseudodifferential operators of negative and positive order, respectively. Both lead to an ill-conditioned matrix. A preconditioner can be designed to cluster the spectrum of the preconditioned system around unity. This has a twofold effect: it stabilizes the convergence and dramatically reduces the number of iterations. State of the art preconditioners exploit the physics of the EFIE: Calder\'on identities are used to cure the dense-discretization breakdown, and the low-frequency breakdown is treated by a quasi-Helmholtz decomposition in the form of loop/star or loop/tree schemes. We introduce a novel approach that combines a fast trigonometric preconditioner with a low-frequency stabilization scheme. On a uniform rectangular grid, the mixed discrete sine and cosine transforms (DST-I/DCT-II) diagonalize the discrete curl and divergence operators of the rooftop basis, so the impedance matrix is approximated by a single $2\times 2$ block per trigonometric mode. This approximation is built in $\mathcal{O}(N \log N)$ operations directly from the Toeplitz generators produced by the compression. Because the same transforms provide an exact loop/star splitting mode by mode, both breakdowns are treated at once, without the dual meshes required by Calder\'on preconditioners. We will derive bounds on the convergence rate and on the scaling of the condition number with respect to the wavenumber $k$ and the grid edge length $h$. The performance of the preconditioner will be tested on the eigenvalue problem of the characteristic mode (CM) decomposition, which places real demands on the quality of the preconditioner.
+
+     \hspace{\baselineskip} The second part of the thesis addresses the application of the solver to the optimization of end-fire arrays. We first validate the optimizer on uniformly spaced arrays. We search for the optimal separation distance of the dipoles while accounting for the sensitivity of the array to feed voltage ripple and to errors in the element positions. We then discuss how well the resulting pareto front and the position of its knee agree with the classical analytical results. Namely the ordinary end-fire and Hansen--Woodyard conditions. Next, we ask how much this design can be improved when the dipoles may be spaced nonuniformly. The Green's operator is assembled once, for the full grid of $N$ dipole slots with $M-1$ rooftops each, and it is never modified. A design is a mask that selects the active dipoles. The current $\mathbf{I}$ is computed by the masked iterative solver, preconditioned by the proposed preconditioner. Then we apply a procedure that we call screening. In the DST basis, the dipole blocks of the impedance matrix are nearly diagonal. We assume that they are diagonal, and thus we can perform the current perturbations using rank-1 updates. This introduces a screening error, which is due to the diagonality assumption. After the metric is evaluated for all perturbed currents, we choose a set of potential candidates. We compare their sensitivities and store the error introduced by the screening procedure. To avoid missing the best move, all candidates whose predicted metric lies within the estimated screening error of the best prediction are verified. The error estimate is updated after every verification from the difference between the predicted and the exact metric. Promising candidates may first be refined by one or two preconditioned iterations before the full solve, and when the screening finds no improving move, a final exact sweep over all feasible single moves certifies the local optimum. The local search is complemented by a genetic algorithm. \\ \hline
+
+\end{tabu}
+
+\newpage
+
+\subsection{shorter version}
+
+1/ add split fft
+2/ remove till the the thesis
+
+
+
+\begin{tabu} to \linewidth {| >{\raggedleft\arraybackslash}X[0.1] | X[0.9] |}
+    \hline
+    \textbf{Topic:} & Towards a Faster FFT-Accelerated Full-Wave Solver and Its Integration into Shape Optimization Strategies \\ \hline
+    \textbf{Synopsis:} & The method of moments formulation of the electric field integral equation leads to a linear system of equations that poses a serious problem for iterative solvers in the form of the low-frequency and dense-discretization breakdowns. We have developed such an iterative solver on a uniform rectangular grid, whose translation invariance gives the impedance matrix a Toeplitz structure, so that the matrix-vector product can be accelerated using the fast Fourier transform. This removes the memory and computational bottleneck, but the real issue remains the convergence rate and accuracy of the solver. Our previous attempts to improve it with circulant preconditioners have been only partially successful. This thesis will therefore propose a more powerful preconditioner based on the discrete sine and cosine transforms, which diagonalize the discrete curl and divergence operators on the rectangular grid. This allows the preconditioner to compensate for the opposite differential orders of the vector and scalar potential operators. To maintain the accuracy of the solver at very low frequencies, we will solve the system in an explicit loop/star basis in which the scalar potential acts only on the charges. Since the discrete sine and cosine transforms can be computed via the fast Fourier transform, the preconditioner can be applied in $\mathcal{O}(N \log N)$ time with $\mathcal{O}(N)$ memory, so the solver retains its original complexity. The performance of the preconditioner will be tested on the eigenvalue problem of the characteristic mode decomposition, which places high demands on its quality, and its strengths will be discussed. The second part of the thesis addresses the application of the solver to the optimization of end-fire arrays. \\ \hline
+\end{tabu}
+
+\end{document}
