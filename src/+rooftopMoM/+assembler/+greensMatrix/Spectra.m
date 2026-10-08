@@ -1,6 +1,7 @@
 classdef Spectra
-% Spectra: The 2x2 block spectra of the Green's matrix on a frequency grid. XX and YY act within the x- and the
-%   y-directed rooftops, XY and YX couple them. The blocks of a missing rooftop direction are empty.
+% Spectra: The spectra of a 2x2 block circulant matrix on a frequency grid, such as the circulant embedding of the
+%   Green's matrix. XX and YY act within the x- and the y-directed rooftops, XY and YX couple them. The blocks of a
+%   missing rooftop direction are empty.
 
     properties (Access = private)
         blockXX_;
@@ -34,6 +35,28 @@ classdef Spectra
                 determinant = obj.blockYY_;
             else
                 determinant = obj.blockXX_ .* obj.blockYY_ - obj.blockXY_ .* obj.blockYX_;
+            end
+        end
+
+        function inverse = invert(obj, content)
+        % invert: Returns the spectra of the inverse of the block circulant matrix. The FFT diagonalizes every
+        %   circulant block, so the inverse is the inverse of the 2x2 matrix [XX, XY; YX, YY] at every frequency, the
+        %   reciprocal of the single block for a strip.
+        %
+        %   Input:
+        %       content: rooftopMoM.basisFunctions.RooftopContent.
+        %
+        %   Output:
+        %       inverse: rooftopMoM.assembler.greensMatrix.Spectra.
+
+            if content == rooftopMoM.basisFunctions.RooftopContent.XONLY
+                inverse = rooftopMoM.assembler.greensMatrix.Spectra(1 ./ obj.blockXX_, [], [], []);
+            elseif content == rooftopMoM.basisFunctions.RooftopContent.YONLY
+                inverse = rooftopMoM.assembler.greensMatrix.Spectra([], [], [], 1 ./ obj.blockYY_);
+            else
+                determinant = obj.determinant(content);
+                inverse = rooftopMoM.assembler.greensMatrix.Spectra(obj.blockYY_ ./ determinant, ...
+                    -obj.blockXY_ ./ determinant, -obj.blockYX_ ./ determinant, obj.blockXX_ ./ determinant);
             end
         end
 
