@@ -1,3 +1,3 @@
 [submodule "3rd/matlab-logger"]
-	path = 3rd/matlab-logger
+	path = obsolete/v2/3rd/matlab-logger
 	url = git@github.com:piroot01/matlab-logger.git
