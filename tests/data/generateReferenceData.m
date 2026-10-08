@@ -93,8 +93,12 @@ function data = generateCase_(countX, countY, sizeX, sizeY, order, wavenumber)
     data.direction = [1; 2; -2] / 3;
     data.polarization = [2; -1; 0] / sqrt(5);
     data.intensity = 2;
-    data.planeWave = rooftopMoM.operator.PlaneWaveExcitation.generate(quadrature, rooftops, wavenumber, ...
-        data.direction, data.polarization, data.intensity, 1e6);
+
+    % The old code takes the phase exp(+1i k d.r) and the face length instead of the face area. With the opposite
+    % direction and times the edge length, its result follows the conventions of src.
+    edgeLengths = [repmat(sizeY, rooftops.countDir('x'), 1); repmat(sizeX, rooftops.countDir('y'), 1)];
+    data.planeWave = edgeLengths .* rooftopMoM.operator.PlaneWaveExcitation.generate(quadrature, rooftops, ...
+        wavenumber, -data.direction, data.polarization, data.intensity, 1e6);
 
     data.impedanceMatrix = [];
 end
