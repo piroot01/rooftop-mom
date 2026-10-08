@@ -86,6 +86,20 @@ classdef UniformRooftops
             offsets = [i; j] - 1;
         end
 
+        function lengths = edgeLengths(obj, indices)
+        % edgeLengths: Returns the lengths of the edges of the given rooftops, sizeY for the x-directed ones and sizeX
+        %   for the y-directed ones.
+        %
+        %   Input:
+        %       indices: 1xP vector of the rooftop indices.
+        %
+        %   Output:
+        %       lengths: 1xP vector of the edge lengths.
+
+            lengths = repmat(obj.primitive_.sizeX(), size(indices));
+            lengths(indices <= obj.countDir('x')) = obj.primitive_.sizeY();
+        end
+
         function rooftop = referenceRooftop(obj, direction)
         % referenceRooftop: Returns the rooftop of one direction whose first face is at the origin.
         %

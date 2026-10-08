@@ -47,6 +47,13 @@ classdef UniformRooftopsTest < unit.Base
             testCase.verifyEqual(rooftops.referenceRooftop('x').amplitudes, [pointsU.', 1 - pointsU.']);
             testCase.verifyEqual(rooftops.referenceRooftop('y').amplitudes, [pointsV.', 1 - pointsV.']);
         end
+
+        function testEdgeLengths(testCase)
+            rooftops = testCase.rooftops_(4, 3, 0.1, 0.2);
+
+            % Rooftops 1 to 9 are x-directed, 10 to 17 y-directed.
+            testCase.verifyEqual(rooftops.edgeLengths([1, 9, 10, 17]), [0.2, 0.2, 0.1, 0.1]);
+        end
     end
 
     methods (Access = private)
