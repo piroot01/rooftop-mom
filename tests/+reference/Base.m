@@ -1,6 +1,6 @@
 classdef (Abstract) Base < unit.Base
-% Base: Common fixture of the reference tests. They compare v3 with the results of the v2 code in obsolete/v2,
-%   stored in tests/data/reference.mat by tests/data/generateReferenceData.m.
+% Base: Common fixture of the reference tests. They compare the package with the reference data in
+%   tests/data/reference.mat, computed by tests/data/generateReferenceData.m.
 
     properties (SetAccess = private)
         % 1xC struct array, one element per reference grid.

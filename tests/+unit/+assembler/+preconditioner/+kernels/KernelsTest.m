@@ -31,8 +31,7 @@ classdef KernelsTest < unit.Base
         end
 
         function testHuckleKeepsTheZeroOffset(testCase)
-            % B17: v2 never set the zero offset, so its circulant missed the diagonal.
-            generator = reshape(1:20, 5, 4);
+            generator =reshape(1:20, 5, 4);
             circulant = rooftopMoM.assembler.preconditioner.kernels.generateHuckle(generator, 1, 1);
 
             expected = zeros(5, 4);

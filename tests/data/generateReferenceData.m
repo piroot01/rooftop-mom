@@ -1,18 +1,17 @@
 function generateReferenceData()
-% generateReferenceData: Computes the reference data of the v2 code in obsolete/v2 and saves it as reference.mat next
-%   to this file. The reference tests of v3 (tests/+reference) compare against it.
-%   Run it in a fresh MATLAB session, so the v3 package is not on the path:
+% generateReferenceData: Computes the data of the reference tests (tests/+reference) with the implementation in
+%   obsolete/v2 and saves it as reference.mat next to this file. Run it in a fresh MATLAB session:
 %       matlab -batch "cd tests/data; generateReferenceData"
 
     here = fileparts(mfilename('fullpath'));
     root = fileparts(fileparts(here));
-    v2 = fullfile(root, 'obsolete', 'v2');
+    obsolete = fullfile(root, 'obsolete', 'v2');
 
-    % Both versions are the package rooftopMoM, so the v3 source must not be on the path.
+    % Both implementations are the package rooftopMoM, so src must not be on the path.
     if contains(path, fullfile(root, 'src'))
         rmpath(fullfile(root, 'src'));
     end
-    addpath(fullfile(v2, 'src'), fullfile(v2, '3rd', 'matlab-logger', 'src'));
+    addpath(fullfile(obsolete, 'src'), fullfile(obsolete, '3rd', 'matlab-logger', 'src'));
     logger.Logger.configure('minLevel', logger.LogLevel.OFF);
 
     rng(1);
@@ -30,10 +29,10 @@ function generateReferenceData()
 
     reference(1).impedanceMatrix = generateImpedanceMatrix_(cases{1, :});
 
-    % The dense matrix comes from a separate code path of v2; it should agree with the fast product.
+    % The dense matrix is assembled without generators, so it checks the products independently.
     difference = norm(reference(1).impedanceMatrix * reference(1).vector - reference(1).productFFT) / ...
         norm(reference(1).productFFT);
-    fprintf('v2 dense against FFT product: relative difference %.1e\n', difference);
+    fprintf('Dense matrix against the FFT product: relative difference %.1e\n', difference);
 
     save(fullfile(here, 'reference.mat'), 'reference');
 end
@@ -68,7 +67,7 @@ function data = generateCase_(countX, countY, sizeX, sizeY, order, wavenumber)
     data.productLean = apply_(rooftopMoM.core.greensMatrix.MemoryEfficientSplitFFTAcceleratedApplicator(context, ...
         matrixData.generateSplitSpectralGreensMatrix(options), content), vector);
 
-    % Rows: the Strang, T. Chan and R. Chan kernel; columns: generatePreconditioner1, 2 and 3.
+    % Rows: the Strang, T. Chan and R. Chan kernel; columns: the partwise, blockwise and hybrid builder.
     kernels = {
         @rooftopMoM.core.greensMatrix.preconditioner.utils.generateStrangPreconditionerKernel
         @rooftopMoM.core.greensMatrix.preconditioner.utils.generateTChanPreconditionerKernel
@@ -113,7 +112,7 @@ function impedanceMatrix = generateImpedanceMatrix_(countX, countY, sizeX, sizeY
     rooftops.generate();
     context = rooftopMoM.core.impedanceMatrix.AssemblerContext(quadrature, rooftops, wavenumber);
     planner = rooftopMoM.core.impedanceMatrix.AssemblerChunkPlanner(1e6);
-    % The plain dense assembler of v2 fails for non-square faces; the symmetry accelerator handles them.
+    % The plain dense assembler fails for non-square faces; the symmetry accelerator handles them.
     fullAssembler = rooftopMoM.core.impedanceMatrix.FullAssembler(planner);
     impedanceMatrix = rooftopMoM.core.impedanceMatrix.InteractionSymmetriesAccelerator(fullAssembler) ...
         .generateFull(context).value();

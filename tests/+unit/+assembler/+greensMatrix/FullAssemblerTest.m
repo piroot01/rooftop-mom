@@ -20,8 +20,7 @@ classdef FullAssemblerTest < unit.Base
         end
 
         function testEntriesDoNotDependOnTheGridSize(testCase)
-            % B16: on grids two faces wide, v2 added the self-face integral to the rooftop one row up.
-            narrow = testCase.generate_(2, 3);
+            narrow =testCase.generate_(2, 3);
             wide = testCase.generate_(5, 3);
             wideXX = wide.magneticXX();
             wideYY = wide.magneticYY();

@@ -1,8 +1,8 @@
 classdef (TestTags = {'Reference'}) GenerateCirculantTest < reference.Base
-% GenerateCirculantTest: The circulant preconditioners of v3 against v2 for every kernel and builder.
+% GenerateCirculantTest: The circulant preconditioners against the reference data, for every kernel and builder.
 
     methods (Test)
-        function testPreconditionersMatchV2(testCase)
+        function testPreconditionersMatchTheReference(testCase)
             % Rows and columns as in tests/data/generateReferenceData.m.
             kernels = {
                 @rooftopMoM.assembler.preconditioner.kernels.generateStrang

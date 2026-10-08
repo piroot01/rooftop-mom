@@ -3,8 +3,7 @@ classdef ConstantsTest < unit.Base
 
     methods (Test)
         function testConstantsAreConsistent(testCase)
-            % B13: v2 mixed the pre-2019 exact mu0 with the CODATA 2018 epsilon0 and Z0.
-            c = rooftopMoM.assembler.Constants.c;
+            c =rooftopMoM.assembler.Constants.c;
             Z0 = rooftopMoM.assembler.Constants.Z0;
             mu0 = rooftopMoM.assembler.Constants.mu0;
             epsilon0 = rooftopMoM.assembler.Constants.epsilon0;
