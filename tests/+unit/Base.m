@@ -31,5 +31,48 @@ classdef (Abstract) Base < matlab.unittest.TestCase
             rooftops = rooftopMoM.basisFunctions.UniformRooftops(primitive, quadrature);
             context = rooftopMoM.assembler.AssemblerContext(rooftops, wavenumber, memoryBytes);
         end
+
+        function matrix = generateDenseMatrix(~, generators, rooftops)
+        % generateDenseMatrix: Returns the dense Green's matrix built from its generators by the definition: the block
+        %   Toeplitz vector potential part minus D.' * E * D, with E the face interaction matrix and D the divergence
+        %   of the rooftops (1 / faceSize on the first face of a rooftop, -1 / faceSize on the second).
+
+            primitive = rooftops.primitive();
+            gridSize = [primitive.countX(), primitive.countY()];
+            [faceI, faceJ] = ndgrid(0:(gridSize(1) - 1), 0:(gridSize(2) - 1));
+            faceMatrix = toeplitz_(generators.electric(), [faceI(:).'; faceJ(:).']);
+
+            directions = 'xy';
+            magneticParts = {generators.magneticXX(), generators.magneticYY()};
+            faceSizes = [primitive.sizeX(), primitive.sizeY()];
+            magneticBlocks = cell(1, 2);
+            divergence = zeros(prod(gridSize), 0);
+
+            for d = 1:2
+                count = rooftops.countDir(directions(d));
+                first = rooftops.faceOffsets(directions(d), 1:count);
+                second = first + rooftops.referenceRooftop(directions(d)).secondFaceOffset;
+
+                magneticBlocks{d} = toeplitz_(magneticParts{d}, first);
+
+                faces = [sub2ind(gridSize, first(1, :) + 1, first(2, :) + 1), ...
+                    sub2ind(gridSize, second(1, :) + 1, second(2, :) + 1)];
+                values = [ones(1, count), -ones(1, count)] / faceSizes(d);
+                divergence = [divergence, full(sparse(faces, [1:count, 1:count], values, prod(gridSize), count))]; %#ok<AGROW>
+            end
+
+            matrix = blkdiag(magneticBlocks{:}) - divergence.' * faceMatrix * divergence;
+        end
     end
+end
+
+function matrix = toeplitz_(generator, offsets)
+    % The generators are even in both offsets, so an entry depends on the absolute offset difference only.
+    if isempty(offsets)
+        matrix = zeros(0);
+        return;
+    end
+
+    matrix = generator(sub2ind(size(generator), abs(offsets(1, :).' - offsets(1, :)) + 1, ...
+        abs(offsets(2, :).' - offsets(2, :)) + 1));
 end
