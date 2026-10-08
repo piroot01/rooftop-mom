@@ -28,7 +28,7 @@ function integrals = integrateFacePairs(context, gridSize, shift, weights, stati
     logger = rooftopMoM.logging.Logger.instance();
     isTrace = logger.isEnabled(rooftopMoM.logging.LogLevel.TRACE);
 
-    integrals = complex(zeros(gridSize));
+    integrals = zeros(gridSize, 'like', 1i);
 
     for n = 1:chunkCount
         indices = ((n - 1) * chunkLength + 1):min(n * chunkLength, count);

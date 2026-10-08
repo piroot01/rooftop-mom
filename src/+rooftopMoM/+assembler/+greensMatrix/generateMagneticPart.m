@@ -22,7 +22,7 @@ function generator = generateMagneticPart(context, direction)
     differentHalves = rooftopMoM.assembler.singularIntegrals.type2(rooftop.length, rooftop.height);
     staticIntegrals = [sameHalves, differentHalves; differentHalves, sameHalves];
 
-    generator = complex(zeros(rowCount, columnCount));
+    generator = zeros(rowCount, columnCount, 'like', 1i);
 
     for face = 1:2
         for referenceFace = 1:2
