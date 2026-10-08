@@ -7,7 +7,6 @@ classdef (TestTags = {'Reference'}) GenerateCirculantTest < reference.Base
             kernels = {
                 @rooftopMoM.assembler.preconditioner.kernels.generateStrang
                 @rooftopMoM.assembler.preconditioner.kernels.generateTChan
-                @rooftopMoM.assembler.preconditioner.kernels.generateRChan
             };
             builders = {
                 @rooftopMoM.assembler.preconditioner.generatePartwiseSpectra

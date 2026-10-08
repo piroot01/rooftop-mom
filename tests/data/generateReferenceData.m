@@ -67,11 +67,11 @@ function data = generateCase_(countX, countY, sizeX, sizeY, order, wavenumber)
     data.productLean = apply_(rooftopMoM.core.greensMatrix.MemoryEfficientSplitFFTAcceleratedApplicator(context, ...
         matrixData.generateSplitSpectralGreensMatrix(options), content), vector);
 
-    % Rows: the Strang, T. Chan and R. Chan kernel; columns: the partwise, blockwise and hybrid builder.
+    % Rows: the Strang and T. Chan kernel; columns: the partwise, blockwise and hybrid builder. The R. Chan kernel of
+    % the old code adds no reflection along the axes, so its circulant is not symmetric and is left out.
     kernels = {
         @rooftopMoM.core.greensMatrix.preconditioner.utils.generateStrangPreconditionerKernel
         @rooftopMoM.core.greensMatrix.preconditioner.utils.generateTChanPreconditionerKernel
-        @rooftopMoM.core.greensMatrix.preconditioner.utils.generateRChanPreconditionerKernel
     };
     builders = {
         @rooftopMoM.core.greensMatrix.preconditioner.utils.generatePreconditioner1

@@ -1,7 +1,23 @@
 classdef KernelsTest < unit.Base
 % KernelsTest: Tests of the circulant approximations in rooftopMoM.assembler.preconditioner.kernels.
 
+    properties (TestParameter)
+        kernel = struct( ...
+            'strang', @rooftopMoM.assembler.preconditioner.kernels.generateStrang, ...
+            'tChan', @rooftopMoM.assembler.preconditioner.kernels.generateTChan, ...
+            'rChan', @rooftopMoM.assembler.preconditioner.kernels.generateRChan, ...
+            'huckle', @(generator) rooftopMoM.assembler.preconditioner.kernels.generateHuckle(generator, 3, 2));
+    end
+
     methods (Test)
+        function testCirculantIsSymmetric(testCase, kernel)
+            % A circulant is symmetric if its generator is even: c(k) = c(n - k) in both directions.
+            rng(1);
+            circulant = kernel(randn(6, 5));
+
+            testCase.verifyEqual(circulant, circulant([1, 6:(-1):2], [1, 5:(-1):2]), 'AbsTol', 1e-14);
+        end
+
         function testStrangAndTChanKeepACirculant(testCase)
             % A symmetric circulant generator t(k) = t(n - k) is its own best circulant approximation.
             circulant = testCase.symmetricCirculant_(6, 5);
@@ -21,17 +37,19 @@ classdef KernelsTest < unit.Base
             testCase.verifyEqual(circulant(1, 4), generator(1, 2));
         end
 
-        function testRChanAddsThePointReflection(testCase)
+        function testRChanAddsTheReflectionInEveryDirection(testCase)
             generator = reshape(1:12, 4, 3);
             circulant = rooftopMoM.assembler.preconditioner.kernels.generateRChan(generator);
 
-            testCase.verifyEqual(circulant(1, :), generator(1, :));
-            testCase.verifyEqual(circulant(:, 1), generator(:, 1));
-            testCase.verifyEqual(circulant(2, 2), generator(2, 2) + generator(4, 3));
+            % Offsets (i, j) counted from 0: (1, 0) gains (3, 0), (0, 1) gains (0, 2), (1, 1) gains all three.
+            testCase.verifyEqual(circulant(1, 1), generator(1, 1));
+            testCase.verifyEqual(circulant(2, 1), generator(2, 1) + generator(4, 1));
+            testCase.verifyEqual(circulant(1, 2), generator(1, 2) + generator(1, 3));
+            testCase.verifyEqual(circulant(2, 2), generator(2, 2) + generator(4, 2) + generator(2, 3) + generator(4, 3));
         end
 
         function testHuckleKeepsTheZeroOffset(testCase)
-            generator =reshape(1:20, 5, 4);
+            generator = reshape(1:20, 5, 4);
             circulant = rooftopMoM.assembler.preconditioner.kernels.generateHuckle(generator, 1, 1);
 
             expected = zeros(5, 4);
