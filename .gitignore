@@ -4,3 +4,4 @@ build
 !tests/data/*.mat
 *.fig
 *.asv
+.buildtool
