@@ -17,6 +17,10 @@ classdef (Abstract) Applicator
     end
 
     methods
+        function spectra = spectra(obj)
+            spectra = obj.spectra_;
+        end
+
         function bytes = memory(obj)
         % memory: Returns the bytes of the stored spectra.
 
