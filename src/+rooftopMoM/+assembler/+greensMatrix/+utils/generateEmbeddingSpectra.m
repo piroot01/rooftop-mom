@@ -12,6 +12,7 @@ function spectra = generateEmbeddingSpectra(generators, faceSizeX, faceSizeY)
 %   Output:
 %       spectra: rooftopMoM.assembler.greensMatrix.Spectra.
 
+    start = tic;
     [countX, countY] = size(generators.electric());
     mirroredX = [1:countX, (countX - 1):(-1):2];
     mirroredY = [1:countY, (countY - 1):(-1):2];
@@ -24,6 +25,9 @@ function spectra = generateEmbeddingSpectra(generators, faceSizeX, faceSizeY)
     spectra = rooftopMoM.assembler.greensMatrix.utils.generateBlockSpectra(embed(generators.magneticXX()), ...
         embed(generators.magneticYY()), embed(generators.electric()), generators.content(), faceSizeX, faceSizeY, ...
         shiftX, shiftY);
+
+    rooftopMoM.logging.Logger.instance().info('Generated the embedding spectra in %.3f s (%.1f MB).', toc(start), ...
+        spectra.memory() / 2^20);
 end
 
 function mirrored = mirror_(generator, mirroredX, mirroredY)

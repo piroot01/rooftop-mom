@@ -16,6 +16,7 @@ function spectra = generateSubbandSpectra(generators, faceSizeX, faceSizeY)
 %           S = 4 and the element 1 + parityX + 2 * parityY holds the subband of the given parities, otherwise S = 2
 %           and the elements hold the even and the odd subband.
 
+    start = tic;
     [countX, countY] = size(generators.electric());
 
     fftSizeX = 1;
@@ -45,4 +46,7 @@ function spectra = generateSubbandSpectra(generators, faceSizeX, faceSizeY)
     end
 
     spectra = [spectra{:}];
+
+    rooftopMoM.logging.Logger.instance().info('Generated the subband spectra in %.3f s (%.1f MB).', toc(start), ...
+        spectra.memory() / 2^20);
 end
