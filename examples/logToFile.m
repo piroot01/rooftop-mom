@@ -1,0 +1,21 @@
+% logToFile: Every stage of a run reports to one logger. By default only warnings reach the command window; a level
+%   and a file make a run traceable, and the level trace adds a line per iteration and per chunk of the assembly.
+
+addpath(fullfile(fileparts(fileparts(mfilename('fullpath'))), 'src'));
+
+logFile = fullfile(tempdir, 'rooftopMoM.log');
+
+% The file is appended to, so the log of an earlier run goes first.
+if isfile(logFile)
+    delete(logFile);
+end
+
+rooftopMoM.Logging.configure('level', 'trace', 'file', logFile, 'console', false);
+
+problem = rooftopMoM.Problem(rooftopMoM.Mesh(16, 16, 0.05, 0.05), 2 * pi);
+rooftopMoM.Solver().solve(rooftopMoM.Operator(problem), rooftopMoM.Excitation.planeWave(problem), ...
+    'preconditioner', rooftopMoM.Preconditioner(problem));
+
+% Back to the default, warnings to the command window.
+rooftopMoM.Logging.reset();
+type(logFile);
