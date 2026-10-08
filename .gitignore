@@ -1,4 +1,6 @@
 tmp
+build
 *.mat
+!tests/data/*.mat
 *.fig
 *.asv
