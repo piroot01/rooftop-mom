@@ -28,7 +28,7 @@ classdef SpectraTest < unit.Base
         end
 
         function testGridSizeAndMemory(testCase)
-            spectra = rooftopMoM.assembler.greensMatrix.Spectra([], [], [], complex(zeros(3, 5)));
+            spectra = rooftopMoM.assembler.greensMatrix.Spectra([], [], [], zeros(3, 5, 'like', 1i));
             [sizeX, sizeY] = spectra.gridSize();
 
             testCase.verifyEqual([sizeX, sizeY], [3, 5]);
