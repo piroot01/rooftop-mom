@@ -13,7 +13,7 @@ classdef (TestTags = {'Reference'}) ApplicatorTest < reference.Base
                     data.electric, rooftops.content());
 
                 for n = 1:numel(names)
-                    product = feval(['rooftopMoM.assembler.greensMatrix.', names{n}], rooftops, generators);
+                    product = testCase.createProduct(names{n}, rooftops, generators);
                     expected = data.(fields{n});
                     testCase.verifyLessThan(norm(product.apply(data.vector) - expected) / norm(expected), 1e-13);
                 end
@@ -25,7 +25,7 @@ classdef (TestTags = {'Reference'}) ApplicatorTest < reference.Base
             data = testCase.reference(1);
             context = testCase.createReferenceContext(data);
             generators = rooftopMoM.assembler.greensMatrix.FullAssembler().generate(context);
-            product = rooftopMoM.assembler.greensMatrix.FFTApplicator(context.rooftops(), generators);
+            product = testCase.createProduct('FFTApplicator', context.rooftops(), generators);
             expected = data.impedanceMatrix * data.vector;
 
             % B10 limits v2 to about 4e-11 (its dense and fast paths agree to 3.6e-11).

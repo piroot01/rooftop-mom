@@ -1,5 +1,6 @@
 classdef SplitFFTApplicator < rooftopMoM.assembler.greensMatrix.Applicator
-% SplitFFTApplicator: Applies the Green's matrix by the split (subband) FFT with the fewest operations.
+% SplitFFTApplicator: Applies the Green's matrix by the split (subband) FFT with the fewest operations, from the
+%   subband spectra of utils.generateSubbandSpectra.
 %   Only arrays of the (fast FFT) grid size are transformed, with no zero-padding to the doubled circulant. In 2D the
 %   transforms of the first split direction are shared by two subbands (24 FFTs in total), which keeps more arrays
 %   alive than the LeanSplitFFTApplicator.
@@ -13,12 +14,8 @@ classdef SplitFFTApplicator < rooftopMoM.assembler.greensMatrix.Applicator
     end
 
     methods
-        function obj = SplitFFTApplicator(rooftops, generators)
-            primitive = rooftops.primitive();
-            spectra = rooftopMoM.assembler.greensMatrix.utils.generateSubbandSpectra(generators, ...
-                primitive.sizeX(), primitive.sizeY());
-
-            obj@rooftopMoM.assembler.greensMatrix.Applicator(rooftops, spectra, generators.content());
+        function obj = SplitFFTApplicator(rooftops, spectra, content)
+            obj@rooftopMoM.assembler.greensMatrix.Applicator(rooftops, spectra, content);
 
             [fftSizeX, fftSizeY] = spectra(1).gridSize();
             obj.modulationX_ = rooftopMoM.assembler.greensMatrix.utils.generateSubbandModulation(fftSizeX, 1);

@@ -32,6 +32,23 @@ classdef (Abstract) Base < matlab.unittest.TestCase
             context = rooftopMoM.assembler.AssemblerContext(rooftops, wavenumber, memoryBytes);
         end
 
+        function product = createProduct(~, name, rooftops, generators)
+        % createProduct: Returns the product with the Green's matrix of the applicator class name (without the
+        %   package) built from the spectra it needs.
+
+            primitive = rooftops.primitive();
+
+            if strcmp(name, 'FFTApplicator')
+                spectra = rooftopMoM.assembler.greensMatrix.utils.generateEmbeddingSpectra(generators, ...
+                    primitive.sizeX(), primitive.sizeY());
+            else
+                spectra = rooftopMoM.assembler.greensMatrix.utils.generateSubbandSpectra(generators, ...
+                    primitive.sizeX(), primitive.sizeY());
+            end
+
+            product = feval(['rooftopMoM.assembler.greensMatrix.', name], rooftops, spectra, generators.content());
+        end
+
         function matrix = generateDenseMatrix(~, generators, rooftops)
         % generateDenseMatrix: Returns the dense Green's matrix built from its generators by the definition: the block
         %   Toeplitz vector potential part minus D.' * E * D, with E the face interaction matrix and D the divergence

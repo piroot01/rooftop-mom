@@ -1,20 +1,18 @@
 classdef FFTApplicator < rooftopMoM.assembler.greensMatrix.Applicator
-% FFTApplicator: Applies the Green's matrix by 2D FFTs on the grid of its circulant embedding, which is about twice the
-%   rooftop grid in every direction.
+% FFTApplicator: Applies a block circulant matrix, given by its 2x2 block spectra, by 2D FFTs. Each rooftop component
+%   is zero-padded to the spectral grid, transformed, mixed by the blocks, transformed back and cut to its grid.
+%   With the spectra of the circulant embedding (utils.generateEmbeddingSpectra) it applies the Green's matrix, with
+%   inverted circulant spectra (Spectra.invert) a circulant preconditioner.
 
     methods
-        function obj = FFTApplicator(rooftops, generators)
-            primitive = rooftops.primitive();
-            spectra = rooftopMoM.assembler.greensMatrix.utils.generateEmbeddingSpectra(generators, ...
-                primitive.sizeX(), primitive.sizeY());
-
-            obj@rooftopMoM.assembler.greensMatrix.Applicator(rooftops, spectra, generators.content());
+        function obj = FFTApplicator(rooftops, spectra, content)
+            obj@rooftopMoM.assembler.greensMatrix.Applicator(rooftops, spectra, content);
         end
     end
 
     methods
         function output = apply(obj, input)
-        % apply: Returns the product of the Green's matrix with a vector of rooftop coefficients.
+        % apply: Returns the product with a vector of rooftop coefficients.
         %
         %   Input:
         %       input: Nx1 vector of the rooftop coefficients.
@@ -50,7 +48,7 @@ classdef FFTApplicator < rooftopMoM.assembler.greensMatrix.Applicator
 
     methods (Access = private)
         function output = applySingleDirection_(obj, input, direction, block)
-        % applySingleDirection_: Applies the Green's matrix of a strip, the rooftops of one direction only.
+        % applySingleDirection_: Applies the matrix of a strip, the rooftops of one direction only.
 
             [rowCount, columnCount] = obj.rooftops_.gridSize(direction);
 
@@ -59,20 +57,20 @@ classdef FFTApplicator < rooftopMoM.assembler.greensMatrix.Applicator
         end
 
         function output = applyBothDirections_(obj, input)
-        % applyBothDirections_: Applies the Green's matrix of the x- and y-directed rooftops. The arrays are cleared
-        %   as soon as possible to keep the peak memory low.
+        % applyBothDirections_: Applies the matrix of the x- and y-directed rooftops. The arrays are cleared as soon as
+        %   possible to keep the peak memory low.
 
             [rowCountX, columnCountX] = obj.rooftops_.gridSize('x');
             [rowCountY, columnCountY] = obj.rooftops_.gridSize('y');
-            [blockSizeX, blockSizeY] = obj.spectra_.gridSize();
+            [sizeX, sizeY] = obj.spectra_.gridSize();
             countX = rowCountX * columnCountX;
 
-            spectrumX = fft2(reshape(input(1:countX), rowCountX, columnCountX), blockSizeX, blockSizeY);
+            spectrumX = fft2(reshape(input(1:countX), rowCountX, columnCountX), sizeX, sizeY);
             outputX = obj.spectra_.blockXX() .* spectrumX;
             outputY = obj.spectra_.blockYX() .* spectrumX;
             clear spectrumX;
 
-            spectrumY = fft2(reshape(input((countX + 1):end), rowCountY, columnCountY), blockSizeX, blockSizeY);
+            spectrumY = fft2(reshape(input((countX + 1):end), rowCountY, columnCountY), sizeX, sizeY);
             outputX = outputX + obj.spectra_.blockXY() .* spectrumY;
             outputY = outputY + obj.spectra_.blockYY() .* spectrumY;
             clear spectrumY;

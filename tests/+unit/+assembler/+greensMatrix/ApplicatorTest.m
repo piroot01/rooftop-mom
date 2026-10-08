@@ -19,7 +19,7 @@ classdef ApplicatorTest < unit.Base
             context = testCase.createContext(grid(1), grid(2), grid(3), grid(4), 3, 2 * pi);
             rooftops = context.rooftops();
             generators = rooftopMoM.assembler.greensMatrix.FullAssembler().generate(context);
-            product = feval(['rooftopMoM.assembler.greensMatrix.', applicator], rooftops, generators);
+            product = testCase.createProduct(applicator, rooftops, generators);
 
             rng(1);
             input = complex(randn(rooftops.count(), 1), randn(rooftops.count(), 1));
@@ -31,7 +31,7 @@ classdef ApplicatorTest < unit.Base
         function testMemoryIsReported(testCase, applicator)
             context = testCase.createContext(5, 4, 0.1, 0.15, 3, 2 * pi);
             generators = rooftopMoM.assembler.greensMatrix.FullAssembler().generate(context);
-            product = feval(['rooftopMoM.assembler.greensMatrix.', applicator], context.rooftops(), generators);
+            product = testCase.createProduct(applicator, context.rooftops(), generators);
 
             testCase.verifyGreaterThan(product.memory(), 0);
             testCase.verifyGreaterThan(product.workingMemory(), 16 * context.rooftops().count());

@@ -15,24 +15,22 @@ function spectra = generateEmbeddingSpectra(generators, faceSizeX, faceSizeY)
     [countX, countY] = size(generators.electric());
     mirroredX = [1:countX, (countX - 1):(-1):2];
     mirroredY = [1:countY, (countY - 1):(-1):2];
+    embed = @(generator) fft2(mirror_(rooftopMoM.assembler.utils.padWithZeros(generator, countX, countY), ...
+        mirroredX, mirroredY));
 
     [shiftX, shiftY] = rooftopMoM.assembler.greensMatrix.utils.generateShiftPhases( ...
         numel(mirroredX), numel(mirroredY), 0, 0);
 
-    spectra = rooftopMoM.assembler.greensMatrix.utils.generateBlockSpectra( ...
-        embed_(generators.magneticXX(), countX, countY, mirroredX, mirroredY), ...
-        embed_(generators.magneticYY(), countX, countY, mirroredX, mirroredY), ...
-        embed_(generators.electric(), countX, countY, mirroredX, mirroredY), ...
-        generators.content(), faceSizeX, faceSizeY, shiftX, shiftY);
+    spectra = rooftopMoM.assembler.greensMatrix.utils.generateBlockSpectra(embed(generators.magneticXX()), ...
+        embed(generators.magneticYY()), embed(generators.electric()), generators.content(), faceSizeX, faceSizeY, ...
+        shiftX, shiftY);
 end
 
-function spectrum = embed_(generator, countX, countY, mirroredX, mirroredY)
+function mirrored = mirror_(generator, mirroredX, mirroredY)
     if isempty(generator)
-        spectrum = [];
+        mirrored = [];
         return;
     end
 
-    padded = zeros(countX, countY, 'like', generator);
-    padded(1:size(generator, 1), 1:size(generator, 2)) = generator;
-    spectrum = fft2(padded(mirroredX, mirroredY));
+    mirrored = generator(mirroredX, mirroredY);
 end
