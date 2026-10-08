@@ -2,10 +2,10 @@ classdef Logger < handle
 % Logger: Shared logger of the rooftopMoM package.
 %   All modules write to one instance, Logger.instance(). A message is written only if its level is enabled; a
 %   disabled call returns after a single comparison. A written line looks like
-%       [2026-10-08 16:41:23.123] [DEBUG] [PreconditionedConjugateGradient.solve]: Converged in 12 iterations.
+%       [2026-10-08 16:41:23.123] [INFO] [IterativeMethod.solve]: ConjugateGradient converged in 12 iterations.
 %   The caller is read from the call stack, so a call site passes only the message:
 %       logger = rooftopMoM.logging.Logger.instance();
-%       logger.debug('Converged in %d iterations.', iterationCount);
+%       logger.info('%s converged in %d iterations.', method, iterationCount);
 %
 %   NOTE: The user configures the logger through rooftopMoM.Logging; the modules only write to it. Workers of a
 %       parallel pool have their own instance, so nothing is logged inside parfor.
