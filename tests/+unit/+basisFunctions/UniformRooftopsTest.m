@@ -50,15 +50,13 @@ classdef UniformRooftopsTest < unit.Base
     end
 
     methods (Access = private)
-        function rooftops = rooftops_(~, countX, countY, sizeX, sizeY)
+        function rooftops = rooftops_(testCase, countX, countY, sizeX, sizeY)
             if nargin < 4
                 sizeX = 0.1;
                 sizeY = 0.1;
             end
 
-            primitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
-            quadrature = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(3);
-            rooftops = rooftopMoM.basisFunctions.UniformRooftops(primitive, quadrature);
+            rooftops = testCase.createRooftops(countX, countY, sizeX, sizeY, 3);
         end
     end
 end

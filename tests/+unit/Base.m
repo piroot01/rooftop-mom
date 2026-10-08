@@ -19,16 +19,22 @@ classdef (Abstract) Base < matlab.unittest.TestCase
     end
 
     methods (Access = protected)
-        function context = createContext(~, countX, countY, sizeX, sizeY, order, wavenumber, memoryBytes)
+        function rooftops = createRooftops(~, countX, countY, sizeX, sizeY, order)
+        % createRooftops: Returns the rooftops of a grid with the quadrature of the given order.
+
+            primitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
+            quadrature = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
+            rooftops = rooftopMoM.basisFunctions.UniformRooftops(primitive, quadrature);
+        end
+
+        function context = createContext(testCase, countX, countY, sizeX, sizeY, order, wavenumber, memoryBytes)
         % createContext: Returns the AssemblerContext of a grid, by default with a 64 MB chunk budget.
 
             if nargin < 8
                 memoryBytes = 2^26;
             end
 
-            primitive = rooftopMoM.mesh.UniformRectPrimitive(countX, countY, sizeX, sizeY);
-            quadrature = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(order);
-            rooftops = rooftopMoM.basisFunctions.UniformRooftops(primitive, quadrature);
+            rooftops = testCase.createRooftops(countX, countY, sizeX, sizeY, order);
             context = rooftopMoM.assembler.AssemblerContext(rooftops, wavenumber, memoryBytes);
         end
 
