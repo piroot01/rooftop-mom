@@ -10,15 +10,15 @@ function plan = buildfile
 %               build/coverage.
 
     plan = buildplan(localfunctions);
-    plan.DefaultTasks = ["check", "test"];
+    plan.DefaultTasks = {'check', 'test'};
 end
 
 function checkTask(~)
 % checkTask: Fails on code issues of the severity error in src and tests.
 
     root = fileparts(mfilename('fullpath'));
-    issues = codeIssues(fullfile(root, ["src", "tests"])).Issues;
-    errors = issues(issues.Severity == "error", :);
+    issues = codeIssues(fullfile(root, {'src', 'tests'})).Issues;
+    errors = issues(issues.Severity == 'error', :);
 
     if ~isempty(errors)
         disp(errors);
