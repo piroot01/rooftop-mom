@@ -81,8 +81,9 @@ classdef UniformRooftops
         %   Output:
         %       offsets: 2xN matrix of the face offsets (i; j), counted from 0.
 
-            rowCount = obj.gridSize(direction);
-            offsets = [mod(indices - 1, rowCount); floor((indices - 1) / rowCount)];
+            [rowCount, columnCount] = obj.gridSize(direction);
+            [i, j] = ind2sub([rowCount, columnCount], indices);
+            offsets = [i; j] - 1;
         end
 
         function rooftop = referenceRooftop(obj, direction)
