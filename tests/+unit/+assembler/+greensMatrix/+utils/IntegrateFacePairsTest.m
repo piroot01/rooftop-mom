@@ -66,10 +66,10 @@ classdef IntegrateFacePairsTest < unit.Base
 
             % A small first call loads the code, so only the arrays of the chunks remain to be measured.
             integrate([16, 16]);
-            baseline = readStatus_('VmRSS');
-            resetPeak_();
+            baseline = testCase.readProcessMemory('VmRSS');
+            testCase.resetPeakMemory();
             integrals = integrate([256, 256]);
-            peak = readStatus_('VmHWM') - baseline - 16 * numel(integrals);
+            peak = testCase.readProcessMemory('VmHWM') - baseline - 16 * numel(integrals);
 
             testCase.verifyLessThanOrEqual(peak, 1.01 * budget);
             testCase.verifyGreaterThanOrEqual(peak, 0.95 * budget);
@@ -91,17 +91,4 @@ classdef IntegrateFacePairsTest < unit.Base
             end
         end
     end
-end
-
-function bytes = readStatus_(field)
-    text = fileread('/proc/self/status');
-    value = regexp(text, [field, ':\s*(\d+) kB'], 'tokens', 'once');
-    bytes = 1024 * str2double(value{1});
-end
-
-function resetPeak_()
-    % Writing 5 to clear_refs sets the peak resident memory back to the current one.
-    fileId = fopen('/proc/self/clear_refs', 'w');
-    fprintf(fileId, '5');
-    fclose(fileId);
 end

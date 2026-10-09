@@ -19,6 +19,24 @@ classdef (Abstract) Base < matlab.unittest.TestCase
     end
 
     methods (Access = protected)
+        function bytes = readProcessMemory(~, field)
+        % readProcessMemory: Returns the resident memory of the process, 'VmRSS', or its peak, 'VmHWM', from the Linux
+        %   file /proc/self/status.
+
+            text = fileread('/proc/self/status');
+            value = regexp(text, [field, ':\s*(\d+) kB'], 'tokens', 'once');
+            bytes = 1024 * str2double(value{1});
+        end
+
+        function resetPeakMemory(~)
+        % resetPeakMemory: Sets the peak resident memory of the process back to the current one; Linux does so when 5
+        %   is written to /proc/self/clear_refs.
+
+            fileId = fopen('/proc/self/clear_refs', 'w');
+            fprintf(fileId, '5');
+            fclose(fileId);
+        end
+
         function rooftops = createRooftops(~, countX, countY, sizeX, sizeY, order)
         % createRooftops: Returns the rooftops of a grid with the quadrature of the given order.
 
