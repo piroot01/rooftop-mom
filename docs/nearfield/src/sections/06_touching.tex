@@ -48,16 +48,16 @@ equal to $[0,b]$ or $[b,2b]$ according to $d_y$. Then
 \begin{equation}
     \label{eq:touching}
     \Mom{p}{\alpha\beta}{\offs} = \frac{1}{ab}\sum_{s,t\in\{-,+\}}\;\sum_{m=0}^{3}\sum_{n=0}^{1}
-    c^{s}_{m}\,e^{t}_{n}\;\cornerdiff\Gf{p}{m}{n}\,A_s\times B_t,
+    c^{s}_{m}\,e^{t}_{n}\;\cornerdiff_{A_s\times B_t}\Gf{p}{m}{n},
 \end{equation}
-where, because $\Gf{p}{m}{n}$ vanishes on the axes,
+where, with $G=\Gf{p}{m}{n}$, which vanishes on the axes,
 \begin{equation}
     \label{eq:fourpoints}
     \begin{aligned}
-        \cornerdiff G\,[0,a]\times[0,b]  &= G(a,b),\\
-        \cornerdiff G\,[a,2a]\times[0,b] &= G(2a,b)-G(a,b),\\
-        \cornerdiff G\,[0,a]\times[b,2b] &= G(a,2b)-G(a,b),\\
-        \cornerdiff G\,[a,2a]\times[b,2b] &= G(2a,2b)-G(2a,b)-G(a,2b)+G(a,b).
+        \cornerdiff_{[0,a]\times[0,b]}G   &= G(a,b),\\
+        \cornerdiff_{[a,2a]\times[0,b]}G  &= G(2a,b)-G(a,b),\\
+        \cornerdiff_{[0,a]\times[b,2b]}G  &= G(a,2b)-G(a,b),\\
+        \cornerdiff_{[a,2a]\times[b,2b]}G &= G(2a,2b)-G(2a,b)-G(a,2b)+G(a,b).
     \end{aligned}
 \end{equation}
 Every touching moment is therefore an exact, finite combination of $\Gf{p}{m}{n}$ at the four points $(a,b)$, $(2a,b)$,
