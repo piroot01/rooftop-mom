@@ -8,8 +8,8 @@ classdef AccumulateMomentsTest < unit.Base
             counts = [5, 4];
             rng(1);
             moments = complex(randn(7, prod(counts)), randn(7, prod(counts)));
-            [i, j] = ind2sub(counts, 1:prod(counts));
-            offsets = [i - 1; j - 1];
+            [m, n] = ind2sub(counts, 1:prod(counts));
+            offsets = [m - 1; n - 1];
             parts = struct('electric', zeros(counts, 'like', 1i), 'magneticXX', zeros(counts - [1, 0], 'like', 1i), ...
                 'magneticYY', zeros(counts - [0, 1], 'like', 1i));
             order = randperm(prod(counts));

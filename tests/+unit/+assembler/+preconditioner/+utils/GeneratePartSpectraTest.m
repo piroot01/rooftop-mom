@@ -17,10 +17,10 @@ classdef GeneratePartSpectraTest < unit.assembler.preconditioner.Base
             modulationsY = {ones(grid(2), 1), exp(1i * pi * (0:(grid(2) - 1)).' / grid(2))};
             matrix = zeros(prod(grid));
 
-            for a = 1:2
-                for b = 1:2
-                    modulation = diag(kron(modulationsY{b}, modulationsX{a}));
-                    matrix = matrix + modulation' * fourier' * diag(spectra{a, b}(:)) * fourier * modulation;
+            for m = 1:2
+                for n = 1:2
+                    modulation = diag(kron(modulationsY{n}, modulationsX{m}));
+                    matrix = matrix + modulation' * fourier' * diag(spectra{m, n}(:)) * fourier * modulation;
                 end
             end
 

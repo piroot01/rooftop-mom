@@ -40,21 +40,21 @@ function moments = generateAlongX_(a, b, power)
 
     % Every moment sums over the four pieces s x t, with the weight k along u and W00 along v.
     for k = 1:4
-        for d = 1:4
+        for l = 1:4
             for s = 1:2
                 % The weight k on the part s along u: the coefficients c^s_m of (54), i.e. one cell of Table 2, and
                 % the interval A_s, 1 for [0, a] or 2 for [a, 2a].
-                [coefficientsA, intervalA] = composePart_(weights{k, s}, s, offsets(1, d), 1, 4);
+                [coefficientsA, intervalA] = composePart_(weights{k, s}, s, offsets(1, l), 1, 4);
 
                 for t = 1:2
                     % W00 on the part t along v: the coefficients e^t_n of (54) and the interval B_t, 1 for [0, b] or
                     % 2 for [b, 2b].
-                    [coefficientsB, intervalB] = composePart_(weights{1, t}, t, offsets(2, d), ratio, 2);
+                    [coefficientsB, intervalB] = composePart_(weights{1, t}, t, offsets(2, l), ratio, 2);
 
                     % The piece s x t of (55), the sum over m and n of c^s_m e^t_n times the integral of
                     % u^m v^n R^power over A_s x B_t: the row c^s (1x4) times these integrals (4x2) times the column
                     % e^t (2x1).
-                    moments(k, d) = moments(k, d) ...
+                    moments(k, l) = moments(k, l) ...
                         + coefficientsA * rectangles(:, :, intervalA, intervalB) * coefficientsB.';
                 end
             end
@@ -97,21 +97,21 @@ function rectangles = integrateRectangles_(power, ratio)
     % the longer side away, so Gauss-Legendre with 20 points per direction integrates it to rounding.
     [points, pointWeights] = rooftopMoM.basisFunctions.utils.generateGaussLegendre1D(20, 0, 1);
 
-    for i = 1:2
-        for j = 1:2
+    for k = 1:2
+        for l = 1:2
             % Check whether the rectangle is at least its longer side away from the origin. Only then is it far enough
             % from the singularity to apply Gauss-Legendre safely; otherwise it keeps the closed form.
-            if hypot(i - 1, ratio * (j - 1)) < max(1, ratio)
+            if hypot(k - 1, ratio * (l - 1)) < max(1, ratio)
                 continue;
             end
 
-            u = i - 1 + points;
-            v = ratio * (j - 1 + points.');
+            u = k - 1 + points;
+            v = ratio * (l - 1 + points.');
             kernel = sqrt(u.^2 + v.^2).^power;
 
             for m = 0:3
                 for n = 0:1
-                    rectangles(m + 1, n + 1, i, j) = ratio * pointWeights.' * (u.^m .* v.^n .* kernel) * pointWeights;
+                    rectangles(m + 1, n + 1, k, l) = ratio * pointWeights.' * (u.^m .* v.^n .* kernel) * pointWeights;
                 end
             end
         end
@@ -139,17 +139,17 @@ function [coefficients, interval] = composePart_(weight, part, offset, cellSize,
     % end, 0 or 1, gives the interval index 1 or 2.
     interval = min(sigma * shifted) + 1;
 
-    % Substitute nu = offset + sigma * u / cellSize into weight(nu) = sum_j weight(j) nu^(j - 1). term holds the
-    % ascending coefficients in u of nu^(j - 1): it starts at nu^0 = 1, and every step multiplies it by
+    % Substitute nu = offset + sigma * u / cellSize into weight(nu) = sum_k weight(k) nu^(k - 1). term holds the
+    % ascending coefficients in u of nu^(k - 1): it starts at nu^0 = 1, and every step multiplies it by
     % nu = [offset, sigma / cellSize] through conv, the product of two polynomials, raising its degree by one. At
-    % step j it has j coefficients, and weight(j) times it is added to the first j of the result. E.g. W00 on [-1, 0]
+    % step k it has k coefficients, and weight(k) times it is added to the first k of the result. E.g. W00 on [-1, 0]
     % at offset 1 is 1 + nu with nu = 1 - u, which gives [2, -1], i.e. 2 - u. The coefficients are padded to the
     % polynomial size with zeros.
     coefficients = zeros(1, count);
     term = 1;
 
-    for j = 1:numel(weight)
-        coefficients(1:j) = coefficients(1:j) + weight(j) * term;
+    for k = 1:numel(weight)
+        coefficients(1:k) = coefficients(1:k) + weight(k) * term;
         term = conv(term, [offset, sigma / cellSize]);
     end
 end

@@ -33,9 +33,9 @@ kernels = {'strang', 'tChan', 'rChan', 'huckle'};
 builders = {'partwise', 'hybrid'};
 
 for k = 1:numel(kernels)
-    for b = 1:numel(builders)
-        preconditioner = rooftopMoM.Preconditioner(problem, 'kernel', kernels{k}, 'builder', builders{b});
-        report_([kernels{k}, ', ', builders{b}], solver.solve(operator, excitation, 'preconditioner', preconditioner));
+    for n = 1:numel(builders)
+        preconditioner = rooftopMoM.Preconditioner(problem, 'kernel', kernels{k}, 'builder', builders{n});
+        report_([kernels{k}, ', ', builders{n}], solver.solve(operator, excitation, 'preconditioner', preconditioner));
     end
 end
 

@@ -56,9 +56,9 @@ classdef MomentAssemblerTest < unit.Base
             % Square cells, elongated cells and the cells of a thin strip: the default orders against much higher ones.
             cases = {12, 12, 0.1, 0.1; 6, 40, 0.1, 0.01; 30, 1, 0.025, 0.004};
 
-            for c = 1:size(cases, 1)
-                default = testCase.generate_(cases{c, :}, [16, 8]);
-                precise = testCase.generate_(cases{c, :}, [32, 24]);
+            for n = 1:size(cases, 1)
+                default = testCase.generate_(cases{n, :}, [16, 8]);
+                precise = testCase.generate_(cases{n, :}, [32, 24]);
 
                 testCase.verifyEqual(default.magneticXX(), precise.magneticXX(), 'RelTol', 3e-14);
                 testCase.verifyEqual(default.magneticYY(), precise.magneticYY(), 'RelTol', 3e-14);
@@ -144,11 +144,13 @@ function value = integrateAdaptively_(sizes, k, offset, kinds)
     weight = weights{kinds(1) + 2 * kinds(2) + 1};
     distance = @(nu, eta) sqrt((sizes(1) * (nu - offset(1))).^2 + (sizes(2) * (eta - offset(2))).^2);
     integrand = @(nu, eta) weight(nu) .* (1 - abs(eta)) .* exp(-1i * k * distance(nu, eta)) ./ distance(nu, eta);
+    ends = [-1, 0; 0, 1];
     value = 0;
 
-    for x = [-1, 0; 0, 1].'
-        for y = [-1, 0; 0, 1].'
-            value = value + integral2(integrand, x(1), x(2), y(1), y(2), 'AbsTol', 0, 'RelTol', 1e-13);
+    for m = 1:2
+        for n = 1:2
+            value = value + integral2(integrand, ends(m, 1), ends(m, 2), ends(n, 1), ends(n, 2), 'AbsTol', 0, ...
+                'RelTol', 1e-13);
         end
     end
 end

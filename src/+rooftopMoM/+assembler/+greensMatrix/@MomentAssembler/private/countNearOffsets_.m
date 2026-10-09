@@ -4,8 +4,8 @@ function nearCounts = countNearOffsets_(counts, sizes, gap)
 
     nearCounts = zeros(1, 2);
 
-    for d = 1:2
-        gaps = max((0:(counts(d) - 1)) - 1, 0) * sizes(d);
-        nearCounts(d) = nnz(gaps < gap * max(sizes));
+    for n = 1:2
+        gaps = max((0:(counts(n) - 1)) - 1, 0) * sizes(n);
+        nearCounts(n) = nnz(gaps < gap * max(sizes));
     end
 end

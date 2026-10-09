@@ -15,15 +15,15 @@ classdef IntegrateMomentsTest < unit.Base
             [xi, xiOther, eta, etaOther] = ndgrid(points, points, points, points);
             pairWeights = weights .* weights.' .* reshape(weights, 1, 1, []) .* reshape(weights, 1, 1, 1, []);
 
-            for c = 1:size(offsets, 2)
-                distance = sqrt((sizes(1) * (xi - xiOther - offsets(1, c))).^2 ...
-                    + (sizes(2) * (eta - etaOther - offsets(2, c))).^2);
+            for n = 1:size(offsets, 2)
+                distance = sqrt((sizes(1) * (xi - xiOther - offsets(1, n))).^2 ...
+                    + (sizes(2) * (eta - etaOther - offsets(2, n))).^2);
                 values = pairWeights .* exp(-1i * k * distance) ./ distance;
                 expected = [sum(values, 'all'); sum(xi .* values, 'all'); sum(xiOther .* values, 'all'); ...
                     sum(xi .* xiOther .* values, 'all'); sum(eta .* values, 'all'); sum(etaOther .* values, 'all'); ...
                     sum(eta .* etaOther .* values, 'all')];
 
-                testCase.verifyEqual(moments(:, c), expected, 'RelTol', 1e-13);
+                testCase.verifyEqual(moments(:, n), expected, 'RelTol', 1e-13);
             end
         end
 
@@ -46,10 +46,10 @@ classdef IntegrateMomentsTest < unit.Base
             offsets = [0, 1, 2, 7; 0, 1, 0, 3];
             together = rooftopMoM.assembler.greensMatrix.utils.integrateMoments(rule, offsets, [0.1, 0.1], 2 * pi);
 
-            for c = 1:size(offsets, 2)
-                alone = rooftopMoM.assembler.greensMatrix.utils.integrateMoments(rule, offsets(:, c), [0.1, 0.1], ...
+            for n = 1:size(offsets, 2)
+                alone = rooftopMoM.assembler.greensMatrix.utils.integrateMoments(rule, offsets(:, n), [0.1, 0.1], ...
                     2 * pi);
-                testCase.verifyEqual(together(:, c), alone, 'RelTol', 1e-15);
+                testCase.verifyEqual(together(:, n), alone, 'RelTol', 1e-15);
             end
         end
     end

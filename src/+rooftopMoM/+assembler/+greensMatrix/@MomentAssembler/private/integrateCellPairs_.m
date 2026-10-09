@@ -33,7 +33,7 @@ function offsets = selectOffsets_(extent, range, excluded)
 % selectOffsets_: Returns the 2xC offsets with the linear indices range among the offsets 0 to extent - 1, except
 %   those below excluded in both directions.
 
-    [i, j] = ind2sub(extent, range);
-    offsets = [i - 1; j - 1];
+    [m, n] = ind2sub(extent, range);
+    offsets = [m - 1; n - 1];
     offsets = offsets(:, offsets(1, :) >= excluded(1) | offsets(2, :) >= excluded(2));
 end

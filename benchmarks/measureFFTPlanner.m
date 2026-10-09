@@ -35,10 +35,10 @@ function measureFFTPlanner(count, planners)
     fprintf('\n');
     previous = fftw('planner');
 
-    for p = 1:numel(planners)
+    for k = 1:numel(planners)
         fftw('dwisdom', []);
-        fftw('planner', planners{p});
-        fprintf('%10s', planners{p});
+        fftw('planner', planners{k});
+        fprintf('%10s', planners{k});
 
         for n = 1:numel(names)
             % The set-up builds the spectra and plans the transforms of the first product.
@@ -54,10 +54,10 @@ function measureFFTPlanner(count, planners)
             setup = toc(start);
             times = zeros(1, 5);
 
-            for r = 1:numel(times)
+            for m = 1:numel(times)
                 start = tic;
                 product.apply(input);
-                times(r) = toc(start);
+                times(m) = toc(start);
             end
 
             fprintf('%10.2f s + %8.3f s', setup, median(times));

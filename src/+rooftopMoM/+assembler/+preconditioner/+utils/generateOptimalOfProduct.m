@@ -22,10 +22,10 @@ function eigenvalues = generateOptimalOfProduct(partsA, partsB)
     types = [1, 1; 2, 1; 1, 2; 2, 2];
     eigenvalues = zeros(countX, countY, 'like', 1i);
 
-    for a = 1:4
-        for b = 1:4
-            typeA = types(a, :);
-            typeB = types(b, :);
+    for m = 1:4
+        for n = 1:4
+            typeA = types(m, :);
+            typeB = types(n, :);
             valuesA = partsA{typeA(1), typeA(2)};
             valuesB = partsB{typeB(1), typeB(2)};
 

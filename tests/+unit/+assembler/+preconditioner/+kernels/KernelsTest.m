@@ -48,7 +48,7 @@ classdef KernelsTest < unit.assembler.preconditioner.Base
             circulant = rooftopMoM.assembler.preconditioner.kernels.generateRChan( ...
                 rooftopMoM.assembler.preconditioner.utils.extendEvenly(generator));
 
-            % Offsets (i, j) counted from 0: (1, 0) gains (3, 0), (0, 1) gains (0, 2), (1, 1) gains all three.
+            % Offsets (m, n) counted from 0: (1, 0) gains (3, 0), (0, 1) gains (0, 2), (1, 1) gains all three.
             testCase.verifyEqual(circulant(1, 1), generator(1, 1));
             testCase.verifyEqual(circulant(2, 1), generator(2, 1) + generator(4, 1));
             testCase.verifyEqual(circulant(1, 2), generator(1, 2) + generator(1, 3));

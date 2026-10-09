@@ -36,9 +36,9 @@ function measureThreadScaling(count, threads)
         % A new problem assembles its generators again.
         [wall(1), busy(1)] = measure_(@() rooftopMoM.Problem(mesh, 2 * pi).generators(), 3);
 
-        for p = 2:4
-            operator = rooftopMoM.Operator(problem, 'product', names{p});
-            [wall(p), busy(p)] = measure_(@() operator.apply(input), 5);
+        for k = 2:4
+            operator = rooftopMoM.Operator(problem, 'product', names{k});
+            [wall(k), busy(k)] = measure_(@() operator.apply(input), 5);
             clear operator
         end
 
@@ -62,10 +62,10 @@ function [wall, busy] = measure_(operation, repeats)
     cpu = cputime;
     total = tic;
 
-    for r = 1:repeats
+    for k = 1:repeats
         start = tic;
         operation();
-        times(r) = toc(start);
+        times(k) = toc(start);
     end
 
     busy = (cputime - cpu) / toc(total);

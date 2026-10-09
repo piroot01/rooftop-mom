@@ -27,16 +27,16 @@ function excitation = generatePlaneWave(rooftops, wavenumber, direction, polariz
     directions = 'xy';
     parts = cell(2, 1);
 
-    for d = 1:2
-        rooftop = rooftops.referenceRooftop(directions(d));
-        [rowCount, columnCount] = rooftops.gridSize(directions(d));
+    for n = 1:2
+        rooftop = rooftops.referenceRooftop(directions(n));
+        [rowCount, columnCount] = rooftops.gridSize(directions(n));
 
         secondFacePhase = exp(phaseSteps.' * rooftop.secondFaceOffset);
         amplitudes = rooftop.amplitudes(:, 1) + secondFacePhase * rooftop.amplitudes(:, 2);
-        reference = intensity * polarization(d) * faceArea * pointPhases * (weights .* amplitudes);
+        reference = intensity * polarization(n) * faceArea * pointPhases * (weights .* amplitudes);
 
         translations = exp(phaseSteps(1) * (0:(rowCount - 1)).') * exp(phaseSteps(2) * (0:(columnCount - 1)));
-        parts{d} = reference * translations(:);
+        parts{n} = reference * translations(:);
     end
 
     excitation = cat(1, parts{:});

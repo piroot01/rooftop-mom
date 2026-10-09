@@ -20,8 +20,8 @@ classdef IntegrateMonomialTest < unit.Base
             % One rectangle with a corner at the singular point and one away from it.
             rectangles = [0, 0.6, 0, 0.25; 0.3, 0.8, 0.1, 0.9];
 
-            for r = 1:size(rectangles, 1)
-                [a0, a1, b0, b1] = deal(rectangles(r, 1), rectangles(r, 2), rectangles(r, 3), rectangles(r, 4));
+            for k = 1:size(rectangles, 1)
+                [a0, a1, b0, b1] = deal(rectangles(k, 1), rectangles(k, 2), rectangles(k, 3), rectangles(k, 4));
 
                 for m = 0:3
                     for n = 0:1

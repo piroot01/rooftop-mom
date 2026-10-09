@@ -21,11 +21,11 @@ classdef GenerateSpatialBlocksTest < unit.Base
             counts = [rooftops.countDir('x'), rooftops.countDir('y')];
             first = [0, counts(1)];
 
-            for a = find(counts)
-                for b = find(counts)
-                    expected = matrix(first(a) + (1:counts(a)), first(b) + (1:counts(b)));
-                    actual = assemble_(blocks{a, b}, rooftops.faceOffsets(directions(a), 1:counts(a)), ...
-                        rooftops.faceOffsets(directions(b), 1:counts(b)), grid);
+            for m = find(counts)
+                for n = find(counts)
+                    expected = matrix(first(m) + (1:counts(m)), first(n) + (1:counts(n)));
+                    actual = assemble_(blocks{m, n}, rooftops.faceOffsets(directions(m), 1:counts(m)), ...
+                        rooftops.faceOffsets(directions(n), 1:counts(n)), grid);
 
                     testCase.verifyEqual(actual, expected, 'AbsTol', 1e-13 * max(abs(matrix(:))));
                 end
@@ -36,7 +36,7 @@ end
 
 function block = assemble_(generator, rowOffsets, columnOffsets, grid)
     % The entry of two rooftops is the generator at the offset between their first faces.
-    p = rowOffsets(1, :).' - columnOffsets(1, :);
-    q = rowOffsets(2, :).' - columnOffsets(2, :);
-    block = generator(sub2ind(size(generator), p + grid(1), q + grid(2)));
+    m = rowOffsets(1, :).' - columnOffsets(1, :);
+    n = rowOffsets(2, :).' - columnOffsets(2, :);
+    block = generator(sub2ind(size(generator), m + grid(1), n + grid(2)));
 end

@@ -87,8 +87,8 @@ classdef (Abstract) Base < matlab.unittest.TestCase
 
             primitive = rooftops.primitive();
             gridSize = [primitive.countX(), primitive.countY()];
-            [faceI, faceJ] = ndgrid(0:(gridSize(1) - 1), 0:(gridSize(2) - 1));
-            faceMatrix = toeplitz_(generators.electric(), [faceI(:).'; faceJ(:).']);
+            [faceX, faceY] = ndgrid(0:(gridSize(1) - 1), 0:(gridSize(2) - 1));
+            faceMatrix = toeplitz_(generators.electric(), [faceX(:).'; faceY(:).']);
 
             directions = 'xy';
             magneticParts = {generators.magneticXX(), generators.magneticYY()};
@@ -96,16 +96,16 @@ classdef (Abstract) Base < matlab.unittest.TestCase
             magneticBlocks = cell(1, 2);
             divergence = zeros(prod(gridSize), 0);
 
-            for d = 1:2
-                count = rooftops.countDir(directions(d));
-                first = rooftops.faceOffsets(directions(d), 1:count);
-                second = first + rooftops.referenceRooftop(directions(d)).secondFaceOffset;
+            for n = 1:2
+                count = rooftops.countDir(directions(n));
+                first = rooftops.faceOffsets(directions(n), 1:count);
+                second = first + rooftops.referenceRooftop(directions(n)).secondFaceOffset;
 
-                magneticBlocks{d} = toeplitz_(magneticParts{d}, first);
+                magneticBlocks{n} = toeplitz_(magneticParts{n}, first);
 
                 faces = [sub2ind(gridSize, first(1, :) + 1, first(2, :) + 1), ...
                     sub2ind(gridSize, second(1, :) + 1, second(2, :) + 1)];
-                values = [ones(1, count), -ones(1, count)] / faceSizes(d);
+                values = [ones(1, count), -ones(1, count)] / faceSizes(n);
                 divergence = [divergence, full(sparse(faces, [1:count, 1:count], values, prod(gridSize), count))]; %#ok<AGROW>
             end
 

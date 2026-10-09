@@ -79,11 +79,11 @@ classdef UniformRooftops
         %       indices: 1xN vector of the rooftop indices within the direction.
         %
         %   Output:
-        %       offsets: 2xN matrix of the face offsets (i; j), counted from 0.
+        %       offsets: 2xN matrix of the face offsets (m; n), counted from 0.
 
             [rowCount, columnCount] = obj.gridSize(direction);
-            [i, j] = ind2sub([rowCount, columnCount], indices);
-            offsets = [i; j] - 1;
+            [m, n] = ind2sub([rowCount, columnCount], indices);
+            offsets = [m; n] - 1;
         end
 
         function lengths = edgeLengths(obj, indices)

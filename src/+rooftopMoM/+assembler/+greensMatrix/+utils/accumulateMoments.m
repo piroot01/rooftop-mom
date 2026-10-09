@@ -30,13 +30,13 @@ function parts = accumulateMoments(parts, moments, offsets, scales)
     names = {'magneticXX', 'magneticYY'};
     rows = {1:4, [1, 5, 6, 7]};
 
-    for d = 1:2
-        if isempty(parts.(names{d}))
+    for k = 1:2
+        if isempty(parts.(names{k}))
             continue;
         end
 
-        along = offsets(d, :);
-        scaled = scales(2) * moments(rows{d}, :);
+        along = offsets(k, :);
+        scaled = scales(2) * moments(rows{k}, :);
         terms = {
             scaled(1, :) - scaled(2, :) - scaled(3, :) + 2 * scaled(4, :), along
             (scaled(2, :) - scaled(4, :)) .* (1 + (along == 1)), along - 1
@@ -45,12 +45,12 @@ function parts = accumulateMoments(parts, moments, offsets, scales)
 
         for n = 1:size(terms, 1)
             [values, target] = terms{n, :};
-            inside = target >= 0 & target < size(parts.(names{d}), d);
+            inside = target >= 0 & target < size(parts.(names{k}), k);
             position = offsets(:, inside);
-            position(d, :) = target(inside);
-            index = sub2ind(size(parts.(names{d})), position(1, :) + 1, position(2, :) + 1);
-            entries = parts.(names{d})(index);
-            parts.(names{d})(index) = entries + reshape(values(inside), size(entries));
+            position(k, :) = target(inside);
+            index = sub2ind(size(parts.(names{k})), position(1, :) + 1, position(2, :) + 1);
+            entries = parts.(names{k})(index);
+            parts.(names{k})(index) = entries + reshape(values(inside), size(entries));
         end
     end
 end

@@ -7,8 +7,8 @@ classdef (Abstract) Base < unit.Base
         % generateToeplitzMatrix: Returns the dense two-level Toeplitz matrix of a two-sided generator.
 
             grid = (size(generator) + 1) / 2;
-            [i, j] = ndgrid(0:(grid(1) - 1), 0:(grid(2) - 1));
-            matrix = generator(sub2ind(size(generator), i(:) - i(:).' + grid(1), j(:) - j(:).' + grid(2)));
+            [m, n] = ndgrid(0:(grid(1) - 1), 0:(grid(2) - 1));
+            matrix = generator(sub2ind(size(generator), m(:) - m(:).' + grid(1), n(:) - n(:).' + grid(2)));
         end
 
         function fourier = generateFourierMatrix(~, grid)

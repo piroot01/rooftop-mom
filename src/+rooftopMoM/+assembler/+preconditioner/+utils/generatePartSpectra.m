@@ -20,22 +20,22 @@ function spectra = generatePartSpectra(generator)
     partsX = splitRows_(generator);
     spectra = cell(2);
 
-    for a = 1:2
+    for m = 1:2
         % The transpose splits along y, the columns.
-        partsY = splitRows_(partsX{a}.');
+        partsY = splitRows_(partsX{m}.');
 
-        for b = 1:2
-            part = partsY{b}.';
+        for n = 1:2
+            part = partsY{n}.';
 
-            if a == 2
+            if m == 2
                 part = modulationX .* part;
             end
 
-            if b == 2
+            if n == 2
                 part = part .* modulationY;
             end
 
-            spectra{a, b} = fft2(part);
+            spectra{m, n} = fft2(part);
         end
     end
 end

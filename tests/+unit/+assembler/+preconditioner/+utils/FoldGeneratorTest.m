@@ -20,10 +20,10 @@ classdef FoldGeneratorTest < unit.Base
 
             expected = zeros(2, 3);
 
-            for p = -1:1
-                for q = -2:2
-                    expected(mod(p, 2) + 1, mod(q, 3) + 1) = expected(mod(p, 2) + 1, mod(q, 3) + 1) ...
-                        + generator(p + 2, q + 3);
+            for m = -1:1
+                for n = -2:2
+                    expected(mod(m, 2) + 1, mod(n, 3) + 1) = expected(mod(m, 2) + 1, mod(n, 3) + 1) ...
+                        + generator(m + 2, n + 3);
                 end
             end
 
