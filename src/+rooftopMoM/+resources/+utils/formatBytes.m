@@ -1,16 +1,20 @@
 function text = formatBytes(bytes)
-% formatBytes: Returns a number of bytes as a short text in B, kB, MB, GB or TB, powers of 1024.
+% formatBytes: Returns a number of bytes as a short text in B, kB, MB, GB or TB, powers of 1024. Inf, a missing
+%   ceiling, reads 'unlimited' and NaN, an unknown free memory, reads 'unknown'.
 %
 %   Input:
-%       bytes: Number of bytes (Inf and NaN allowed).
+%       bytes: Number of bytes, Inf or NaN.
 %
 %   Output:
 %       text: Character vector, e.g. '1.5 GB'.
 
     units = {'B', 'kB', 'MB', 'GB', 'TB'};
 
-    if ~isfinite(bytes)
-        text = sprintf('%g B', bytes);
+    if isinf(bytes)
+        text = 'unlimited';
+        return;
+    elseif isnan(bytes)
+        text = 'unknown';
         return;
     end
 
