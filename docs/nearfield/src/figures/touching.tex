@@ -1,5 +1,5 @@
-% The touching neighbourhood of the reference cell and the x-directed rooftop with its two wedges.
-\begin{tikzpicture}[line cap=round, line join=round, scale=0.95]
+% The touching neighbourhood of the reference cell, and the x- and y-directed rooftops with their two wedges.
+\begin{tikzpicture}[baseline=(current bounding box.center), line cap=round, line join=round, scale=0.95]
     \def\h{1.2}
     \foreach \i in {-2,...,1} { \draw[dashed] ({(\i+0.5)*\h},{-1.5*\h-0.4}) -- ({(\i+0.5)*\h},{1.5*\h+0.4}); }
     \foreach \j in {-2,...,1} { \draw[dashed] ({-1.5*\h-0.4},{(\j+0.5)*\h}) -- ({1.5*\h+0.4},{(\j+0.5)*\h}); }
@@ -23,19 +23,37 @@
 \end{tikzpicture}
 \hspace{0.6cm}
 \tdplotsetmaincoords{62}{20}
-\begin{tikzpicture}[tdplot_main_coords, line cap=round, line join=round, scale=1.1]
+\begin{tabular}{@{}c@{}}
+\begin{tikzpicture}[tdplot_main_coords, line cap=round, line join=round, scale=1.15]
     \def\dx{1.6}
     \def\dy{1.6}
     \def\roofh{1.5}
     \foreach \i in {0,...,2} { \draw[dashed] ({\i*\dx},0,0) -- ({\i*\dx},\dy,0); }
     \foreach \j in {0,...,1} { \draw[dashed] (0,{\j*\dy},0) -- (2*\dx,{\j*\dy},0); }
     \noteroofx{0}{0}{PairedF}{PairedE}{PairedB}{PairedA}
-    \node at ({0.5*\dx},{0.5*\dy},0) {$\Om{mn}$};
-    \node at ({1.5*\dx},{0.5*\dy},0) {$\Om{m+1,n}$};
+    \node at ({0.5*\dx},{-0.3*\dy},0) {$\Om{mn}$};
+    \node at ({1.5*\dx},{-0.3*\dy},0) {$\Om{m+1,n}$};
     \node[PairedF] at ($(A)!0.5!(C)$) {$\xi$};
     \node[PairedB] at ($(B)!0.5!(F)$) {$1-\xi$};
-    \node[anchor=west, font=\small] at ($(G)!0.6!(B)$) {$1$};
     \draw[thick,->] (-0.4,-1.2,0) -- (0.4,-1.2,0) node[anchor=north]{$\UV{x}$};
     \draw[thick,->] (-0.4,-1.2,0) -- (-0.4,-0.4,0) node[anchor=west]{$\UV{y}$};
     \draw[thick,->] (-0.4,-1.2,0) -- (-0.4,-1.2,0.8) node[anchor=south]{$\UV{z}$};
 \end{tikzpicture}
+\\[0.3cm]
+\tdplotsetmaincoords{62}{110}
+\begin{tikzpicture}[tdplot_main_coords, line cap=round, line join=round, scale=1.15]
+    \def\dx{1.6}
+    \def\dy{1.6}
+    \def\roofh{1.5}
+    \foreach \i in {0,...,1} { \draw[dashed] ({\i*\dx},0,0) -- ({\i*\dx},2*\dy,0); }
+    \foreach \j in {0,...,2} { \draw[dashed] (0,{\j*\dy},0) -- (\dx,{\j*\dy},0); }
+    \noteroofy{0}{0}{PairedF}{PairedE}{PairedB}{PairedA}
+    \node at ({1.3*\dx},{0.5*\dy},0) {$\Om{mn}$};
+    \node at ({1.3*\dx},{1.5*\dy},0) {$\Om{m,n+1}$};
+    \node[PairedF] at ($(A)!0.5!(C)$) {$\eta$};
+    \node[PairedB] at ($(B)!0.5!(F)$) {$1-\eta$};
+    \draw[thick,->] ({\dx+1.2},-0.4,0) -- ({\dx+2.0},-0.4,0) node[anchor=north]{$\UV{x}$};
+    \draw[thick,->] ({\dx+1.2},-0.4,0) -- ({\dx+1.2},0.4,0) node[anchor=west]{$\UV{y}$};
+    \draw[thick,->] ({\dx+1.2},-0.4,0) -- ({\dx+1.2},-0.4,0.8) node[anchor=south]{$\UV{z}$};
+\end{tikzpicture}
+\end{tabular}

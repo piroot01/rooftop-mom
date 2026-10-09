@@ -45,3 +45,26 @@
         \draw[thick, dotted] (C) -- (H);
     \end{scope}%
 }
+
+% \noteroofy{m}{n}{rising line}{rising fill}{falling line}{falling fill}: the y-directed rooftop on the cells (m,n),
+% (m,n+1), drawn like \noteroofx with the same coordinate names (ridge B-C, base edge G-H); the falling wedge, which lies
+% behind, is drawn first.
+\newcommand{\noteroofy}[6]{%
+    \begin{scope}[shift={({#1*\dx},{#2*\dy},0)}]
+        \coordinate (A) at (0,0,0);
+        \coordinate (B) at (0,\dy,\roofh);
+        \coordinate (C) at (\dx,\dy,\roofh);
+        \coordinate (D) at (\dx,0,0);
+        \coordinate (E) at (0,2*\dy,0);
+        \coordinate (F) at (\dx,2*\dy,0);
+        \coordinate (G) at (0,\dy,0);
+        \coordinate (H) at (\dx,\dy,0);
+        \fill[#6] (B) -- (E) -- (F) -- (C) -- cycle;
+        \draw[#5, thick] (B) -- (E) -- (F) -- (C);
+        \fill[#4] (A) -- (B) -- (C) -- (D) -- cycle;
+        \draw[#3, thick] (D) -- (A) -- (B) -- (C) -- cycle;
+        \draw[thick] (G) -- (H);
+        \draw[thick, dotted] (B) -- (G);
+        \draw[thick, dotted] (C) -- (H);
+    \end{scope}%
+}
