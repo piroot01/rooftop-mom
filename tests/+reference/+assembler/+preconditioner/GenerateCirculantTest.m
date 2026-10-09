@@ -1,17 +1,12 @@
 classdef (TestTags = {'Reference'}) GenerateCirculantTest < reference.Base
-% GenerateCirculantTest: The circulant preconditioners against the reference data, for every kernel and builder.
+% GenerateCirculantTest: The partwise circulant preconditioners against the reference data.
 
     methods (Test)
         function testPreconditionersMatchTheReference(testCase)
-            % Rows and columns as in tests/data/generateReferenceData.m.
+            % In the order of tests/data/generateReferenceData.m.
             kernels = {
                 @rooftopMoM.assembler.preconditioner.kernels.generateStrang
                 @rooftopMoM.assembler.preconditioner.kernels.generateTChan
-            };
-            builders = {
-                @rooftopMoM.assembler.preconditioner.generatePartwiseSpectra
-                @rooftopMoM.assembler.preconditioner.generateBlockwiseSpectra
-                @rooftopMoM.assembler.preconditioner.generateHybridSpectra
             };
 
             for data = testCase.reference
@@ -20,14 +15,11 @@ classdef (TestTags = {'Reference'}) GenerateCirculantTest < reference.Base
                     data.electric, rooftops.content());
 
                 for k = 1:numel(kernels)
-                    for b = 1:numel(builders)
-                        preconditioner = rooftopMoM.assembler.preconditioner.generateCirculant(rooftops, generators, ...
-                            kernels{k}, builders{b});
-                        expected = data.preconditioned{k, b};
+                    preconditioner = rooftopMoM.assembler.preconditioner.generateCirculant(rooftops, generators, ...
+                        kernels{k}, @rooftopMoM.assembler.preconditioner.generatePartwiseSpectra);
+                    expected = data.preconditioned{k};
 
-                        testCase.verifyLessThan(norm(preconditioner.apply(data.vector) - expected) / norm(expected), ...
-                            1e-12);
-                    end
+                    testCase.verifyLessThan(norm(preconditioner.apply(data.vector) - expected) / norm(expected), 1e-12);
                 end
             end
         end

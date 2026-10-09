@@ -67,26 +67,21 @@ function data = generateCase_(countX, countY, sizeX, sizeY, order, wavenumber)
     data.productLean = apply_(rooftopMoM.core.greensMatrix.MemoryEfficientSplitFFTAcceleratedApplicator(context, ...
         matrixData.generateSplitSpectralGreensMatrix(options), content), vector);
 
-    % Rows: the Strang and T. Chan kernel; columns: the partwise, blockwise and hybrid builder. The R. Chan kernel of
-    % the old code adds no reflection along the axes, so its circulant is not symmetric and is left out.
+    % The Strang and the T. Chan kernel with the partwise builder. The R. Chan kernel of the old code adds no reflection
+    % along the axes, and its blockwise and hybrid builders close the spatial blocks with reflections and treat the
+    % coupling blocks as even; their circulants are not symmetric, so they are left out.
     kernels = {
         @rooftopMoM.core.greensMatrix.preconditioner.utils.generateStrangPreconditionerKernel
         @rooftopMoM.core.greensMatrix.preconditioner.utils.generateTChanPreconditionerKernel
     };
-    builders = {
-        @rooftopMoM.core.greensMatrix.preconditioner.utils.generatePreconditioner1
-        @rooftopMoM.core.greensMatrix.preconditioner.utils.generatePreconditioner2
-        @rooftopMoM.core.greensMatrix.preconditioner.utils.generatePreconditioner3
-    };
-    data.preconditioned = cell(numel(kernels), numel(builders));
+    data.preconditioned = cell(numel(kernels), 1);
 
     for k = 1:numel(kernels)
-        for b = 1:numel(builders)
-            spectra = builders{b}(kernels{k}, matrixData, sizeX, sizeY);
-            preconditioner = rooftopMoM.core.greensMatrix.preconditioner.FFTAcceleratedApplicator(context, ...
-                spectra, content);
-            data.preconditioned{k, b} = preconditioner.apply(vector);
-        end
+        spectra = rooftopMoM.core.greensMatrix.preconditioner.utils.generatePreconditioner1(kernels{k}, matrixData, ...
+            sizeX, sizeY);
+        preconditioner = rooftopMoM.core.greensMatrix.preconditioner.FFTAcceleratedApplicator(context, spectra, ...
+            content);
+        data.preconditioned{k} = preconditioner.apply(vector);
     end
 
     % An oblique plane wave: the direction and the polarization are perpendicular.

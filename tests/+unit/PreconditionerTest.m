@@ -29,6 +29,30 @@ classdef PreconditionerTest < unit.Base
             testCase.verifyEqual(preconditioner.apply(input), expected.apply(input));
         end
 
+        function testIsSymmetric(testCase, kernel, builder)
+            % The Green's matrix is complex symmetric, and the conjugate gradients need a symmetric preconditioner too.
+            preconditioner = rooftopMoM.Preconditioner(testCase.problem_(), 'kernel', kernel, 'builder', builder);
+            rng(1);
+            x = complex(randn(31, 1), randn(31, 1));
+            y = complex(randn(31, 1), randn(31, 1));
+
+            testCase.verifyEqual(x.' * preconditioner.apply(y), y.' * preconditioner.apply(x), 'RelTol', 1e-12);
+        end
+
+        function testBlockwiseApproximationCutsTheIterations(testCase)
+            problem = rooftopMoM.Problem(rooftopMoM.Mesh(16, 16, 0.05, 0.05), 2 * pi, 'quadratureOrder', 3);
+            operator = rooftopMoM.Operator(problem);
+            excitation = rooftopMoM.Excitation.planeWave(problem);
+            solver = rooftopMoM.Solver('tolerance', 1e-8);
+
+            plain = solver.solve(operator, excitation);
+            preconditioned = solver.solve(operator, excitation, 'preconditioner', ...
+                rooftopMoM.Preconditioner(problem, 'kernel', 'rChan', 'builder', 'blockwise'));
+
+            testCase.verifyTrue(preconditioned.converged());
+            testCase.verifyLessThan(preconditioned.iterationCount(), plain.iterationCount());
+        end
+
         function testSingularApproximationRaisesError(testCase)
             testCase.verifyError(@() rooftopMoM.Preconditioner(testCase.problem_(), ...
                 'modifier', @(generator) zeros(size(generator))), 'rooftopMoM:preconditioner:singular');

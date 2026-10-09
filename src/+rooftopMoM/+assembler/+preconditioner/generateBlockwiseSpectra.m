@@ -15,8 +15,7 @@ function spectra = generateBlockwiseSpectra(kernel, generators, faceSizeX, faceS
 
     [blockXX, blockXY, blockYX, blockYY] = rooftopMoM.assembler.preconditioner.utils.generateSpatialBlocks( ...
         generators, faceSizeX, faceSizeY);
-    approximate = @(generator) fft2(kernel(rooftopMoM.assembler.preconditioner.utils.extendEvenly(generator)));
 
-    spectra = rooftopMoM.assembler.greensMatrix.Spectra(approximate(blockXX), approximate(blockXY), ...
-        approximate(blockYX), approximate(blockYY));
+    spectra = rooftopMoM.assembler.greensMatrix.Spectra(fft2(kernel(blockXX)), fft2(kernel(blockXY)), ...
+        fft2(kernel(blockYX)), fft2(kernel(blockYY)));
 end

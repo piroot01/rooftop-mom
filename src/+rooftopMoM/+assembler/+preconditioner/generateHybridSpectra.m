@@ -15,13 +15,13 @@ function spectra = generateHybridSpectra(kernel, generators, faceSizeX, faceSize
 
     [blockXX, ~, ~, blockYY] = rooftopMoM.assembler.preconditioner.utils.generateSpatialBlocks(generators, ...
         faceSizeX, faceSizeY);
-    approximate = @(generator) fft2(kernel(rooftopMoM.assembler.preconditioner.utils.extendEvenly(generator)));
 
     [countX, countY] = size(generators.electric());
     [shiftX, shiftY] = rooftopMoM.assembler.greensMatrix.utils.generateShiftPhases(countX, countY, 0, 0);
-    coupling = rooftopMoM.assembler.greensMatrix.utils.generateBlockSpectra([], [], ...
-        approximate(generators.electric()), generators.content(), faceSizeX, faceSizeY, shiftX, shiftY);
+    electric = fft2(kernel(rooftopMoM.assembler.preconditioner.utils.extendEvenly(generators.electric())));
+    coupling = rooftopMoM.assembler.greensMatrix.utils.generateBlockSpectra([], [], electric, generators.content(), ...
+        faceSizeX, faceSizeY, shiftX, shiftY);
 
-    spectra = rooftopMoM.assembler.greensMatrix.Spectra(approximate(blockXX), coupling.blockXY(), ...
-        coupling.blockYX(), approximate(blockYY));
+    spectra = rooftopMoM.assembler.greensMatrix.Spectra(fft2(kernel(blockXX)), coupling.blockXY(), ...
+        coupling.blockYX(), fft2(kernel(blockYY)));
 end
