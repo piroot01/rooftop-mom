@@ -21,6 +21,25 @@ are polynomials and to move the singular point of every piece to the origin. Eac
 quadrant $Q$ of Section~\ref{sec:antiderivatives}, with polynomial weights in front of $(u^2+v^2)^{p/2}$, and
 Proposition~\propRef{gproperties}(ii) integrates it exactly with the antiderivatives $\Gf{p}{m}{n}$.
 
+Figure~\ref{fig:rooftoptouch} shows where these configurations come from. A rooftop consists of two wedges, so a pair
+of rooftops gives four wedge pairs (Proposition~\propRef{generators}), and each wedge pair is a pair of cells. Two
+rooftops in a row that overlap by one cell have a wedge pair on the same cell, the coincident configuration. With one
+cell between them, the two inner wedges share an edge parallel to $y$. Two rooftops side by side in $y$ have wedge
+pairs that share an edge parallel to $x$, and two rooftops placed diagonally have a wedge pair that meets in a single
+vertex. In all four cases the two cells of the pair have the points of the red set in common, where $R=0$.
+
+\begin{figure}[ht]
+    \centering
+    \input{figures/rooftop_touch.tex}
+    \caption{Two $x$-directed rooftops, $\V{\Psi}^x_{\V{0}}$ (red) and a second one (blue), placed so that two of their
+    wedges lie on touching cells; the set that the two cells have in common is drawn in red on the floor. (a) Rooftop
+    offset $(1,0)$: the falling wedge of $\V{\Psi}^x_{\V{0}}$ and the rising wedge of $\V{\Psi}^x_{(1,0)}$ lie on the
+    same cell. (b) Rooftop offset $(2,0)$: the wedges on $\Om{(1,0)}$ and $\Om{(2,0)}$ share an edge parallel to $y$.
+    (c) Rooftop offset $(0,1)$: the wedges side by side share edges parallel to $x$. (d) Rooftop offset $(2,1)$: the
+    wedges on $\Om{(1,0)}$ and $\Om{(2,1)}$ share only a vertex.}
+    \label{fig:rooftoptouch}
+\end{figure}
+
 The cut is the one of Corollary~\coroRef{weights}: in each direction the interval $[-1,1]$ splits into $I_-=[-1,0]$ and
 $I_+=[0,1]$, and on each of them the weights are polynomials. This gives the four pieces $I_s\times I_t$,
 $s,t\in\{-,+\}$, of Figure~\ref{fig:regions}. The next lemma moves the singular point to the origin, one direction at a
