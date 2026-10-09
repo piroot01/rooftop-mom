@@ -105,6 +105,16 @@ normalization of Definition~\defRef{moments}, $\xi(\V{r})=\xi_1$, $\xi(\V{r}')=\
 \begin{equation*}
     \NORM{\V{r}-\V{r}'} = \sqrt{a^2(\xi_1-\xi_2-d_x)^2+b^2(\eta_1-\eta_2-d_y)^2}.
 \end{equation*}
+The moment is therefore the integral over the unit cube $[0,1]^4$
+\begin{equation}
+    \label{eq:fourfold}
+    \Mom{p}{\alpha\beta}{\offs} = \int_0^1\!\!\int_0^1\!\!\int_0^1\!\!\int_0^1
+    \xi_1^{\alpha}\,\xi_2^{\beta}\,\Bigl(a^2(\xi_1-\xi_2-d_x)^2+b^2(\eta_1-\eta_2-d_y)^2\Bigr)^{p/2}
+    \D\eta_2\D\xi_2\D\eta_1\D\xi_1 .
+\end{equation}
+The integrand depends on the coordinates of the two directions only through the differences $\xi_1-\xi_2$ and
+$\eta_1-\eta_2$, and the weight depends on the $x$-coordinates only. The proof integrates out one difference after the
+other with Lemma~\lemmaRef{correlation}, first in $x$ and then in $y$.
 
 First, the integral converges absolutely. The function $\V{z}\mapsto\NORM{\V{z}}^p$ is locally integrable on $\Rn^2$ for $p>-2$
 (polar coordinates). Lemma~\lemmaRef{correlation}, applied in each direction to the nonnegative kernel by Tonelli's
@@ -114,17 +124,50 @@ theorem, gives
     = \int_{-1}^1\!\!\int_{-1}^1(1-\ABS{\nu})(1-\ABS{\eta})\,\rho_{\offs}^p
     \le \int_{-1}^1\!\!\int_{-1}^1\rho_{\offs}^p < \infty .
 \end{equation*}
+Fubini's theorem therefore allows the four integrations of~\eqref{eq:fourfold} in any order.
 
-Second, by Fubini's theorem, fix $(\eta_1,\eta_2)$ with $\eta_1-\eta_2-d_y\ne0$ (almost every pair) and apply
-Lemma~\lemmaRef{correlation} in $(\xi_1,\xi_2)$ with $\varphi(\xi)=\xi^\alpha$, $\psi(\tau)=\tau^\beta$, $\delta=d_x$ and
+Second, the $x$-direction. Fix $\eta_1$ and $\eta_2$, and write $c=b(\eta_1-\eta_2-d_y)$ for the separation of the two
+points in $y$. The integrals over $\xi_1$ and $\xi_2$ in~\eqref{eq:fourfold} are then
 \begin{equation*}
-    h(s)=\bigl(a^2s^2+b^2(\eta_1-\eta_2-d_y)^2\bigr)^{p/2}.
+    \int_0^1\!\!\int_0^1 \xi_1^{\alpha}\,\xi_2^{\beta}\,\bigl(a^2(\xi_1-\xi_2-d_x)^2+c^2\bigr)^{p/2}\D\xi_2\D\xi_1 .
 \end{equation*}
-This gives the inner integral $\int_{-1}^{1}W_{\alpha\beta}(\nu)\,h(\nu-d_x)\D\nu$. Applying the lemma once more in
-$(\eta_1,\eta_2)$, with the weights $1$ and $1$, gives the factor $W_{00}(\eta)$.
+This is the left-hand side of~\eqref{eq:correlation} with $\varphi(\xi)=\xi^\alpha$, $\psi(\tau)=\tau^\beta$,
+$\delta=d_x$ and
+\begin{equation*}
+    h(s)=\bigl(a^2s^2+c^2\bigr)^{p/2}.
+\end{equation*}
+For $c\ne0$ the function $h$ is continuous, hence locally integrable. The pairs with $c=0$, that is
+$\eta_1-\eta_2=d_y$, form a line in the $(\eta_1,\eta_2)$-square and do not contribute to the outer integral. The
+lemma, with the weight $W_{\varphi\psi}=W_{\alpha\beta}$ of Corollary~\coroRef{weights}, gives
+\begin{equation*}
+    \int_0^1\!\!\int_0^1 \xi_1^{\alpha}\,\xi_2^{\beta}\,\bigl(a^2(\xi_1-\xi_2-d_x)^2+c^2\bigr)^{p/2}\D\xi_2\D\xi_1
+    = \int_{-1}^{1} W_{\alpha\beta}(\nu)\,\bigl(a^2(\nu-d_x)^2+c^2\bigr)^{p/2}\D\nu .
+\end{equation*}
+The two $x$-coordinates are replaced by their difference $\nu$, and the weights $\xi_1^\alpha$, $\xi_2^\beta$ by the
+single weight $W_{\alpha\beta}(\nu)$. With $c=b(\eta_1-\eta_2-d_y)$ inserted back,
+\begin{equation*}
+    \Mom{p}{\alpha\beta}{\offs} = \int_{-1}^{1} W_{\alpha\beta}(\nu)\Biggl(\int_0^1\!\!\int_0^1
+    \Bigl(a^2(\nu-d_x)^2+b^2(\eta_1-\eta_2-d_y)^2\Bigr)^{p/2}\D\eta_2\D\eta_1\Biggr)\D\nu ,
+\end{equation*}
+where the $\nu$-integration has been moved outside by Fubini's theorem.
 
-The $N$-moments are the same with the roles of the two directions exchanged, and the general kernel changes nothing in the
-argument. \qed
+Third, the $y$-direction. Fix $\nu\ne d_x$; the single value $\nu=d_x$ again does not contribute. The inner integral
+in the last display is the left-hand side of~\eqref{eq:correlation} once more, now in the variables $(\eta_1,\eta_2)$
+with $\varphi=\psi=1$, $\delta=d_y$ and
+\begin{equation*}
+    h(s)=\bigl(a^2(\nu-d_x)^2+b^2s^2\bigr)^{p/2}.
+\end{equation*}
+For the weights $1$ and $1$ the weight of the lemma is $W_{00}$, so
+\begin{equation*}
+    \int_0^1\!\!\int_0^1\Bigl(a^2(\nu-d_x)^2+b^2(\eta_1-\eta_2-d_y)^2\Bigr)^{p/2}\D\eta_2\D\eta_1
+    = \int_{-1}^{1} W_{00}(\eta)\,\rho_{\offs}(\nu,\eta)^p\D\eta .
+\end{equation*}
+Inserting this into the previous display gives the first line of~\eqref{eq:reduction}.
+
+Finally, the $N$-moments carry the weights $\eta_1^\alpha\eta_2^\beta$ in the $y$-coordinates instead. The same three
+steps then give $W_{00}(\nu)$ in $x$ and $W_{\alpha\beta}(\eta)$ in $y$, which is the second line
+of~\eqref{eq:reduction}. Nothing in the argument uses the form of the power $\rho^p$ beyond its local integrability, so
+a general admissible kernel $K$ gives the same result with $K(\rho_{\offs})$ in place of $\rho_{\offs}^p$. \qed
 
 \vspace{\baselineskip}
 \noindent\textbf{Remark.} For $\offs\in\mathcal{T}$ the singular point of $\rho_{\offs}^p$, $p<0$, is
