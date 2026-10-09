@@ -25,8 +25,11 @@ classdef Operator < rooftopMoM.Product
                 options.modifier (1, 1) function_handle = @(generator) generator
             end
 
-            generators = problem.generators().modify(options.modifier);
             rooftops = problem.rooftops();
+            [stored, working] = rooftopMoM.resources.estimateProduct(rooftops, options.product);
+            obj.requireMemory_(problem, stored, working, sprintf('The %s product', options.product));
+
+            generators = problem.generators().modify(options.modifier);
             [sizeX, sizeY] = problem.mesh().faceSize();
 
             switch options.product
@@ -47,6 +50,7 @@ classdef Operator < rooftopMoM.Product
 
             obj.problem_ = problem;
             obj.applicator_ = applicator;
+            obj.holdMemory_();
         end
     end
 end

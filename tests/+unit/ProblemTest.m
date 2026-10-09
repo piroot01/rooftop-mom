@@ -32,9 +32,8 @@ classdef ProblemTest < unit.Base
 
             rooftopMoM.Problem(rooftopMoM.Mesh(4, 3, 0.1, 0.2), 2 * pi, 'quadratureOrder', 3);
 
-            lines = sink.lines();
-            testCase.verifySubstring(lines{1}, ['[Problem.Problem]: 4 x 3 faces of 0.1 x 0.2 m, 17 rooftops, ' ...
-                'wavenumber 6.28319 rad/m, quadrature order 3.']);
+            testCase.verifyTrue(any(contains(sink.lines(), ['[Problem.Problem]: 4 x 3 faces of 0.1 x 0.2 m, ' ...
+                '17 rooftops, wavenumber 6.28319 rad/m, quadrature order 3.'])));
         end
 
         function testInvalidInputsRaiseErrors(testCase)

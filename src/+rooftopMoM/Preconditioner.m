@@ -50,6 +50,9 @@ classdef Preconditioner < rooftopMoM.Product
                 'blockwise', @rooftopMoM.assembler.preconditioner.generateBlockwiseSpectra, ...
                 'hybrid', @rooftopMoM.assembler.preconditioner.generateHybridSpectra);
 
+            [stored, working] = rooftopMoM.resources.estimatePreconditioner(problem.rooftops());
+            obj.requireMemory_(problem, stored, working, 'The circulant preconditioner');
+
             obj.problem_ = problem;
             obj.applicator_ = rooftopMoM.assembler.preconditioner.generateCirculant(problem.rooftops(), ...
                 problem.generators().modify(options.modifier), kernels.(options.kernel), builders.(options.builder));
@@ -62,6 +65,8 @@ classdef Preconditioner < rooftopMoM.Product
                 error('rooftopMoM:preconditioner:singular', ['The circulant approximation is singular at some ' ...
                     'frequency. Use another kernel or builder.']);
             end
+
+            obj.holdMemory_();
         end
     end
 end

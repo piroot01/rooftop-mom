@@ -78,6 +78,14 @@ classdef Solver
                 error('rooftopMoM:solver:sizeMismatch', 'The initial guess must have %d elements.', count);
             end
 
+            % The spectra of the products are held already; one product runs at a time next to the vectors.
+            vectors = rooftopMoM.resources.estimateSolver(count, obj.method_, ~isempty(options.preconditioner), ...
+                obj.restart_, obj.maxIterationCount_);
+            working = max(workingMemory_(operator), workingMemory_(options.preconditioner));
+            toText = @rooftopMoM.resources.utils.formatBytes;
+            rooftopMoM.resources.Budget.instance().require(vectors + working, sprintf(['The %s solve of %d unknowns ' ...
+                '(vectors %s, working %s)'], obj.method_, count, toText(vectors), toText(working)));
+
             method = obj.createMethod_(unwrap_(options.preconditioner));
             output = method.solve(unwrap_(operator), vector, double(options.initialGuess(:)));
             result = rooftopMoM.Result(output, excitation);
@@ -108,6 +116,14 @@ function operator = unwrap_(operator)
     % The iterations use the core product, which skips the checks of the API.
     if isa(operator, 'rooftopMoM.Product')
         operator = operator.applicator();
+    end
+end
+
+function bytes = workingMemory_(operator)
+    bytes = 0;
+
+    if isa(operator, 'rooftopMoM.Product')
+        bytes = operator.workingMemory();
     end
 end
 

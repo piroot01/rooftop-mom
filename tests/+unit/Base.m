@@ -1,7 +1,7 @@
 classdef (Abstract) Base < matlab.unittest.TestCase
 % Base: Common fixture of the unit tests.
-%   It puts src on the path, so a test class also runs with only the folder tests on the path. The shared logger is
-%   reset before and after every test, so no test depends on the logging state left by another one.
+%   It puts src on the path, so a test class also runs with only the folder tests on the path. The shared logger and
+%   the resources are reset before and after every test, so no test depends on the state left by another one.
 
     methods (TestClassSetup)
         function addSourcePath(testCase)
@@ -15,6 +15,11 @@ classdef (Abstract) Base < matlab.unittest.TestCase
             logger = rooftopMoM.logging.Logger.instance();
             logger.reset();
             testCase.addTeardown(@() logger.reset());
+        end
+
+        function resetResources(testCase)
+            rooftopMoM.Resources.reset();
+            testCase.addTeardown(@() rooftopMoM.Resources.reset());
         end
     end
 
