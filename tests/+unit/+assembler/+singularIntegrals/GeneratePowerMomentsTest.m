@@ -30,8 +30,8 @@ classdef GeneratePowerMomentsTest < unit.Base
         end
 
         function testCoincidentCellGivesTheSelfTermsOfTheThesis(testCase)
-            % The near-field note (Agreement with the coincident-cell formulas of the thesis): the self terms of 1 / R
-            % over two equal halves of one rooftop, over different halves and over the cell.
+            % The closed self terms of 1 / R in the appendix of the bachelor thesis, over two equal halves of one rooftop,
+            % over different halves and over the cell; the assembler used them before the near-field extraction.
             for sizes = [0.1, 0.15; 0.3, 0.05].'
                 [a, b] = deal(sizes(1), sizes(2));
                 moments = rooftopMoM.assembler.singularIntegrals.generatePowerMoments(a, b, -1);
