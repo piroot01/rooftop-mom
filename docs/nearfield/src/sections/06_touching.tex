@@ -42,7 +42,19 @@ vertex. In all four cases the two cells of the pair have the points of the red s
 
 The cut is the one of Corollary~\coroRef{weights}: in each direction the interval $[-1,1]$ splits into $I_-=[-1,0]$ and
 $I_+=[0,1]$, and on each of them the weights are polynomials. This gives the four pieces $I_s\times I_t$,
-$s,t\in\{-,+\}$, of Figure~\ref{fig:regions}. The next lemma moves the singular point to the origin, one direction at a
+$s,t\in\{-,+\}$, of Figure~\ref{fig:regions}.
+
+Moving the singular point to the origin is what makes one table of closed forms enough. First, at the origin the
+kernel is $(u^2+v^2)^{p/2}$ without any shift, so every piece of every configuration is integrated by the same functions
+$\Gf{p}{m}{n}$ of Definition~\defRef{antiderivative}, which depend only on the end point $(a,b)$ of the rectangle. A
+singular point at some other position $(u_0,v_0)$ would need a separate family of antiderivatives for every shift.
+Second, on a piece with $u,v\ge0$ the absolute values $\ABS{x-x'}$ and $\ABS{y-y'}$ in the distance and the kinks of the
+weights at $\nu=d_x$ and $\eta=d_y$ disappear, so the integrand is a sum of terms $u^mv^n(u^2+v^2)^{p/2}$, the integrand
+of~\eqref{eq:G}. Third, the singular point is a corner of every piece that contains it, and $\Gf{p}{m}{n}$ vanishes on
+both axes (Proposition~\propRef{gproperties}(i)). The corner sum~\eqref{eq:corner} therefore never evaluates anything at
+$R=0$, and the singularity is integrated exactly, without a limit. Placing the singularity at a vertex is also the
+starting point of the Duffy transformation~\cite{duffy1982}, which uses it to make the integrand smooth for quadrature
+instead of integrating it in closed form. The next lemma moves the singular point to the origin, one direction at a
 time.
 
 \lemmaTitle{The polynomial pieces}{pieces} Let $d\in\{0,1\}$ be the offset in the $x$-direction, so that the singular
