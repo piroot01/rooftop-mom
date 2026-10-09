@@ -1,0 +1,25 @@
+Near-field singularity extraction
+=================================
+
+A technical note on the near-field extraction in src: the three-term extraction (1/R, R, R^3) on all touching cells
+of the rooftop EFIE on a uniform grid, and the closed forms of all static integrals it needs, written in the form of
+the bachelor-thesis appendix.
+
+Build
+
+    make            builds out/main.pdf with Tectonic
+    make clean      removes out/
+    make generated  regenerates src/generated/*.tex, needs a Python with sympy and mpmath, e.g.
+                    make generated PYTHON="uv run --no-project --with sympy --with mpmath python"
+
+Layout
+
+    src/main.tex                the driver
+    src/sections/               one file per section and appendix
+    src/figures/                the TikZ figures
+    src/generated/              the formula tables of the appendices, written by tools/make_tex.py
+    src/include/template.sty    the bachelor-thesis template, unchanged
+    src/include/note.sty        the macros of the note
+    tools/derive_G3.py          the mixed antiderivatives, verified symbolically and by 30-digit quadrature
+    tools/doc_pieces.py         the pieces of the weights and the corner sums of the touching moments
+    tools/make_tex.py           the tables, each formula checked against its corner sum to 30 digits
