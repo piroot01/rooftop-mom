@@ -34,6 +34,10 @@ for k = 1:numel(kernels)
     end
 end
 
+% The blockwise builder approximates the four blocks of the matrix in space; it suits the R. Chan kernel.
+preconditioner = rooftopMoM.Preconditioner(problem, 'kernel', 'rChan', 'builder', 'blockwise');
+report_('rChan, blockwise', solver.solve(operator, excitation, 'preconditioner', preconditioner));
+
 % The huckle kernel keeps the offsets within its bandwidth, by default the whole grid.
 preconditioner = rooftopMoM.Preconditioner(problem, 'kernel', 'huckle', 'bandwidth', [16, 16]);
 report_('huckle, bandwidth 16', solver.solve(operator, excitation, 'preconditioner', preconditioner));
