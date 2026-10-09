@@ -4,7 +4,7 @@ classdef Solver
 %       result = solver.solve(operator, excitation, 'preconditioner', preconditioner);
 %   The operator and the preconditioner may also be a matrix, a function handle or any object with the method apply,
 %   and the right-hand side a plain vector. Outside of this package the solver needs only rooftopMoM.Solver,
-%   rooftopMoM.Result and the packages rooftopMoM.solver and rooftopMoM.logging.
+%   rooftopMoM.Result and the packages rooftopMoM.solver, rooftopMoM.resources and rooftopMoM.logging.
 
     properties (Access = private)
         method_ char;
