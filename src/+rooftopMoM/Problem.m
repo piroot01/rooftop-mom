@@ -1,7 +1,7 @@
 classdef Problem < handle
 % Problem: The electric field integral equation of a Mesh at one wavenumber, discretized with rooftops. The
 %   generators of its Green's matrix are assembled once, when an Operator or a Preconditioner needs them first.
-%       problem = rooftopMoM.Problem(mesh, 2 * pi, 'quadratureOrder', 5);
+%       problem = rooftopMoM.Problem(mesh, 2 * pi, 'quadratureOrder', [16, 8]);
 
     properties (Access = private)
         mesh_ rooftopMoM.Mesh;
@@ -20,7 +20,10 @@ classdef Problem < handle
         %       wavenumber: Wavenumber in rad/m, 2 * pi / wavelength.
         %
         %   Optional name-value inputs:
-        %       'quadratureOrder': Number of Gauss-Legendre points per face and direction (default 5).
+        %       'quadratureOrder': Gauss-Legendre orders [near, far] of the cell pairs, or one order for both (default
+        %           [16, 8], which gives the entries of the Green's matrix to about 1e-14, or 1e-13 for faces ten times
+        %           as long as wide). The faces of a near pair are less than three longer face sides apart. The
+        %           excitation uses the far order.
         %       'memoryBytes': Peak memory of one chunk of the assembly in bytes (default 2^24, or what the memory
         %           ceiling of rooftopMoM.Resources leaves). Chunks of about the size of the last-level cache of the CPU
         %           are the fastest; larger ones are slower.
@@ -28,11 +31,12 @@ classdef Problem < handle
             arguments
                 mesh (1, 1) rooftopMoM.Mesh
                 wavenumber (1, 1) {mustBeReal, mustBeFinite, mustBePositive}
-                options.quadratureOrder (1, 1) {mustBeInteger, mustBePositive} = 5
+                options.quadratureOrder {mustBeInteger, mustBePositive, mustBeOneOrTwo_} = [16, 8]
                 options.memoryBytes {mustBeScalarOrEmpty, mustBeReal, mustBeFinite, mustBePositive} = []
             end
 
-            quadrature = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(double(options.quadratureOrder));
+            orders = double([options.quadratureOrder(1), options.quadratureOrder(end)]);
+            quadrature = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(orders(2));
             rooftops = rooftopMoM.basisFunctions.UniformRooftops(mesh.primitive(), quadrature);
             memoryBytes = double(options.memoryBytes);
 
@@ -42,15 +46,14 @@ classdef Problem < handle
             end
 
             obj.mesh_ = mesh;
-            obj.context_ = rooftopMoM.assembler.AssemblerContext(rooftops, double(wavenumber), memoryBytes, ...
-                double(options.quadratureOrder) * [1, 1]);
+            obj.context_ = rooftopMoM.assembler.AssemblerContext(rooftops, double(wavenumber), memoryBytes, orders);
             obj.requireAssembly_();
 
             [countX, countY] = mesh.count();
             [sizeX, sizeY] = mesh.faceSize();
             rooftopMoM.logging.Logger.instance().debug(['%d x %d faces of %g x %g m, %d rooftops, wavenumber %g ' ...
-                'rad/m, quadrature order %d.'], countX, countY, sizeX, sizeY, rooftops.count(), wavenumber, ...
-                options.quadratureOrder);
+                'rad/m, quadrature orders %d near and %d far.'], countX, countY, sizeX, sizeY, rooftops.count(), ...
+                wavenumber, orders(1), orders(2));
         end
 
         function delete(obj)
@@ -115,5 +118,11 @@ classdef Problem < handle
             rooftopMoM.resources.Budget.instance().require(generatorBytes + chunkBytes, sprintf(['The assembly of %d ' ...
                 'rooftops (generators %s, chunk %s)'], obj.rooftopCount(), toText(generatorBytes), toText(chunkBytes)));
         end
+    end
+end
+
+function mustBeOneOrTwo_(value)
+    if ~ismember(numel(value), [1, 2])
+        error('rooftopMoM:problem:invalidQuadratureOrder', 'The quadrature order is one order or a pair [near, far].');
     end
 end
