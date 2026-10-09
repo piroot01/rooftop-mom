@@ -1,4 +1,4 @@
-classdef KernelsTest < unit.Base
+classdef KernelsTest < unit.assembler.preconditioner.Base
 % KernelsTest: Tests of the circulant approximations in rooftopMoM.assembler.preconditioner.kernels.
 
     properties (TestParameter)
@@ -80,6 +80,29 @@ classdef KernelsTest < unit.Base
             testCase.verifyEmpty(rooftopMoM.assembler.preconditioner.kernels.generateTChan([]));
             testCase.verifyEmpty(rooftopMoM.assembler.preconditioner.kernels.generateRChan([]));
             testCase.verifyEmpty(rooftopMoM.assembler.preconditioner.kernels.generateHuckle([], 2, 2));
+            testCase.verifyEmpty(rooftopMoM.assembler.preconditioner.kernels.generateSuperoptimal([]));
+        end
+
+        function testSuperoptimalMatchesItsDefinition(testCase)
+            % C = c(T * T') / c(T') with the eigenvalues of c, the diagonal of the matrix in the Fourier basis.
+            rng(1);
+            generator = complex(randn(7, 5), randn(7, 5));
+            matrix = testCase.generateToeplitzMatrix(generator);
+            fourier = testCase.generateFourierMatrix([4, 3]);
+            expected = diag(fourier * (matrix * matrix') * fourier') ./ conj(diag(fourier * matrix * fourier'));
+
+            circulant = rooftopMoM.assembler.preconditioner.kernels.generateSuperoptimal(generator);
+
+            testCase.verifyEqual(reshape(fft2(circulant), [], 1), expected, 'AbsTol', 1e-12 * max(abs(expected)));
+        end
+
+        function testSuperoptimalOfAnEvenGeneratorIsSymmetric(testCase)
+            rng(1);
+            generator = rooftopMoM.assembler.preconditioner.utils.extendEvenly(complex(randn(5, 4), randn(5, 4)));
+            circulant = rooftopMoM.assembler.preconditioner.kernels.generateSuperoptimal(generator);
+
+            testCase.verifyEqual(circulant, circulant([1, 5:(-1):2], [1, 4:(-1):2]), ...
+                'AbsTol', 1e-13 * max(abs(circulant(:))));
         end
     end
 end

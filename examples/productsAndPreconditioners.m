@@ -38,6 +38,10 @@ end
 preconditioner = rooftopMoM.Preconditioner(problem, 'kernel', 'rChan', 'builder', 'blockwise');
 report_('rChan, blockwise', solver.solve(operator, excitation, 'preconditioner', preconditioner));
 
+% The superoptimal circulant of Tyrtyshnikov, a kernel like the others.
+preconditioner = rooftopMoM.Preconditioner(problem, 'kernel', 'superoptimal');
+report_('superoptimal, partwise', solver.solve(operator, excitation, 'preconditioner', preconditioner));
+
 % The huckle kernel keeps the offsets within its bandwidth, by default the whole grid.
 preconditioner = rooftopMoM.Preconditioner(problem, 'kernel', 'huckle', 'bandwidth', [16, 16]);
 report_('huckle, bandwidth 16', solver.solve(operator, excitation, 'preconditioner', preconditioner));
