@@ -1,30 +1,18 @@
 function circulant = generateRChan(generator)
-% generateRChan: Returns the R. Chan circulant approximation of a symmetric Toeplitz generator: in every direction the
-%   offset k > 0 gets the generator at k plus the generator at count - k, so the circulant stays symmetric.
+% generateRChan: Returns the R. Chan circulant approximation of a Toeplitz generator: every offset wrapped onto the
+%   period, so the offset k > 0 gets the generator at k plus the generator at k - count.
 %
 %   Input:
-%       generator: 2D Toeplitz generator (may be empty).
+%       generator: (2 * countX - 1) x (2 * countY - 1) two-sided generator (may be empty).
 %
 %   Output:
-%       circulant: Generator of the circulant, of the size of the input.
+%       circulant: countX x countY generator of the circulant.
 
     if isempty(generator)
         circulant = [];
         return;
     end
 
-    circulant = addReflection_(addReflection_(generator, 1), 2);
-end
-
-function reflected = addReflection_(generator, dimension)
-    count = size(generator, dimension);
-    indices = repmat({':'}, 1, 2);
-    indices{dimension} = [1, count:(-1):2];
-    reflection = generator(indices{:});
-
-    % The zero offset has no counterpart.
-    indices{dimension} = 1;
-    reflection(indices{:}) = 0;
-
-    reflected = generator + reflection;
+    circulant = rooftopMoM.assembler.preconditioner.utils.foldGenerator(generator, @(offsets, ~, ~) ...
+        ones(size(offsets)));
 end

@@ -4,7 +4,8 @@ function spectra = generateHybridSpectra(kernel, generators, faceSizeX, faceSize
 %   blocks follow from the circulant approximation of the electric generator as in generatePartwiseSpectra.
 %
 %   Inputs:
-%       kernel: Function handle returning the circulant approximation of a generator (preconditioner.kernels).
+%       kernel: Function handle returning the circulant approximation of a two-sided generator
+%           (preconditioner.kernels).
 %       generators: rooftopMoM.assembler.greensMatrix.Generators.
 %       faceSizeX: Face size in the x direction.
 %       faceSizeY: Face size in the y direction.
@@ -14,12 +15,13 @@ function spectra = generateHybridSpectra(kernel, generators, faceSizeX, faceSize
 
     [blockXX, ~, ~, blockYY] = rooftopMoM.assembler.preconditioner.utils.generateSpatialBlocks(generators, ...
         faceSizeX, faceSizeY);
+    approximate = @(generator) fft2(kernel(rooftopMoM.assembler.preconditioner.utils.extendEvenly(generator)));
 
     [countX, countY] = size(generators.electric());
     [shiftX, shiftY] = rooftopMoM.assembler.greensMatrix.utils.generateShiftPhases(countX, countY, 0, 0);
     coupling = rooftopMoM.assembler.greensMatrix.utils.generateBlockSpectra([], [], ...
-        fft2(kernel(generators.electric())), generators.content(), faceSizeX, faceSizeY, shiftX, shiftY);
+        approximate(generators.electric()), generators.content(), faceSizeX, faceSizeY, shiftX, shiftY);
 
-    spectra = rooftopMoM.assembler.greensMatrix.Spectra(fft2(kernel(blockXX)), coupling.blockXY(), ...
-        coupling.blockYX(), fft2(kernel(blockYY)));
+    spectra = rooftopMoM.assembler.greensMatrix.Spectra(approximate(blockXX), coupling.blockXY(), ...
+        coupling.blockYX(), approximate(blockYY));
 end

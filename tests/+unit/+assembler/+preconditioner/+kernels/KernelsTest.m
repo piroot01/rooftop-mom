@@ -10,27 +10,33 @@ classdef KernelsTest < unit.Base
     end
 
     methods (Test)
-        function testCirculantIsSymmetric(testCase, kernel)
-            % A circulant is symmetric if its generator is even: c(k) = c(n - k) in both directions.
+        function testReversedGeneratorGivesTheTransposedCirculant(testCase, kernel)
+            % g(-p, -q) in place of g(p, q) transposes the matrix, so the circulant must become c(-k, -l). This keeps
+            % symmetric matrices and transposed coupling blocks symmetric.
             rng(1);
-            circulant = kernel(randn(6, 5));
+            generator = randn(11, 9);
+            circulant = kernel(generator);
 
-            testCase.verifyEqual(circulant, circulant([1, 6:(-1):2], [1, 5:(-1):2]), 'AbsTol', 1e-14);
+            testCase.verifyEqual(kernel(rot90(generator, 2)), circulant([1, 6:(-1):2], [1, 5:(-1):2]), ...
+                'AbsTol', 1e-14);
         end
 
         function testStrangAndTChanKeepACirculant(testCase)
-            % A symmetric circulant generator t(k) = t(n - k) is its own best circulant approximation.
-            circulant = testCase.symmetricCirculant_(6, 5);
+            % The Toeplitz matrix of a circulant generator is the circulant, its own best approximation.
+            rng(1);
+            circulant = randn(6, 5);
+            generator = circulant(mod(-5:5, 6) + 1, mod(-4:4, 5) + 1);
 
-            testCase.verifyEqual(rooftopMoM.assembler.preconditioner.kernels.generateStrang(circulant), circulant, ...
+            testCase.verifyEqual(rooftopMoM.assembler.preconditioner.kernels.generateStrang(generator), circulant, ...
                 'AbsTol', 1e-14);
-            testCase.verifyEqual(rooftopMoM.assembler.preconditioner.kernels.generateTChan(circulant), circulant, ...
+            testCase.verifyEqual(rooftopMoM.assembler.preconditioner.kernels.generateTChan(generator), circulant, ...
                 'AbsTol', 1e-14);
         end
 
         function testStrangCopiesTheCentralOffsets(testCase)
             generator = reshape(1:20, 5, 4);
-            circulant = rooftopMoM.assembler.preconditioner.kernels.generateStrang(generator);
+            circulant = rooftopMoM.assembler.preconditioner.kernels.generateStrang( ...
+                rooftopMoM.assembler.preconditioner.utils.extendEvenly(generator));
 
             testCase.verifyEqual(circulant(1:3, 1:3), generator(1:3, 1:3));
             testCase.verifyEqual(circulant(4:5, 1), generator([3, 2], 1));
@@ -39,7 +45,8 @@ classdef KernelsTest < unit.Base
 
         function testRChanAddsTheReflectionInEveryDirection(testCase)
             generator = reshape(1:12, 4, 3);
-            circulant = rooftopMoM.assembler.preconditioner.kernels.generateRChan(generator);
+            circulant = rooftopMoM.assembler.preconditioner.kernels.generateRChan( ...
+                rooftopMoM.assembler.preconditioner.utils.extendEvenly(generator));
 
             % Offsets (i, j) counted from 0: (1, 0) gains (3, 0), (0, 1) gains (0, 2), (1, 1) gains all three.
             testCase.verifyEqual(circulant(1, 1), generator(1, 1));
@@ -50,7 +57,8 @@ classdef KernelsTest < unit.Base
 
         function testHuckleKeepsTheZeroOffset(testCase)
             generator = reshape(1:20, 5, 4);
-            circulant = rooftopMoM.assembler.preconditioner.kernels.generateHuckle(generator, 1, 1);
+            circulant = rooftopMoM.assembler.preconditioner.kernels.generateHuckle( ...
+                rooftopMoM.assembler.preconditioner.utils.extendEvenly(generator), 1, 1);
 
             expected = zeros(5, 4);
             expected(1, 1) = generator(1, 1);
@@ -59,7 +67,8 @@ classdef KernelsTest < unit.Base
 
         function testHuckleDampsAndWraps(testCase)
             generator = reshape(1:20, 5, 4);
-            circulant = rooftopMoM.assembler.preconditioner.kernels.generateHuckle(generator, 2, 1);
+            circulant = rooftopMoM.assembler.preconditioner.kernels.generateHuckle( ...
+                rooftopMoM.assembler.preconditioner.utils.extendEvenly(generator), 2, 1);
 
             % Offset 1 in x, damped by 1 - 1 / 2, sits at offsets 1 and 4.
             testCase.verifyEqual(circulant([2, 5], 1), [0.5; 0.5] * generator(2, 1));
@@ -71,18 +80,6 @@ classdef KernelsTest < unit.Base
             testCase.verifyEmpty(rooftopMoM.assembler.preconditioner.kernels.generateTChan([]));
             testCase.verifyEmpty(rooftopMoM.assembler.preconditioner.kernels.generateRChan([]));
             testCase.verifyEmpty(rooftopMoM.assembler.preconditioner.kernels.generateHuckle([], 2, 2));
-        end
-    end
-
-    methods (Access = private)
-        function generator = symmetricCirculant_(~, countX, countY)
-            rng(1);
-            values = randn(countX, countY);
-            p = mod(-(0:(countX - 1)), countX) + 1;
-            q = mod(-(0:(countY - 1)), countY) + 1;
-
-            % Averaging with the wrapped offsets makes t(k) = t(n - k) in both directions.
-            generator = (values + values(p, :) + values(:, q) + values(p, q)) / 4;
         end
     end
 end

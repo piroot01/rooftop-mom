@@ -4,7 +4,8 @@ function spectra = generatePartwiseSpectra(kernel, generators, faceSizeX, faceSi
 %   follow as for the Green's matrix itself.
 %
 %   Inputs:
-%       kernel: Function handle returning the circulant approximation of a generator (preconditioner.kernels).
+%       kernel: Function handle returning the circulant approximation of a two-sided generator
+%           (preconditioner.kernels).
 %       generators: rooftopMoM.assembler.greensMatrix.Generators.
 %       faceSizeX: Face size in the x direction.
 %       faceSizeY: Face size in the y direction.
@@ -13,7 +14,8 @@ function spectra = generatePartwiseSpectra(kernel, generators, faceSizeX, faceSi
 %       spectra: rooftopMoM.assembler.greensMatrix.Spectra on the face grid.
 
     [countX, countY] = size(generators.electric());
-    approximate = @(generator) fft2(kernel(rooftopMoM.assembler.utils.padWithZeros(generator, countX, countY)));
+    approximate = @(generator) fft2(kernel(rooftopMoM.assembler.preconditioner.utils.extendEvenly( ...
+        rooftopMoM.assembler.utils.padWithZeros(generator, countX, countY))));
     [shiftX, shiftY] = rooftopMoM.assembler.greensMatrix.utils.generateShiftPhases(countX, countY, 0, 0);
 
     spectra = rooftopMoM.assembler.greensMatrix.utils.generateBlockSpectra(approximate(generators.magneticXX()), ...
