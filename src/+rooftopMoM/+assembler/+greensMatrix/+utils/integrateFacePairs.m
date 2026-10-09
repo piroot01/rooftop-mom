@@ -21,8 +21,9 @@ function integrals = integrateFacePairs(context, gridSize, shift, weights, stati
     pairCount = numel(weights);
     count = prod(gridSize);
 
-    % The kernel step holds the distances and three complex arrays at once, 56 bytes per point pair.
-    chunkLength = context.chunkLength(56 * pairCount);
+    % A chunk peaks in the kernel step with the distances and one complex array, 24 bytes per point pair: MATLAB
+    % computes the other temporaries in place.
+    chunkLength = context.chunkLength(24 * pairCount);
     chunkCount = ceil(count / chunkLength);
 
     logger = rooftopMoM.logging.Logger.instance();
@@ -51,6 +52,9 @@ function integrals = integrateFacePairs(context, gridSize, shift, weights, stati
         end
 
         integrals(indices) = weights(:).' * reshape(kernel, pairCount, []);
+
+        % Freed here, the arrays of this chunk do not overlap with those of the next one.
+        clear distance kernel
 
         if isTrace
             logger.trace('Integrated chunk %d of %d.', n, chunkCount);

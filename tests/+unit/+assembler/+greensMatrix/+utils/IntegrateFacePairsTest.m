@@ -52,6 +52,28 @@ classdef IntegrateFacePairsTest < unit.Base
                 rooftopMoM.assembler.greensMatrix.utils.integrateFacePairs(oneChunk, [5, 4], [0; 0], weights, 1), ...
                 'RelTol', 1e-14);
         end
+
+        function testPeakMemoryMatchesTheBudget(testCase)
+            % Linux keeps the peak resident memory of the process and resets it on request.
+            testCase.assumeTrue(isfile('/proc/self/clear_refs'), 'The peak memory is read from Linux /proc only.');
+
+            % A budget of 256 MB splits the 65 536 face pairs into four chunks.
+            budget = 2^28;
+            context = testCase.createContext(256, 256, 0.05, 0.05, 5, 2 * pi, budget);
+            weights = context.rooftops().quadrature().weights4D();
+            integrate = @(gridSize) rooftopMoM.assembler.greensMatrix.utils.integrateFacePairs(context, gridSize, ...
+                [0; 0], weights, 0);
+
+            % A small first call loads the code, so only the arrays of the chunks remain to be measured.
+            integrate([16, 16]);
+            baseline = readStatus_('VmRSS');
+            resetPeak_();
+            integrals = integrate([256, 256]);
+            peak = readStatus_('VmHWM') - baseline - 16 * numel(integrals);
+
+            testCase.verifyLessThanOrEqual(peak, 1.01 * budget);
+            testCase.verifyGreaterThanOrEqual(peak, 0.95 * budget);
+        end
     end
 
     methods (Access = private)
@@ -69,4 +91,17 @@ classdef IntegrateFacePairsTest < unit.Base
             end
         end
     end
+end
+
+function bytes = readStatus_(field)
+    text = fileread('/proc/self/status');
+    value = regexp(text, [field, ':\s*(\d+) kB'], 'tokens', 'once');
+    bytes = 1024 * str2double(value{1});
+end
+
+function resetPeak_()
+    % Writing 5 to clear_refs sets the peak resident memory back to the current one.
+    fileId = fopen('/proc/self/clear_refs', 'w');
+    fprintf(fileId, '5');
+    fclose(fileId);
 end
