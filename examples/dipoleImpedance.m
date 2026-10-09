@@ -8,6 +8,10 @@ segmentCount = 40;
 mesh = rooftopMoM.Mesh(segmentCount, 1, dipoleLength / segmentCount, 0.004);
 solver = rooftopMoM.Solver('method', 'gmres', 'tolerance', 1e-8);
 
+% Every frequency is the same run on the same mesh, so one check before the sweep covers them all.
+rooftopMoM.Resources.configure('memory', 2^28);
+rooftopMoM.Resources.check(mesh, 'preconditioner', false, 'method', 'gmres');
+
 % Dipole lengths in wavelengths; every frequency is a problem of its own.
 electricalLengths = 0.40:0.01:0.60;
 impedances = zeros(size(electricalLengths));
@@ -36,3 +40,5 @@ impedance = result.inputImpedance();
 radiatedPower = real(current' * resistance.apply(current)) / 2;
 fprintf('Half-wave dipole: %.1f %+.1fi ohm, radiates %.4f mW of the %.4f mW fed at 1 V.\n', real(impedance), ...
     imag(impedance), 1e3 * radiatedPower, 1e3 * real(1 / impedance) / 2);
+
+rooftopMoM.Resources.reset();

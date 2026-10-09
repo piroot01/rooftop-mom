@@ -8,8 +8,14 @@ rooftopMoM.Logging.configure('level', 'info');
 wavelength = 1;
 side = 2 * wavelength;
 faceCount = 20;
-problem = rooftopMoM.Problem(rooftopMoM.Mesh(faceCount, faceCount, side / faceCount, side / faceCount), ...
-    2 * pi / wavelength);
+mesh = rooftopMoM.Mesh(faceCount, faceCount, side / faceCount, side / faceCount);
+
+% The run may take 1 GB and leaves one core to the rest of the machine; check estimates it before anything is built.
+rooftopMoM.Resources.configure('memory', 2^30, 'threads', max(1, maxNumCompThreads - 1));
+report = rooftopMoM.Resources.check(mesh);
+fprintf('The run needs %.1f MB at its peak.\n', report.peak / 2^20);
+
+problem = rooftopMoM.Problem(mesh, 2 * pi / wavelength);
 
 % The product and the preconditioner are built once and serve every angle.
 operator = rooftopMoM.Operator(problem);
@@ -32,6 +38,7 @@ for n = 1:numel(angles)
 end
 
 rooftopMoM.Logging.reset();
+rooftopMoM.Resources.reset();
 
 % Physical optics: 4 * pi * (area / wavelength)^2 * cos^2, times sinc^2 of the phase across the plate.
 phase = 2 * pi / wavelength * side * sind(angles);

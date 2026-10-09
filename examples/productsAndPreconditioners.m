@@ -3,18 +3,22 @@
 
 addpath(fullfile(fileparts(fileparts(mfilename('fullpath'))), 'src'));
 
-% A finer quadrature than the default, and the memory of one assembly chunk set to 32 MB.
-problem = rooftopMoM.Problem(rooftopMoM.Mesh(64, 64, 0.05, 0.05), 2 * pi, 'quadratureOrder', 6, ...
-    'memoryBytes', 2^25);
+% The comparison may take 512 MB. A finer quadrature than the default, and one assembly chunk of 32 MB.
+rooftopMoM.Resources.configure('memory', 2^29);
+mesh = rooftopMoM.Mesh(64, 64, 0.05, 0.05);
+problem = rooftopMoM.Problem(mesh, 2 * pi, 'quadratureOrder', 6, 'memoryBytes', 2^25);
 input = rand(problem.rooftopCount(), 1);
 products = {'fft', 'splitFFT', 'leanSplitFFT'};
 
 fprintf('%d unknowns\n', problem.rooftopCount());
 
 for n = 1:numel(products)
+    % check estimates the run with each product before the product is built.
+    report = rooftopMoM.Resources.check(mesh, 'memoryBytes', 2^25, 'product', products{n});
     operator = rooftopMoM.Operator(problem, 'product', products{n});
-    fprintf('%-13s %6.2f ms per product, %5.1f MB stored, %5.1f MB at the peak\n', products{n}, ...
-        1e3 * timeit(@() operator.apply(input)), operator.memory() / 2^20, operator.workingMemory() / 2^20);
+    fprintf('%-13s %6.2f ms per product, %5.1f MB stored (%5.1f MB estimated), %5.1f MB at the peak\n', ...
+        products{n}, 1e3 * timeit(@() operator.apply(input)), operator.memory() / 2^20, report.product / 2^20, ...
+        operator.workingMemory() / 2^20);
 end
 
 operator = rooftopMoM.Operator(problem);
@@ -49,6 +53,10 @@ report_('huckle, bandwidth 16', solver.solve(operator, excitation, 'precondition
 % A modifier builds the preconditioner from a part of the matrix, here its imaginary part.
 preconditioner = rooftopMoM.Preconditioner(problem, 'modifier', @imag);
 report_('tChan, imaginary part', solver.solve(operator, excitation, 'preconditioner', preconditioner));
+
+% The generators, the product and the last preconditioner are still alive.
+fprintf('\nThe live objects hold %.1f MB.\n', rooftopMoM.Resources.held() / 2^20);
+rooftopMoM.Resources.reset();
 
 function report_(name, result)
     fprintf('%-22s %5d iterations %7.2f s\n', name, result.iterationCount(), result.time());
