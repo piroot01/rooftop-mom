@@ -5,7 +5,7 @@
 \begin{equation}
     \label{eq:taylor}
     g(R) = \frac{\mathrm{e}^{-\I kR}}{R}
-         = \sum_{j=0}^{\infty} \frac{(-\I k)^j}{j!}\,R^{j-1}
+         = \sum_{n=0}^{\infty} \frac{(-\I k)^n}{n!}\,R^{n-1}
          = \sum_{\ell=0}^{\infty} \frac{(-1)^\ell k^{2\ell}}{(2\ell)!}\,R^{2\ell-1}
          \;-\;\I \sum_{\ell=0}^{\infty} \frac{(-1)^\ell k^{2\ell+1}}{(2\ell+1)!}\,R^{2\ell}.
 \end{equation}
@@ -14,8 +14,8 @@ functions of $\V{z}=\V{r}-\V{r}'\in\Rn^2$ the even powers $R^{2\ell}=\NORM{\V{z}
 $R^{2\ell-1}$ are not smooth at $\V{z}=\V{0}$.
 
 \vspace{\baselineskip}
-\proof Insert the exponential series and separate the even and odd $j$; this is Proposition \textit{greensing}
-of~\cite{machacek2025method}. \qed
+\proof Insert the exponential series and separate the even and odd $n$; this is Proposition~2.2
+in Section~2.6 of~\cite{machacek2025method}. \qed
 
 \defTitle{Extraction of order $N$}{extraction} For $N\in\N$ let
 \begin{equation}
@@ -25,7 +25,7 @@ of~\cite{machacek2025method}. \qed
     g_N = g - S_N .
 \end{equation}
 Table~\ref{tab:extraction} lists the orders: $N=1$ is the extraction of \src{}, $N=2$ the two-term extraction
-of~\cite{machacek2025method} (Entry \textit{singex}), there written as
+of~\cite{machacek2025method} (Entry~2.1 in Section~2.6), there written as
 \begin{equation*}
     g=g_{\mathrm{s}}+\frac{1}{4\uppi}R^{-1}-\frac{k^2}{8\uppi}R,
 \end{equation*}
@@ -50,8 +50,8 @@ with the entire functions
 The function $E(\NORM{\V{z}}^2)$ is real-analytic on $\Rn^2$.
 
 The function $\NORM{\V{z}}^{2N-1}=\bigl(\NORM{\V{z}}^2\bigr)^{N-1}\NORM{\V{z}}$ is smooth away from the origin and
-positively homogeneous of degree $2N-1$. Hence its derivatives of order $j\le 2N-2$ are homogeneous of degree
-$2N-1-j\ge1$. They are therefore continuous at the origin (with the value zero), and those of order $2N-2$, being
+positively homogeneous of degree $2N-1$. Hence its derivatives of order $m\le 2N-2$ are homogeneous of degree
+$2N-1-m\ge1$. They are therefore continuous at the origin (with the value zero), and those of order $2N-2$, being
 homogeneous of degree one, are Lipschitz. The derivatives of order $2N-1$ are homogeneous of degree zero and not constant,
 so they are bounded but discontinuous at the origin.
 

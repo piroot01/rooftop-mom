@@ -79,7 +79,7 @@ The same formulas with $a$ and $b$ exchanged give the inner integrals $\int_0^b 
 
 \vspace{\baselineskip}
 \proof
-\textit{Base cases.} They follow from
+The base cases follow from
 \begin{align*}
     \frac{\D}{\D u}\arsinh\frac{u}{b} &= \bigl(u^2+b^2\bigr)^{-1/2},\qquad
     \frac{\D}{\D u}\bigl(u^2+b^2\bigr)^{(q+2)/2} = (q+2)\,u\,\bigl(u^2+b^2\bigr)^{q/2},\\
@@ -91,12 +91,12 @@ the first one gives $K^{(-1)}_0$ and the second one~\eqref{eq:K1}. The last one 
 \end{equation*}
 which produces~\eqref{eq:K0} from $K^{(-1)}_0$.
 
-\textit{Recursion.} For $m\ge2$ integrate from $0$ to $a$
+For the recursion with $m\ge2$, integrate from $0$ to $a$
 \begin{equation*}
     \frac{\D}{\D u}\bigl(u^{m-1}(u^2+b^2)^{(q+2)/2}\bigr)=(m-1)b^2u^{m-2}(u^2+b^2)^{q/2}+(m+q+1)u^m(u^2+b^2)^{q/2}.
 \end{equation*}
 
-\textit{Logarithmic terms.} Integrate by parts with
+The logarithmic terms follow by integration by parts with
 \begin{equation*}
     \frac{\D}{\D u}\arsinh\frac{b}{u}=-\frac{b}{u\sqrt{u^2+b^2}};
 \end{equation*}
@@ -110,16 +110,16 @@ the boundary term $u^{m+1}\arsinh(b/u)$ vanishes as $u\to0^+$. \qed
     &\phantom{{}=\frac{1}{D}\Bigg(}+ P_3\log\left(\frac{\sqrt{a^2+b^2}+b}{a}\right)\Bigg),
     \end{split}
 \end{equation}
-with an integer $D$ and homogeneous integer polynomials $P_i(a,b)$, listed in Appendix~\ref{app:antiderivatives}. These
+with an integer $D$ and homogeneous integer polynomials $P_0,\dots,P_3$ in $a$ and $b$, listed in Appendix~\ref{app:antiderivatives}. These
 are all the antiderivatives the moments need; any other one follows from the symmetry
 $\Gf{p}{n}{m}(b,a)=\Gf{p}{m}{n}(a,b)$.
 
 \vspace{\baselineskip}
 \proof
-\textit{Construction.} Integrate first in $v$ and then in $u$ with Lemma~\lemmaRef{oned}. Every step produces only terms of
-the form~\eqref{eq:Gform}.
+The formulas are obtained by integrating first in $v$ and then in $u$ with Lemma~\lemmaRef{oned}; every step
+produces only terms of the form~\eqref{eq:Gform}.
 
-\textit{Verification.} Each formula of Appendix~\ref{app:antiderivatives} is continuous on $Q$, vanishes on the axes and
+To verify them, note that each formula of Appendix~\ref{app:antiderivatives} is continuous on $Q$, vanishes on the axes and
 satisfies $\partial_a\partial_bF=a^mb^n(a^2+b^2)^{p/2}$; these properties were checked by exact symbolic computation
 (SymPy).
 Hence $F=\Gf{p}{m}{n}$ by Proposition~\propRef{gproperties}(iii). All formulas also agree

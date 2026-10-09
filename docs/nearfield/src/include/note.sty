@@ -17,12 +17,14 @@
 \newcommand{\Zn}{\mathbb{Z}}
 \newcommand{\GL}{GL}
 \newcommand{\src}{\texttt{src}}
+% Proofs open with an upright label; the thesis template sets it in italics.
+\renewcommand{\proof}{\noindent\textbf{Proof.}\quad}
 
 % Figures: the TikZ style of the thesis figures.
 \RequirePackage{tikz-3dplot}
 \usetikzlibrary{calc,arrows.meta}
-% \noteroofx{i}{j}{rising line}{rising fill}{falling line}{falling fill}: the x-directed rooftop on the cells (i,j),
-% (i+1,j) in a tdplot picture with the cell sizes \dx, \dy and the height \roofh; names the coordinates A-H (ridge B-C,
+% \noteroofx{m}{n}{rising line}{rising fill}{falling line}{falling fill}: the x-directed rooftop on the cells (m,n),
+% (m+1,n) in a tdplot picture with the cell sizes \dx, \dy and the height \roofh; names the coordinates A-H (ridge B-C,
 % base edge G-H).
 \newcommand{\noteroofx}[6]{%
     \begin{scope}[shift={({#1*\dx},{#2*\dy},0)}]
