@@ -50,15 +50,17 @@ classdef (Abstract) Base < matlab.unittest.TestCase
             rooftops = rooftopMoM.basisFunctions.UniformRooftops(primitive, quadrature);
         end
 
-        function context = createContext(testCase, countX, countY, sizeX, sizeY, order, wavenumber, memoryBytes)
-        % createContext: Returns the AssemblerContext of a grid, by default with a 64 MB chunk budget.
+        function context = createContext(testCase, countX, countY, sizeX, sizeY, orders, wavenumber, memoryBytes)
+        % createContext: Returns the AssemblerContext of a grid with the quadrature orders [near, far], or one order
+        %   for both, by default with a 64 MB chunk budget. The rooftops get the far order, as in Problem.
 
             if nargin < 8
                 memoryBytes = 2^26;
             end
 
-            rooftops = testCase.createRooftops(countX, countY, sizeX, sizeY, order);
-            context = rooftopMoM.assembler.AssemblerContext(rooftops, wavenumber, memoryBytes);
+            orders = [orders(1), orders(end)];
+            rooftops = testCase.createRooftops(countX, countY, sizeX, sizeY, orders(2));
+            context = rooftopMoM.assembler.AssemblerContext(rooftops, wavenumber, memoryBytes, orders);
         end
 
         function product = createProduct(~, name, rooftops, generators)

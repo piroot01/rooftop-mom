@@ -42,7 +42,8 @@ classdef Problem < handle
             end
 
             obj.mesh_ = mesh;
-            obj.context_ = rooftopMoM.assembler.AssemblerContext(rooftops, double(wavenumber), memoryBytes);
+            obj.context_ = rooftopMoM.assembler.AssemblerContext(rooftops, double(wavenumber), memoryBytes, ...
+                double(options.quadratureOrder) * [1, 1]);
             obj.requireAssembly_();
 
             [countX, countY] = mesh.count();
