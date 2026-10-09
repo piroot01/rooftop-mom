@@ -12,22 +12,22 @@ classdef GeneralizedMinimumResidualTest < unit.solver.Base
             testCase.verifyLessThan(norm(output.solution() - expected) / norm(expected), 1e-9);
         end
 
-        function testIterationLimitIsRoundedUpToWholeCycles(testCase)
+        function testStopsAtTheIterationLimit(testCase)
             [matrix, rightHandSide] = testCase.createNonsymmetricSystem(60);
             output = rooftopMoM.solver.GeneralizedMinimumResidual(1e-14, 7, 5, []).solve(matrix, rightHandSide, []);
 
             testCase.verifyFalse(output.converged());
-            testCase.verifyEqual(output.iterationCount(), 10);
+            testCase.verifyEqual(output.iterationCount(), 7);
         end
 
-        function testRestartFromTheSystemSizeOnMeansNoRestart(testCase)
-            % gmres runs without restarts when restart equals the system size, and its limit then counts iterations.
+        function testRestartBeyondTheSystemSizeIsCapped(testCase)
+            % A basis never needs more vectors than unknowns.
             [matrix, rightHandSide] = testCase.createNonsymmetricSystem(20);
             solve = @(restart) rooftopMoM.solver.GeneralizedMinimumResidual(1e-10, 100, restart, []).solve(matrix, ...
                 rightHandSide, []);
 
-            equal = testCase.verifyWarningFree(@() solve(20));
-            longer = testCase.verifyWarningFree(@() solve(50));
+            equal = solve(20);
+            longer = solve(50);
 
             testCase.verifyTrue(equal.converged());
             testCase.verifyEqual(equal.solution(), longer.solution());
@@ -48,8 +48,20 @@ classdef GeneralizedMinimumResidualTest < unit.solver.Base
 
             testCase.verifyTrue(output.converged());
             testCase.verifyEqual(residualNorms(1), 1, 'AbsTol', 1e-14);
-            testCase.verifyEqual(residualNorms(end), expected, 'RelTol', 1e-6);
+            testCase.verifyEqual(residualNorms(end), expected, 'AbsTol', 1e-12);
             testCase.verifyLessThan(output.iterationCount(), plain.iterationCount());
+        end
+
+        function testTracesEveryIteration(testCase)
+            sink = rooftopMoM.logging.sinks.MemorySink();
+            rooftopMoM.logging.Logger.instance().configure(rooftopMoM.logging.LogLevel.TRACE, {sink});
+            [matrix, rightHandSide] = testCase.createNonsymmetricSystem(40);
+
+            output = rooftopMoM.solver.GeneralizedMinimumResidual(1e-10, 100, 10, []).solve(matrix, rightHandSide, []);
+
+            lines = sink.lines();
+            testCase.verifyEqual(nnz(contains(lines, ...
+                '[TRACE] [GeneralizedMinimumResidual.iterate_]: Iteration ')), output.iterationCount());
         end
     end
 end

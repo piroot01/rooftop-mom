@@ -19,7 +19,7 @@ classdef Solver
         %
         %   Optional name-value inputs:
         %       'method': 'cg', the conjugate gradient method for complex symmetric matrices like the Green's matrix
-        %           (COCG), or 'gmres', the restarted GMRES of MATLAB for any matrix (default 'cg').
+        %           (COCG), or 'gmres', the restarted GMRES for any matrix (default 'cg').
         %       'tolerance': Relative residual norm to stop at, norm(b - A * x) / norm(b) (default 1e-6).
         %       'maxIterationCount': Maximum number of iterations (default 1000).
         %       'restart': Iterations between the restarts of 'gmres', Inf for none (default 50).
