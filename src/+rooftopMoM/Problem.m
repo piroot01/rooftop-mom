@@ -21,13 +21,14 @@ classdef Problem < handle
         %
         %   Optional name-value inputs:
         %       'quadratureOrder': Number of Gauss-Legendre points per face and direction (default 5).
-        %       'memoryBytes': Memory budget of one chunk of the assembly in bytes (default 2^28).
+        %       'memoryBytes': Peak memory of one chunk of the assembly in bytes (default 2^24). Chunks of about the
+        %           size of the last-level cache of the CPU are the fastest; larger ones are slower.
 
             arguments
                 mesh (1, 1) rooftopMoM.Mesh
                 wavenumber (1, 1) {mustBeReal, mustBeFinite, mustBePositive}
                 options.quadratureOrder (1, 1) {mustBeInteger, mustBePositive} = 5
-                options.memoryBytes (1, 1) {mustBeReal, mustBeFinite, mustBePositive} = 2^28
+                options.memoryBytes (1, 1) {mustBeReal, mustBeFinite, mustBePositive} = 2^24
             end
 
             quadrature = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(double(options.quadratureOrder));

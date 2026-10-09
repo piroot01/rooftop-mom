@@ -3,9 +3,9 @@
 
 addpath(fullfile(fileparts(fileparts(mfilename('fullpath'))), 'src'));
 
-% A finer quadrature and a smaller memory budget of the assembly than the defaults.
+% A finer quadrature than the default, and the memory of one assembly chunk set to 32 MB.
 problem = rooftopMoM.Problem(rooftopMoM.Mesh(64, 64, 0.05, 0.05), 2 * pi, 'quadratureOrder', 6, ...
-    'memoryBytes', 2^26);
+    'memoryBytes', 2^25);
 input = rand(problem.rooftopCount(), 1);
 products = {'fft', 'splitFFT', 'leanSplitFFT'};
 
