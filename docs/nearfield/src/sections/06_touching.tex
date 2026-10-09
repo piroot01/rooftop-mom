@@ -1,21 +1,46 @@
 \section{Closed forms for the touching cells}
 \label{sec:touching}
 
-Theorem~\theoRef{reduction} turns a touching moment into an integral over $[-1,1]^2$. In each direction the square
-splits into $I_-=[-1,0]$ and $I_+=[0,1]$, where the weights are polynomials. Each of the four pieces becomes a rectangle
-of $Q$ with the singular point at the origin (Figure~\ref{fig:regions}), and Proposition~\propRef{gproperties}(ii)
-evaluates it exactly.
+Theorem~\theoRef{reduction} turns a moment into the two-dimensional integral~\eqref{eq:reduction} over $[-1,1]^2$,
+with the weights $W_{\alpha\beta}(\nu)$, $W_{00}(\eta)$ and the distance $\rho_{\offs}(\nu,\eta)$. For a touching offset
+$\offs=(d_x,d_y)\in\{0,1\}^2$ the distance vanishes at the singular point $(\nu,\eta)=(d_x,d_y)$, and this is the only
+point where the integrand is not smooth. The plan of this section is to cut $[-1,1]^2$ into pieces on which the weights
+are polynomials and to move the singular point of every piece to the origin. Each piece then becomes a rectangle in the
+quadrant $Q$ of Section~\ref{sec:antiderivatives}, with polynomial weights in front of $(u^2+v^2)^{p/2}$, and
+Proposition~\propRef{gproperties}(ii) integrates it exactly with the antiderivatives $\Gf{p}{m}{n}$.
 
-\lemmaTitle{The polynomial pieces}{pieces} Let $d\in\{0,1\}$ and $s\in\{-,+\}$. On $\nu\in I_s$ the quantity $\nu-d$ has a
-constant sign $\sigma$, and $u=\sigma a(\nu-d)\ge0$ ranges over $[0,a]$ on both pieces if $d=0$ ($\sigma=\mp1$ on
-$I_\mp$), and over $[a,2a]$ on $I_-$ and $[0,a]$ on $I_+$ if $d=1$ ($\sigma=-1$ on both).
-The singular value $\nu=d$ is $u=0$. Every weight of~\eqref{eq:weights} is on each piece a polynomial in $u$ of degree at
-most three, obtained by substituting $\nu=\sigma u/a+d$ (Table~\ref{tab:pieces}). The $y$-direction is the same with $v$,
-$b$ and $d_y$.
+The cut is the one of Corollary~\coroRef{weights}: in each direction the interval $[-1,1]$ splits into $I_-=[-1,0]$ and
+$I_+=[0,1]$, and on each of them the weights are polynomials. This gives the four pieces $I_s\times I_t$,
+$s,t\in\{-,+\}$, of Figure~\ref{fig:regions}. The next lemma moves the singular point to the origin, one direction at a
+time.
+
+\lemmaTitle{The polynomial pieces}{pieces} Let $d\in\{0,1\}$ be the offset in the $x$-direction, so that the singular
+value of $\nu$ is $\nu=d$. On each interval $I_s$, $s\in\{-,+\}$, introduce the distance from the singular value,
+measured in units of length,
+\begin{equation}
+    \label{eq:udist}
+    u = a\,\ABS{\nu-d} .
+\end{equation}
+On $I_s$ the difference $\nu-d$ does not change sign, so $\ABS{\nu-d}=\sigma(\nu-d)$ with a fixed sign
+$\sigma\in\{-1,+1\}$, and the substitution is linear with the inverse $\nu=d+\sigma u/a$. Explicitly,
+\begin{equation}
+    \label{eq:ucases}
+    \begin{dcases}
+        d=0: & u=-a\nu\in[0,a] \text{ on } I_-, \qquad u=a\nu\in[0,a] \text{ on } I_+,\\
+        d=1: & u=a(1-\nu)\in[a,2a] \text{ on } I_-, \qquad u=a(1-\nu)\in[0,a] \text{ on } I_+ .
+    \end{dcases}
+\end{equation}
+In all four cases the singular value $\nu=d$ corresponds to $u=0$. Every weight $W_{\alpha\beta}$ of~\eqref{eq:weights},
+restricted to $I_s$ and written in $u$, is a polynomial in $u$ of degree at most three; these polynomials are listed in
+Table~\ref{tab:pieces}. The $y$-direction is the same with $\eta$, $b$, $d_y$ and $v=b\,\ABS{\eta-d_y}$.
 
 \vspace{\baselineskip}
-\proof $\nu-d\in[-1,0]$ or $[0,1]$ for $d=0$, and $\nu-d\in[-2,-1]$ or $[-1,0]$ for $d=1$. The polynomials of
-Table~\ref{tab:pieces} are the expansions of~\eqref{eq:weights}. \qed
+\proof For $d=0$ the difference $\nu-d=\nu$ lies in $[-1,0]$ on $I_-$ and in $[0,1]$ on $I_+$, so $\sigma=-1$ and
+$\sigma=+1$, respectively, and $u$ runs over $[0,a]$ on both. For $d=1$ the difference $\nu-1$ lies in $[-2,-1]$ on $I_-$
+and in $[-1,0]$ on $I_+$, so $\sigma=-1$ on both, and $u=a(1-\nu)$ runs over $[a,2a]$ and $[0,a]$. This
+gives~\eqref{eq:ucases}. On $I_s$ every weight is one of the polynomials of~\eqref{eq:weights}, of degree at most three
+in $\nu$, and the linear substitution $\nu=d+\sigma u/a$ keeps it a polynomial of the same degree in $u$. Expanding gives
+Table~\ref{tab:pieces}. \qed
 
 \begin{figure}[ht]
     \centering
