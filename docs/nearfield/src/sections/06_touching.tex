@@ -1,0 +1,112 @@
+\section{Closed forms for the touching cells}
+\label{sec:touching}
+
+Theorem~\theoRef{reduction} turns a touching moment into an integral over $[-1,1]^2$. In each direction the square
+splits into $I_-=[-1,0]$ and $I_+=[0,1]$, where the weights are polynomials. Each of the four pieces becomes a rectangle
+of $Q$ with the singular point at the origin (Figure~\ref{fig:regions}), and Proposition~\propRef{gproperties}(ii)
+evaluates it exactly.
+
+\lemmaTitle{The polynomial pieces}{pieces} Let $d\in\{0,1\}$ and $s\in\{-,+\}$. On $\nu\in I_s$ the quantity $\nu-d$ has a
+constant sign $\sigma$, and $u=\sigma a(\nu-d)\ge0$ ranges over $[0,a]$ on both pieces if $d=0$ ($\sigma=\mp1$ on
+$I_\mp$), and over $[a,2a]$ on $I_-$ and $[0,a]$ on $I_+$ if $d=1$ ($\sigma=-1$ on both).
+The singular value $\nu=d$ is $u=0$. Every weight of~\eqref{eq:weights} is on each piece a polynomial in $u$ of degree at
+most three, obtained by substituting $\nu=\sigma u/a+d$ (Table~\ref{tab:pieces}). The $y$-direction is the same with $v$,
+$b$ and $d_y$.
+
+\vspace{\baselineskip}
+\proof $\nu-d\in[-1,0]$ or $[0,1]$ for $d=0$, and $\nu-d\in[-2,-1]$ or $[-1,0]$ for $d=1$. The polynomials of
+Table~\ref{tab:pieces} are the expansions of~\eqref{eq:weights}. \qed
+
+\begin{figure}[ht]
+    \centering
+    \input{figures/regions.tex}
+    \caption{The integration regions of the four touching configurations ($a=b$). Top: the domain $[-1,1]^2$ of
+    Theorem~\theoRef{reduction}, split into the pieces $I_s\times I_t$, labelled $s\,t$; the singular point
+    $(\nu,\eta)=(d_x,d_y)$ (red) is the centre, the midpoint of an edge or a corner, and the circles are level lines
+    of $\rho_{\offs}$. Bottom: the same pieces in the variables $u=\sigma_sa(\nu-d_x)$, $v=\sigma_tb(\eta-d_y)$ of
+    Lemma~\lemmaRef{pieces}. In a direction with $d=0$ both pieces fold onto $[0,a]$; with $d=1$ they lie side by side
+    on $[0,a]$ and $[a,2a]$. The singular point is the origin, a corner of every piece that contains it.}
+    \label{fig:regions}
+\end{figure}
+
+\begin{table}[ht]
+    \centering
+    \caption{The weights~\eqref{eq:weights} on the pieces of Lemma~\lemmaRef{pieces} ($x$-direction).}
+    \label{tab:pieces}
+    \renewcommand{\arraystretch}{1.35}
+    \input{generated/pieces_tabular.tex}
+\end{table}
+
+\theoTitle{Touching moments}{touching} Let $p\in\{-1,1,3\}$, $\offs=(d_x,d_y)\in\{0,1\}^2$ and $\alpha,\beta\in\{0,1\}$.
+On the pieces $s,t\in\{-,+\}$ write, with Table~\ref{tab:pieces},
+\begin{equation*}
+    W_{\alpha\beta}\big|_{I_s} = \sum_{m=0}^{3}c^{s}_{m}\,u^{m}, \qquad
+    W_{00}\big|_{I_t} = \sum_{n=0}^{1}e^{t}_{n}\,v^{n},
+\end{equation*}
+and let $A_s\times B_t$ be the image of the piece, with $A_s$ equal to $[0,a]$ or $[a,2a]$ according to $d_x$ and $B_t$
+equal to $[0,b]$ or $[b,2b]$ according to $d_y$. Then
+\begin{equation}
+    \label{eq:touching}
+    \Mom{p}{\alpha\beta}{\offs} = \frac{1}{ab}\sum_{s,t\in\{-,+\}}\;\sum_{m=0}^{3}\sum_{n=0}^{1}
+    c^{s}_{m}\,e^{t}_{n}\;\cornerdiff\Gf{p}{m}{n}\,A_s\times B_t,
+\end{equation}
+where, because $\Gf{p}{m}{n}$ vanishes on the axes,
+\begin{equation}
+    \label{eq:fourpoints}
+    \begin{aligned}
+        \cornerdiff G\,[0,a]\times[0,b]  &= G(a,b),\\
+        \cornerdiff G\,[a,2a]\times[0,b] &= G(2a,b)-G(a,b),\\
+        \cornerdiff G\,[0,a]\times[b,2b] &= G(a,2b)-G(a,b),\\
+        \cornerdiff G\,[a,2a]\times[b,2b] &= G(2a,2b)-G(2a,b)-G(a,2b)+G(a,b).
+    \end{aligned}
+\end{equation}
+Every touching moment is therefore an exact, finite combination of $\Gf{p}{m}{n}$ at the four points $(a,b)$, $(2a,b)$,
+$(a,2b)$, $(2a,2b)$. The $N$-moments follow from Lemma~\lemmaRef{symmetries}(iii) with $a$ and $b$ exchanged.
+
+\vspace{\baselineskip}
+\proof
+By Theorem~\theoRef{reduction}, $\Mom{p}{\alpha\beta}{\offs}$ is the sum over the four pieces $I_s\times I_t$. On a piece
+substitute $u=\sigma_s a(\nu-d_x)$ and $v=\sigma_t b(\eta-d_y)$: then $\D\nu\D\eta=\D u\D v/(ab)$,
+$\rho_{\offs}=\sqrt{u^2+v^2}$, the weights become the polynomials of Lemma~\lemmaRef{pieces}, and the piece is
+$\int_{A_s}\int_{B_t}\sum_{m,n}c^s_me^t_nu^mv^n(u^2+v^2)^{p/2}\D v\D u$. Apply~\eqref{eq:corner} term by term; the
+corners on the axes contribute zero by Proposition~\propRef{gproperties}(i). Each piece is absolutely integrable
+($p>-2$), so no limit is involved. \qed
+
+\vspace{\baselineskip}
+\noindent\textbf{Remark.} The same corner-sum construction works for every offset, but for distant cells it gives a
+sum of large, nearly cancelling terms, whereas \GL{} converges exponentially there. It is meant for the touching
+offsets only.
+
+\coroTitle{Homogeneity}{homogeneity} $\Mom{p}{\alpha\beta}{\offs;\lambda a,\lambda b}=\lambda^p\,\Mom{p}{\alpha\beta}{\offs;a,b}$
+for $\lambda>0$, so the static moments of a grid depend, up to the factor $a^p$, on the aspect ratio $b/a$ only.
+
+\vspace{\baselineskip}
+\proof In~\eqref{eq:reduction}, $\rho_{\offs}$ scales by $\lambda$ and the weights do not depend on $a$ and $b$. \qed
+
+\propTitle{Agreement with the coincident-cell formulas of the thesis}{coincident} Consider the functions
+$\texttt{type1}$, $\texttt{type2}$, $\texttt{type3}$ of \src{} and $\mathcal{I}^{(1)}$ of the appendix
+of~\cite{machacek2025method}. Then
+\begin{align*}
+    \Mom{-1}{00}{\V{0}} &= \texttt{type3}(a,b), &
+    \Mom{-1}{10}{\V{0}}-\Mom{-1}{11}{\V{0}} &= \texttt{type2}(a,b),\\
+    \Mom{-1}{11}{\V{0}} &= \texttt{type1}(a,b), &
+    (ab)^2\Mom{1}{00}{\V{0}} &= \mathcal{I}^{(1)}[1],\\
+    & & (ab)^2\Mom{1}{11}{\V{0}} &= \mathcal{I}^{(1)}[\lambda_1\lambda_1'].
+\end{align*}
+The first one reads
+\begin{align*}
+    \Mom{-1}{00}{\V{0}} &= \frac{1}{3a^2b^2}\Bigg(2a^3+2b^3-2\sqrt{a^2+b^2}\left(a^2+b^2\right)\\
+    &\phantom{{}=\frac{1}{3a^2b^2}\Bigg(}+6a^2b\log\left(\frac{\sqrt{a^2+b^2}+b}{a}\right)
+    +6ab^2\log\left(\frac{\sqrt{a^2+b^2}+a}{b}\right)\Bigg).
+\end{align*}
+
+\vspace{\baselineskip}
+\proof By Corollary~\coroRef{homogeneity} it suffices to take $a=1$ and keep $b>0$ symbolic. The difference of the two
+sides, written with~\eqref{eq:touching} and the cited formula, simplifies to zero exactly (SymPy). \qed
+
+\vspace{\baselineskip}
+\noindent\textbf{Remark (thesis appendix).} The values of the formulas in the appendix of~\cite{machacek2025method} are
+correct, but three labels are misprinted: the integrands of the $\mathcal{I}^{(1)}$ entries are written with $1/R$
+instead of $R$; the last $\mathcal{I}^{(1)}$ entry repeats the label $[\lambda_1(1-\lambda_1')]$ instead of
+$[\lambda_2(1-\lambda_2')]$; and the integrand of $\mathcal{I}^{(-1)}[\lambda_2(1-\lambda_2')]$ contains $(u+\lambda_2')$
+instead of $(v+\lambda_2')$.

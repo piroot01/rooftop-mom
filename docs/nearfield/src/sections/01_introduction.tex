@@ -1,0 +1,40 @@
+\section{Introduction}
+\label{sec:introduction}
+
+This note continues the bachelor thesis~\cite{machacek2025method}. There the Galerkin matrix of the electric field
+integral equation (\acs{EFIE}) with rooftop basis functions on a uniform rectangular grid is assembled from three Toeplitz
+generators. Their entries are four-dimensional integrals of the Green's function
+\begin{equation}
+    \label{eq:green}
+    g(R) = \frac{\mathrm{e}^{-\I k R}}{R}, \qquad R = \NORM{\V{r}-\V{r}'},
+\end{equation}
+over pairs of cells, weighted by the linear profiles of the rooftops (the factor $1/(4\uppi)$ is kept outside). The
+implementation in \src{} integrates them with a tensor Gauss--Legendre (\GL{}) rule of order $q$ and extracts $1/R$ on
+the coincident cell (\cite{machacek2025method}, Entry \textit{singex} and Appendix).
+
+Cells that share an edge or only a vertex meet $R=0$ as well, on the boundary of the integration domain. There the \GL{}
+error does not decrease with the order: the generator entries keep a relative error of about $10^{-3}$ for cells of
+$\lambda/10$ at every order between $3$ and $16$, and extraction on the coincident cell alone changes nothing measurable.
+The note therefore extracts the non-smooth terms of~\eqref{eq:green},
+\begin{equation*}
+    \frac{1}{R},\qquad -\frac{k^2}{2}R,\qquad \frac{k^4}{24}R^3,
+\end{equation*}
+on all nine touching cells and gives the closed forms of every static integral this needs.
+
+\paragraph{Three terms are enough.} With the three terms the entries reach $10^{-13}$--$10^{-14}$ at the order $12$--$16$,
+and the computed current is at the rounding floor of double precision. A fourth term ($R^5$) would act below that floor,
+so no further extraction is needed.
+
+\paragraph{The way to the closed forms.} Section~\ref{sec:setting} expresses the three generators through seven
+cell-pair moments, so that only integrals over pairs of cells with linear weights are left. Section~\ref{sec:extraction}
+splits the Green's function into the three extracted terms and a smooth remainder; the remainder stays with the \GL{}
+rule, and the extracted terms leave the static moments with the kernels $R^{-1}$, $R$ and $R^3$. Section~\ref{sec:reduction}
+reduces these four-dimensional integrals to two dimensions, and Section~\ref{sec:antiderivatives} gives the
+antiderivatives of the resulting integrands. Section~\ref{sec:touching} puts them together: every static moment of a
+touching cell pair is a short sum of antiderivative values. The note is written as a manual to the implementation; all
+closed forms are listed in Appendices~\ref{app:antiderivatives} and~\ref{app:explicit} in the form of the thesis
+appendix.
+
+\paragraph{Conventions.} The time convention is $\mathrm{e}^{\I\omega t}$, and $\arsinh x=\log\bigl(x+\sqrt{x^2+1}\bigr)$;
+the logarithms of the thesis appendix are $\log\bigl((\sqrt{a^2+b^2}+a)/b\bigr)=\arsinh(a/b)$. The notation follows
+the thesis~\cite{machacek2025method}.

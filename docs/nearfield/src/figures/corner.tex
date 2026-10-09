@@ -1,0 +1,35 @@
+% The corner difference (Proposition gproperties): a rectangle of Q as an alternating sum of the rectangles
+% [0,U] x [0,V] at its four corners; on a piece that touches the singular point three corners lie on the axes.
+\begin{tikzpicture}[line cap=round, line join=round, scale=1.15]
+    \foreach \sh/\uo/\ui/\vo/\vi in {0/1/2.2/0.7/1.6, 4.2/0/1.6/0/1.2} {
+        \begin{scope}[shift={(\sh,0)}]
+            \begin{scope}
+                \clip (0,0) rectangle (2.6,2.1);
+                \foreach \r in {0.4,0.8,...,3.3} { \draw[PairedE, thin] (0,0) circle (\r); }
+            \end{scope}
+            \fill[PairedA] (\uo,\vo) rectangle (\ui,\vi);
+            \draw[dashed] (0,\vi) -- (\ui,\vi) -- (\ui,0);
+            \draw[dashed] (0,\vo) -- (\ui,\vo);
+            \draw[dashed] (\uo,0) -- (\uo,\vi);
+            \draw[thick] (\uo,\vo) rectangle (\ui,\vi);
+            \draw[thick,->] (0,0) -- (2.8,0) node[anchor=west]{$u$};
+            \draw[thick,->] (0,0) -- (0,2.3) node[anchor=south]{$v$};
+            \fill[PairedF] (0,0) circle (2pt);
+        \end{scope}
+    }
+    \node[anchor=north] at (1,0) {$a_0$};
+    \node[anchor=north] at (2.2,0) {$a_1$};
+    \node[anchor=east] at (0,0.7) {$b_0$};
+    \node[anchor=east] at (0,1.6) {$b_1$};
+    \foreach \u/\v/\s in {2.2/1.6/+, 1/0.7/+, 1/1.6/-, 2.2/0.7/-} {
+        \fill (\u,\v) circle (1.6pt);
+        \node[anchor=south west, inner sep=1.5pt, font=\small] at (\u,\v) {$\s$};
+    }
+    \begin{scope}[shift={(4.2,0)}]
+        \node[anchor=north] at (1.6,0) {$a$};
+        \node[anchor=east] at (0,1.2) {$b$};
+        \fill (1.6,1.2) circle (1.6pt);
+        \node[anchor=south west, inner sep=1.5pt, font=\small] at (1.6,1.2) {$+$};
+        \foreach \u/\v in {0/1.2, 1.6/0} { \draw[fill=white] (\u,\v) circle (1.6pt); }
+            \end{scope}
+\end{tikzpicture}

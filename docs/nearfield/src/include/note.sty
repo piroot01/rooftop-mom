@@ -1,0 +1,45 @@
+%% note.sty: macros of the near-field note on top of the thesis template.
+\RequirePackage{amsmath}
+\allowdisplaybreaks
+\emergencystretch=1.5em
+\providecommand{\arsinh}{\operatorname{arsinh}}
+\newcommand{\Om}[1]{\Omega_{#1}}
+\newcommand{\Mom}[3]{M^{(#1)}_{#2}(#3)}
+\newcommand{\MomK}[3]{M^{[#1]}_{#2}(#3)}
+\newcommand{\Nom}[3]{N^{(#1)}_{#2}(#3)}
+\newcommand{\Wt}[1]{W_{#1}}
+\newcommand{\Gf}[3]{G^{(#1)}_{#2#3}}
+\newcommand{\cornerdiff}{\Delta}
+\newcommand{\ex}{\V{e}_x}
+\newcommand{\ey}{\V{e}_y}
+\newcommand{\offs}{\V{d}}
+\newcommand{\Rn}{\mathbb{R}}
+\newcommand{\Zn}{\mathbb{Z}}
+\newcommand{\GL}{GL}
+\newcommand{\src}{\texttt{src}}
+
+% Figures: the TikZ style of the thesis figures.
+\RequirePackage{tikz-3dplot}
+\usetikzlibrary{calc,arrows.meta}
+% \noteroofx{i}{j}{rising line}{rising fill}{falling line}{falling fill}: the x-directed rooftop on the cells (i,j),
+% (i+1,j) in a tdplot picture with the cell sizes \dx, \dy and the height \roofh; names the coordinates A-H (ridge B-C,
+% base edge G-H).
+\newcommand{\noteroofx}[6]{%
+    \begin{scope}[shift={({#1*\dx},{#2*\dy},0)}]
+        \coordinate (A) at (0,0,0);
+        \coordinate (B) at (\dx,0,\roofh);
+        \coordinate (C) at (\dx,\dy,\roofh);
+        \coordinate (D) at (0,\dy,0);
+        \coordinate (E) at (2*\dx,0,0);
+        \coordinate (F) at (2*\dx,\dy,0);
+        \coordinate (G) at (\dx,0,0);
+        \coordinate (H) at (\dx,\dy,0);
+        \fill[#4] (A) -- (B) -- (C) -- (D) -- cycle;
+        \fill[#6] (B) -- (E) -- (F) -- (C) -- cycle;
+        \draw[#3, thick] (D) -- (A) -- (B) -- (C) -- cycle;
+        \draw[#5, thick] (B) -- (E) -- (F) -- (C);
+        \draw[thick] (G) -- (H);
+        \draw[thick, dotted] (B) -- (G);
+        \draw[thick, dotted] (C) -- (H);
+    \end{scope}%
+}

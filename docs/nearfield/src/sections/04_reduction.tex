@@ -1,0 +1,133 @@
+\section{Reduction to two dimensions}
+\label{sec:reduction}
+
+The integrand of a moment depends on the four coordinates only through the two differences $x-x'$ and $y-y'$, and the
+weights are polynomials. Integrating out the ``position along the diagonal'' in each direction leaves a two-dimensional
+integral with piecewise polynomial weights. The coincident-cell transformation of~\cite{machacek2025method}
+(Proposition \textit{singinteval}, regions I--IV), which follows~\cite{Bao2020}, is the special case $\offs=\V{0}$.
+
+\lemmaTitle{One-dimensional correlation}{correlation} Let $\varphi,\psi\in L^\infty(0,1)$, $\delta\in\Rn$, and let
+$h:\Rn\to\C$ be locally integrable. Then
+\begin{equation}
+    \label{eq:correlation}
+    \begin{gathered}
+    \int_0^1\!\!\int_0^1 \varphi(\xi)\,\psi(\tau)\,h(\xi-\tau-\delta)\D\tau\D\xi
+    = \int_{-1}^{1} W_{\varphi\psi}(\nu)\,h(\nu-\delta)\D\nu,\\
+    W_{\varphi\psi}(\nu) = \int_{\max(0,\nu)}^{\min(1,1+\nu)} \varphi(\xi)\,\psi(\xi-\nu)\D\xi,
+    \end{gathered}
+\end{equation}
+and both integrals converge absolutely.
+
+\vspace{\baselineskip}
+\proof The linear map $(\xi,\tau)\mapsto(\xi,\nu)$, $\nu=\xi-\tau$, has determinant one. It maps the unit square onto the parallelogram (Figure~\ref{fig:correlation})
+\begin{equation*}
+    \{(\xi,\nu):\,-1\le\nu\le1,\ \max(0,\nu)\le\xi\le\min(1,1+\nu)\},
+\end{equation*}
+because $0\le\tau=\xi-\nu\le1$ is equivalent to $\nu\le\xi\le1+\nu$.
+
+By Tonelli's theorem applied to $\ABS{\varphi}\ABS{\psi}\ABS{h}$, the left-hand side is absolutely convergent, since
+\begin{equation*}
+    \int_0^1\!\!\int_0^1 \ABS{\varphi(\xi)\,\psi(\tau)\,h(\xi-\tau-\delta)}\D\tau\D\xi
+    \le \NORM{\varphi}_\infty\NORM{\psi}_\infty\int_{-1}^{1}(1-\ABS{\nu})\,\ABS{h(\nu-\delta)}\D\nu < \infty .
+\end{equation*}
+Fubini's theorem then allows the integration in $\xi$ first, for fixed $\nu$, which gives $W_{\varphi\psi}(\nu)$. \qed
+
+\coroTitle{Weights of the rooftop moments}{weights} For $\varphi(\xi)=\xi^\alpha$ and $\psi(\tau)=\tau^\beta$,
+$\alpha,\beta\in\{0,1\}$, write $W_{\alpha\beta}=W_{\varphi\psi}$. On $I_-=[-1,0]$ and $I_+=[0,1]$ these are the
+polynomials
+\begin{equation}
+    \label{eq:weights}
+    \renewcommand{\arraystretch}{2.2}
+    \begin{array}{l|cc}
+                 & \nu\in I_-                         & \nu\in I_+ \\ \hline
+        W_{00}   & 1+\nu                              & 1-\nu \\
+        W_{10}   & \dfrac12(1+\nu)^2                 & \dfrac12(1-\nu^2) \\
+        W_{01}   & \dfrac12(1-\nu^2)                 & \dfrac12(1-\nu)^2 \\
+        W_{11}   & \dfrac16(1+\nu)^2(2-\nu)          & \dfrac16(2-3\nu+\nu^3)
+    \end{array}
+\end{equation}
+They are continuous on $[-1,1]$, $W_{00}$ and $W_{11}$ are even, and $W_{01}(\nu)=W_{10}(-\nu)$.
+
+\vspace{\baselineskip}
+\proof For $\nu\in I_+$ the limits in~\eqref{eq:correlation} are $\nu\le\xi\le1$:
+\begin{align*}
+    W_{00} &= \int_\nu^1\!\D\xi = 1-\nu, &
+    W_{10} &= \int_\nu^1\!\xi\D\xi = \frac12(1-\nu^2),\\
+    W_{01} &= \int_\nu^1\!(\xi-\nu)\D\xi = \frac12(1-\nu)^2, &
+    W_{11} &= \int_\nu^1\!\xi(\xi-\nu)\D\xi = \frac16\bigl(2-3\nu+\nu^3\bigr).
+\end{align*}
+For $\nu\in I_-$ they are $0\le\xi\le1+\nu$:
+\begin{align*}
+    W_{00} &= \int_0^{1+\nu}\!\D\xi = 1+\nu, &
+    W_{10} &= \int_0^{1+\nu}\!\xi\D\xi = \frac12(1+\nu)^2,\\
+    W_{01} &= \int_0^{1+\nu}\!(\xi-\nu)\D\xi = \frac12(1-\nu^2), &
+    W_{11} &= \int_0^{1+\nu}\!\xi(\xi-\nu)\D\xi = \frac16(1+\nu)^2(2-\nu).
+\end{align*}
+At $\nu=0$ both sides give the values $1$, $1/2$, $1/2$ and $1/3$, so the weights are continuous. For the symmetries,
+the substitution $s=\xi+\nu$ in~\eqref{eq:correlation} gives $W_{\varphi\psi}(-\nu)=W_{\psi\varphi}(\nu)$. Hence
+$W_{01}(\nu)=W_{10}(-\nu)$, and $W_{00}$, $W_{11}$ are even; for $W_{11}$ compare
+\begin{equation*}
+    \frac16(1-\nu)^2(2+\nu)=\frac16\bigl(2-3\nu+\nu^3\bigr).
+\end{equation*}
+\qed
+
+\begin{figure}[ht]
+    \centering
+    \input{figures/correlation.tex}
+    \caption{Left: the substitution $\nu=\xi-\tau$ of Lemma~\lemmaRef{correlation} maps the unit square onto a
+    parallelogram; the line $\xi-\tau=\nu$ (red) becomes the horizontal segment over which $W_{\varphi\psi}(\nu)$
+    integrates. The two triangles $\nu\in I_-$ and $\nu\in I_+$ have different limits in $\xi$, which is why the
+    weights change their polynomial form at $\nu=0$. Right: the weights~\eqref{eq:weights}.}
+    \label{fig:correlation}
+\end{figure}
+
+\theoTitle{Two-dimensional representation}{reduction} Let $p>-2$, $\offs=(d_x,d_y)\in\Zn^2$ and
+$\alpha,\beta\in\{0,1\}$, and put
+\begin{equation*}
+    \rho_{\offs}(\nu,\eta) = \sqrt{a^2(\nu-d_x)^2+b^2(\eta-d_y)^2}.
+\end{equation*}
+Then
+\begin{equation}
+    \label{eq:reduction}
+    \begin{aligned}
+    \Mom{p}{\alpha\beta}{\offs} &= \int_{-1}^{1}\!\!\int_{-1}^{1} W_{\alpha\beta}(\nu)\,W_{00}(\eta)\,
+        \rho_{\offs}(\nu,\eta)^p\D\eta\D\nu,\\
+    \Nom{p}{\alpha\beta}{\offs} &= \int_{-1}^{1}\!\!\int_{-1}^{1} W_{00}(\nu)\,W_{\alpha\beta}(\eta)\,
+        \rho_{\offs}(\nu,\eta)^p\D\eta\D\nu .
+    \end{aligned}
+\end{equation}
+The same holds for a general admissible kernel $K$, with $K(\rho_{\offs})$ in place of $\rho_{\offs}^p$.
+
+\vspace{\baselineskip}
+\proof Parametrize $\V{r}=(a\xi_1,b\eta_1)\in\Om{\V{0}}$ and $\V{r}'=\bigl(a(d_x+\xi_2),\,b(d_y+\eta_2)\bigr)\in\Om{\offs}$
+with $\xi_1,\eta_1,\xi_2,\eta_2\in[0,1]$. Then $\D A'\D A=(ab)^2\D\eta_2\D\xi_2\D\eta_1\D\xi_1$, which cancels the
+normalization of Definition~\defRef{moments}, $\xi(\V{r})=\xi_1$, $\xi(\V{r}')=\xi_2$, and
+\begin{equation*}
+    \NORM{\V{r}-\V{r}'} = \sqrt{a^2(\xi_1-\xi_2-d_x)^2+b^2(\eta_1-\eta_2-d_y)^2}.
+\end{equation*}
+
+\textit{Absolute convergence.} The function $\V{z}\mapsto\NORM{\V{z}}^p$ is locally integrable on $\Rn^2$ for $p>-2$
+(polar coordinates). Lemma~\lemmaRef{correlation}, applied in each direction to the nonnegative kernel by Tonelli's
+theorem, gives
+\begin{equation*}
+    \int\!\!\int\!\!\int\!\!\int \ABS{\cdot}
+    = \int_{-1}^1\!\!\int_{-1}^1(1-\ABS{\nu})(1-\ABS{\eta})\,\rho_{\offs}^p
+    \le \int_{-1}^1\!\!\int_{-1}^1\rho_{\offs}^p < \infty .
+\end{equation*}
+
+\textit{Reduction.} By Fubini's theorem, fix $(\eta_1,\eta_2)$ with $\eta_1-\eta_2-d_y\ne0$ (almost every pair) and apply
+Lemma~\lemmaRef{correlation} in $(\xi_1,\xi_2)$ with $\varphi(\xi)=\xi^\alpha$, $\psi(\tau)=\tau^\beta$, $\delta=d_x$ and
+\begin{equation*}
+    h(s)=\bigl(a^2s^2+b^2(\eta_1-\eta_2-d_y)^2\bigr)^{p/2}.
+\end{equation*}
+This gives the inner integral $\int_{-1}^{1}W_{\alpha\beta}(\nu)\,h(\nu-d_x)\D\nu$. Applying the lemma once more in
+$(\eta_1,\eta_2)$, with the weights $1$ and $1$, gives the factor $W_{00}(\eta)$.
+
+The $N$-moments are the same with the roles of the two directions exchanged, and the general kernel changes nothing in the
+argument. \qed
+
+\vspace{\baselineskip}
+\noindent\textbf{Remark.} For $\offs\in\mathcal{T}$ the singular point of $\rho_{\offs}^p$, $p<0$, is
+$(\nu,\eta)=(d_x,d_y)$. It is the centre, a midpoint of an edge or a corner of $[-1,1]^2$ (Figure~\ref{fig:regions}). In every case it lies on
+the lines $\nu\in\{-1,0,1\}$ and $\eta\in\{-1,0,1\}$, where the weights change their polynomial form. This is the
+structural fact behind the closed forms of Section~\ref{sec:touching}.

@@ -1,0 +1,134 @@
+\section{Mixed antiderivatives}
+\label{sec:antiderivatives}
+
+The antiderivatives below are functions of two lengths, which are written as $a$ and $b$ like in the thesis appendix.
+This does not clash with the cell sizes: the touching moments evaluate them only at the points $(a,b)$, $(2a,b)$,
+$(a,2b)$ and $(2a,2b)$ (Section~\ref{sec:touching}).
+
+\defTitle{Mixed antiderivatives}{antiderivative} Let $Q=[0,\infty)^2$ be the closed first
+quadrant and $Q^\circ$ its interior. For $p>-2$, $m,n\in\N_0$ and $(a,b)\in Q$ put
+\begin{equation}
+    \label{eq:G}
+    \Gf{p}{m}{n}(a,b) = \int_0^a\!\!\int_0^b u^m v^n\bigl(u^2+v^2\bigr)^{p/2}\D v\D u .
+\end{equation}
+For a function $F$ on $Q$ and $0\le a_0\le a_1$, $0\le b_0\le b_1$, the corner difference is
+\begin{equation*}
+    \cornerdiff F\,[a_0,a_1]\times[b_0,b_1] = F(a_1,b_1)-F(a_0,b_1)-F(a_1,b_0)+F(a_0,b_0).
+\end{equation*}
+
+\begin{figure}[ht]
+    \centering
+    \input{figures/corner.tex}
+    \caption{Left: the corner difference~\eqref{eq:corner}. The integral over the shaded rectangle is the alternating
+    sum of $\Gf{p}{m}{n}$ at its corners, each value being the integral over $[0,a]\times[0,b]$ (dashed). The circles
+    are level lines of $\sqrt{u^2+v^2}$ around the singular point (red). Right: a piece that touches the singular
+    point. Three of its corners lie on the axes, where $\Gf{p}{m}{n}$ vanishes, and only $\Gf{p}{m}{n}(a,b)$ remains.}
+    \label{fig:corner}
+\end{figure}
+
+\propTitle{Properties of $G$}{gproperties} Let $p>-2$ and $m,n\in\N_0$.
+\begin{enumerate}[(i)]
+    \item $\Gf{p}{m}{n}$ is continuous on $Q$ and vanishes on both axes: $\Gf{p}{m}{n}(a,0)=\Gf{p}{m}{n}(0,b)=0$.
+    \item For every rectangle $[a_0,a_1]\times[b_0,b_1]\subset Q$,
+    \begin{equation}
+        \label{eq:corner}
+        \int_{a_0}^{a_1}\!\!\int_{b_0}^{b_1} u^mv^n\bigl(u^2+v^2\bigr)^{p/2}\D v\D u
+        = \cornerdiff\Gf{p}{m}{n}\,[a_0,a_1]\times[b_0,b_1] .
+    \end{equation}
+    \item $\partial_a\partial_b\Gf{p}{m}{n}=a^mb^n\bigl(a^2+b^2\bigr)^{p/2}$ on $Q^\circ$, and $\Gf{p}{m}{n}$ is the only
+    function in $C(Q)\cap C^2(Q^\circ)$ with this property that vanishes on both axes.
+    \item $\Gf{p}{m}{n}(\lambda a,\lambda b)=\lambda^{m+n+p+2}\,\Gf{p}{m}{n}(a,b)$ for $\lambda>0$.
+\end{enumerate}
+
+\vspace{\baselineskip}
+\proof
+(i) The integrand is locally integrable on $Q$ because $p>-2$; continuity follows by dominated convergence, and the
+integral over a rectangle with a side of length zero is zero.
+
+(ii) This is inclusion--exclusion (Figure~\ref{fig:corner}): the rectangle $[a_0,a_1]\times[b_0,b_1]$ is
+$[0,a_1]\times[0,b_1]$ minus $[0,a_0]\times[0,b_1]$ and $[0,a_1]\times[0,b_0]$, plus their overlap
+$[0,a_0]\times[0,b_0]$.
+
+(iii) The derivative follows from the fundamental theorem of calculus in each variable. If $D$ is the difference of two
+such functions, $\partial_a\partial_bD=0$ gives $D(a,b)=e(a)+c(b)$ on $Q^\circ$; letting $b\to0^+$ and $a\to0^+$ with
+$D=0$ on the axes shows that $e$ and $c$ are constants with $e+c=D(0,0)=0$.
+
+(iv) Substitute $u=\lambda u'$ and $v=\lambda v'$ in~\eqref{eq:G}. \qed
+
+\lemmaTitle{One-dimensional integrals}{oned} Let $a\ge0$, $b>0$, $m\in\N_0$ and $q\in\{-1,1,3,5\}$, and let $R=\sqrt{a^2+b^2}$. The integrals
+\begin{equation*}
+    K^{(q)}_m(a)=\int_0^a u^m\bigl(u^2+b^2\bigr)^{q/2}\D u
+\end{equation*}
+are
+\begin{align}
+    K^{(q)}_0 &= \begin{dcases}
+        \arsinh\frac{a}{b}, & q=-1,\\[2pt]
+        \frac12\Bigl(aR+b^2\arsinh\frac{a}{b}\Bigr), & q=1,\\[2pt]
+        \frac18\Bigl(2aR^3+3b^2aR+3b^4\arsinh\frac{a}{b}\Bigr), & q=3,\\[2pt]
+        \frac{1}{48}\Bigl(8aR^5+10b^2aR^3+15b^4aR+15b^6\arsinh\frac{a}{b}\Bigr), & q=5,
+    \end{dcases}\label{eq:K0}\\
+    K^{(q)}_1 &= \frac{R^{q+2}-b^{q+2}}{q+2}, \label{eq:K1}\\
+    K^{(q)}_m &= \frac{a^{m-1}R^{q+2}-(m-1)b^2K^{(q)}_{m-2}}{m+q+1}, \qquad m\ge2, \label{eq:Kk}
+\end{align}
+and, for the logarithmic terms produced by the inner integrations,
+\begin{equation}
+    \label{eq:ibp}
+    \int_0^a u^m\arsinh\frac{b}{u}\D u = \frac{1}{m+1}\Bigl(a^{m+1}\arsinh\frac{b}{a} + b\,K^{(-1)}_m(a)\Bigr).
+\end{equation}
+The same formulas with $a$ and $b$ exchanged give the inner integrals $\int_0^b v^n(u^2+v^2)^{p/2}\D v$.
+
+\vspace{\baselineskip}
+\proof
+\textit{Base cases.} They follow from
+\begin{align*}
+    \frac{\D}{\D u}\arsinh\frac{u}{b} &= \bigl(u^2+b^2\bigr)^{-1/2},\qquad
+    \frac{\D}{\D u}\bigl(u^2+b^2\bigr)^{(q+2)/2} = (q+2)\,u\,\bigl(u^2+b^2\bigr)^{q/2},\\
+    \frac{\D}{\D u}\Bigl(u\bigl(u^2+b^2\bigr)^{q/2}\Bigr) &= (q+1)\bigl(u^2+b^2\bigr)^{q/2}-qb^2\bigl(u^2+b^2\bigr)^{(q-2)/2};
+\end{align*}
+the first one gives $K^{(-1)}_0$ and the second one~\eqref{eq:K1}. The last one gives the recursion
+\begin{equation*}
+    K^{(q)}_0=\frac{aR^q+qb^2K^{(q-2)}_0}{q+1},
+\end{equation*}
+which produces~\eqref{eq:K0} from $K^{(-1)}_0$.
+
+\textit{Recursion.} For $m\ge2$ integrate from $0$ to $a$
+\begin{equation*}
+    \frac{\D}{\D u}\bigl(u^{m-1}(u^2+b^2)^{(q+2)/2}\bigr)=(m-1)b^2u^{m-2}(u^2+b^2)^{q/2}+(m+q+1)u^m(u^2+b^2)^{q/2}.
+\end{equation*}
+
+\textit{Logarithmic terms.} Integrate by parts with
+\begin{equation*}
+    \frac{\D}{\D u}\arsinh\frac{b}{u}=-\frac{b}{u\sqrt{u^2+b^2}};
+\end{equation*}
+the boundary term $u^{m+1}\arsinh(b/u)$ vanishes as $u\to0^+$. \qed
+
+\propTitle{Closed forms}{closedforms} For $p\in\{-1,1,3\}$, $m\in\{0,1,2,3\}$, $n\in\{0,1\}$ and $(a,b)\in Q^\circ$,
+\begin{equation}
+    \label{eq:Gform}
+    \begin{split}
+    \Gf{p}{m}{n}(a,b) &= \frac{1}{D}\Bigg(P_0 + P_1\sqrt{a^2+b^2} + P_2\log\left(\frac{\sqrt{a^2+b^2}+a}{b}\right)\\
+    &\phantom{{}=\frac{1}{D}\Bigg(}+ P_3\log\left(\frac{\sqrt{a^2+b^2}+b}{a}\right)\Bigg),
+    \end{split}
+\end{equation}
+with an integer $D$ and homogeneous integer polynomials $P_i(a,b)$, listed in Appendix~\ref{app:antiderivatives}. These
+are all the antiderivatives the moments need; any other one follows from the symmetry
+$\Gf{p}{n}{m}(b,a)=\Gf{p}{m}{n}(a,b)$.
+
+\vspace{\baselineskip}
+\proof
+\textit{Construction.} Integrate first in $v$ and then in $u$ with Lemma~\lemmaRef{oned}. Every step produces only terms of
+the form~\eqref{eq:Gform}.
+
+\textit{Verification.} Each formula of Appendix~\ref{app:antiderivatives} is continuous on $Q$, vanishes on the axes and
+satisfies $\partial_a\partial_bF=a^mb^n(a^2+b^2)^{p/2}$; these properties were checked by exact symbolic computation
+(SymPy).
+Hence $F=\Gf{p}{m}{n}$ by Proposition~\propRef{gproperties}(iii). All formulas also agree
+with 30-digit adaptive quadrature of~\eqref{eq:G} within $2\cdot10^{-25}$. \qed
+
+\vspace{\baselineskip}
+\noindent\textbf{Example.} For $p=-1$, \eqref{eq:ibp} gives directly
+\begin{equation*}
+    \Gf{-1}{0}{0}(a,b) = \int_0^a\arsinh\frac{b}{u}\D u
+    = a\log\left(\frac{\sqrt{a^2+b^2}+b}{a}\right) + b\log\left(\frac{\sqrt{a^2+b^2}+a}{b}\right),
+\end{equation*}
+the classical potential integral of a uniformly charged rectangle at its corner.

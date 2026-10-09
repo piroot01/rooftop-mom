@@ -1,0 +1,11 @@
+\section{The touching moments}
+\label{app:explicit}
+
+This appendix lists the $x$-moments $\Mom{p}{\alpha\beta}{\offs}$ of the cell $a\times b$ for $p\in\{-1,1,3\}$,
+$\alpha,\beta\in\{0,1\}$ and the touching offsets $\offs\in\{(0,0),(1,0),(0,1),(1,1)\}$. They are the corner
+sums~\eqref{eq:touching} expanded with SymPy, and each one was checked against its corner sum to 30 digits. The
+$N$-moments are $\Nom{p}{\alpha\beta}{d_x,d_y;a,b}=\Mom{p}{\alpha\beta}{d_y,d_x;b,a}$, and the negative offsets follow
+from Lemma~\lemmaRef{symmetries}(i) and (ii). For evaluation in double precision the corner sum~\eqref{eq:touching} is
+the better form; the expanded formulas are meant for reading and checking.
+
+\input{generated/explicit_table.tex}

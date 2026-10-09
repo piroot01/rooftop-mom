@@ -1,0 +1,4 @@
+out/*
+!out/main.pdf
+tools/*
+!tools/*.py

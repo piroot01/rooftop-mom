@@ -1,0 +1,38 @@
+\documentclass{article}
+
+\usepackage{include/template}
+\usepackage{include/note}
+
+\usepackage{geometry}
+\geometry{
+    a4paper,
+    margin = 1.5in
+}
+
+\begin{document}
+
+\begin{center}
+    {\LARGE\bfseries Near-field singularity extraction for rooftop\\[0.4ex] basis functions on uniform rectangular grids}
+\end{center}
+
+\vspace{1em}
+
+\tableofcontents
+
+\newpage
+
+\input{sections/01_introduction.tex}
+\input{sections/02_setting.tex}
+\input{sections/03_extraction.tex}
+\input{sections/04_reduction.tex}
+\input{sections/05_antiderivatives.tex}
+\input{sections/06_touching.tex}
+
+\appendix
+\input{sections/A_antiderivatives.tex}
+\input{sections/B_explicit.tex}
+
+\bibliographystyle{IEEEtran}
+\bibliography{bib/references}
+
+\end{document}

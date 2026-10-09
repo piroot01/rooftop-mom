@@ -1,0 +1,106 @@
+\section{Singularity extraction on the touching cells}
+\label{sec:extraction}
+
+\propTitle{Non-smooth terms of the Green's function}{taylor} For $R\ge0$,
+\begin{equation}
+    \label{eq:taylor}
+    g(R) = \frac{\mathrm{e}^{-\I kR}}{R}
+         = \sum_{j=0}^{\infty} \frac{(-\I k)^j}{j!}\,R^{j-1}
+         = \sum_{\ell=0}^{\infty} \frac{(-1)^\ell k^{2\ell}}{(2\ell)!}\,R^{2\ell-1}
+         \;-\;\I \sum_{\ell=0}^{\infty} \frac{(-1)^\ell k^{2\ell+1}}{(2\ell+1)!}\,R^{2\ell}.
+\end{equation}
+The series converge absolutely and locally uniformly for $R>0$; the second one is an entire function of $R^2$. As
+functions of $\V{z}=\V{r}-\V{r}'\in\Rn^2$ the even powers $R^{2\ell}=\NORM{\V{z}}^{2\ell}$ are polynomials, while the odd powers
+$R^{2\ell-1}$ are not smooth at $\V{z}=\V{0}$.
+
+\vspace{\baselineskip}
+\proof Insert the exponential series and separate the even and odd $j$; this is Proposition \textit{greensing}
+of~\cite{machacek2025method}. \qed
+
+\defTitle{Extraction of order $N$}{extraction} For $N\in\N$ let
+\begin{equation}
+    \label{eq:sn}
+    S_N(R) = \sum_{\ell=0}^{N-1} \frac{(-1)^\ell k^{2\ell}}{(2\ell)!}\,R^{2\ell-1}
+           = \frac{1}{R} - \frac{k^2}{2}R + \frac{k^4}{24}R^3 - \dots, \qquad
+    g_N = g - S_N .
+\end{equation}
+Table~\ref{tab:extraction} lists the orders: $N=1$ is the extraction of \src{}, $N=2$ the two-term extraction
+of~\cite{machacek2025method} (Entry \textit{singex}), there written as
+\begin{equation*}
+    g=g_{\mathrm{s}}+\frac{1}{4\uppi}R^{-1}-\frac{k^2}{8\uppi}R,
+\end{equation*}
+and $N=3$ the one of this note.
+For every $N\ge1$, $g_N$ extends continuously to $R=0$ with $g_N(0)=-\I k$.
+
+\lemmaTitle{Regularity of the remainder}{regularity} For $N\ge1$ the function $\V{z}\mapsto g_N(\NORM{\V{z}})$ is
+real-analytic on $\Rn^2\setminus\{\V{0}\}$ and belongs to $C^{2N-2,1}$ on every bounded set: its derivatives up to the
+order $2N-2$ are continuous, and those of the order $2N-2$ are Lipschitz.
+It is not of class $C^{2N-1}$ unless $k=0$.
+
+\vspace{\baselineskip}
+\proof By~\eqref{eq:taylor},
+\begin{equation*}
+    g_N(R) = E(R^2) + R^{2N-1}F(R^2),
+\end{equation*}
+with the entire functions
+\begin{equation*}
+    E(s) = -\I\sum_{\ell\ge0}\frac{(-1)^\ell k^{2\ell+1}}{(2\ell+1)!}s^\ell, \qquad
+    F(s) = \sum_{\ell\ge N}\frac{(-1)^\ell k^{2\ell}}{(2\ell)!}s^{\ell-N}.
+\end{equation*}
+The function $E(\NORM{\V{z}}^2)$ is real-analytic on $\Rn^2$.
+
+The function $\NORM{\V{z}}^{2N-1}=\bigl(\NORM{\V{z}}^2\bigr)^{N-1}\NORM{\V{z}}$ is smooth away from the origin and
+positively homogeneous of degree $2N-1$. Hence its derivatives of order $j\le 2N-2$ are homogeneous of degree
+$2N-1-j\ge1$. They are therefore continuous at the origin (with the value zero), and those of order $2N-2$, being
+homogeneous of degree one, are Lipschitz. The derivatives of order $2N-1$ are homogeneous of degree zero and not constant,
+so they are bounded but discontinuous at the origin.
+
+Multiplication by the analytic factor $F(\NORM{\V{z}}^2)$ preserves the class $C^{2N-2,1}$ on bounded sets. Since
+$F(0)=(-1)^Nk^{2N}/(2N)!\ne0$ for $k\ne0$, the term $F(0)\NORM{\V{z}}^{2N-1}$ is present and the class is sharp. \qed
+
+\vspace{\baselineskip}
+On a touching cell pair the integrand of a moment meets $\V{z}=\V{0}$, in the interior of the four-dimensional domain for
+the coincident cell and on its boundary for a shared edge or vertex. A tensor \GL{} rule integrates polynomials exactly,
+so its error on such a pair is governed by the regularity of Lemma~\lemmaRef{regularity} (Table~\ref{tab:extraction}).
+
+\begin{table}[ht]
+    \centering
+    \caption{The extraction orders and the regularity of the remainder on a touching cell pair.}
+    \label{tab:extraction}
+    \renewcommand{\arraystretch}{1.25}
+    \begin{tabular}{clll}
+        \toprule
+        $N$ & extracted $S_N$ & used in & remainder $g_N$ \\ \midrule
+        $0$ & --- & & unbounded \\
+        $1$ & $1/R$ & \src{} & Lipschitz \\
+        $2$ & $1/R-k^2R/2$ & \cite{machacek2025method} & $C^{2,1}$ \\
+        $3$ & $1/R-k^2R/2+k^4R^3/24$ & this note & $C^{4,1}$ \\ \bottomrule
+    \end{tabular}
+\end{table}
+
+The error then decreases algebraically in the order $q$, and the faster, the larger $N$. The lemma is not a quadrature
+error estimate; for that theory see~\cite{sauter2011boundary}. On the cell pairs that do not touch, $g$ is
+real-analytic on a neighbourhood of the domain, and the \GL{} error decreases exponentially.
+
+\coroTitle{Exact decomposition of the touching moments}{decomposition} For every $N\ge1$, $\offs\in\mathcal{T}$ and
+$\alpha,\beta\in\{0,1\}$,
+\begin{equation}
+    \label{eq:decomposition}
+    M^{[g]}_{\alpha\beta}(\offs) = M^{[g_N]}_{\alpha\beta}(\offs)
+        + \sum_{\ell=0}^{N-1}\frac{(-1)^\ell k^{2\ell}}{(2\ell)!}\,\Mom{2\ell-1}{\alpha\beta}{\offs},
+\end{equation}
+and likewise for the $N$-moments. The first term is evaluated with \GL{}; the static moments $\Mom{p}{\alpha\beta}{\offs}$,
+$p\in\{-1,1,3\}$, are given in closed form by Theorem~\theoRef{touching}.
+
+\vspace{\baselineskip}
+\proof The moments are linear in $K$, and every term is absolutely integrable: the kernels $R^{2\ell-1}$ with $\ell\ge0$ have
+$2\ell-1\ge-1>-2$, and $g_N$ is bounded. \qed
+
+\vspace{\baselineskip}
+\noindent\textbf{What has to be computed.} By Lemma~\lemmaRef{symmetries}, the static moments of the four offsets
+\begin{equation*}
+    \offs\in\{(0,0),\,(1,0),\,(0,1),\,(1,1)\}
+\end{equation*}
+determine all nine touching offsets. These are the coincident cell, the two kinds of shared edge and the shared vertex.
+For $N=3$ we need, for each of them, the four $x$-moments $M_{00},M_{10},M_{01},M_{11}$ and the three $y$-moments,
+with $p\in\{-1,1,3\}$. The $y$-moments follow from the $x$-moments by Lemma~\lemmaRef{symmetries}(iii).
