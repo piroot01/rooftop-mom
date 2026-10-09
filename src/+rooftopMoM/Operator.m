@@ -13,7 +13,7 @@ classdef Operator < rooftopMoM.Product
         %   Optional name-value inputs:
         %       'product': How the product is computed (default 'splitFFT'):
         %           'fft': FFTs of the circulant embedding, about twice the grid size in every direction.
-        %           'splitFFT': FFTs of the grid size only, the fastest.
+        %           'splitFFT': FFTs of the grid size only, the fastest from about 128 x 128 faces up.
         %           'leanSplitFFT': The split FFT in less working memory, but slower.
         %       'modifier': Function handle applied to every generator, e.g. @real or @imag for the real or the
         %           imaginary part of the Green's matrix (default none).
