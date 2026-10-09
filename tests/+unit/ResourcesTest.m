@@ -101,6 +101,25 @@ classdef ResourcesTest < unit.Base
         end
     end
 
+    methods (Test, TestTags = {'Slow'})
+        function testFFTUsesAllThreadsAgainAfterOne(testCase)
+            % FFTW keeps the thread count of its first call in a MATLAB session as its maximum, so only a fresh session
+            % shows it: one thread first, then all of them again.
+            testCase.assumeGreaterThan(feature('numcores'), 2, 'Too few cores to tell one thread from all of them.');
+            root = fileparts(fileparts(fileparts(mfilename('fullpath'))));
+            command = sprintf(['addpath(''%s''); rooftopMoM.Resources.configure(''threads'', 1); fft2(ones(64)); ' ...
+                'rooftopMoM.Resources.configure(); A = complex(randn(2048), randn(2048)); fft2(A); cpu = cputime; ' ...
+                'wall = tic; for r = 1:20, fft2(A); end; fprintf(''busy cores %%.2f\\n'', (cputime - cpu) / toc(wall));'], ...
+                fullfile(root, 'src'));
+
+            [status, output] = system(sprintf('"%s" -batch "%s"', fullfile(matlabroot, 'bin', 'matlab'), command));
+            busy = sscanf(regexp(output, 'busy cores [\d.]+', 'match', 'once'), 'busy cores %f');
+
+            testCase.verifyEqual(status, 0, output);
+            testCase.verifyGreaterThan(busy, 2, output);
+        end
+    end
+
     methods (Access = private)
         function bytes = estimateGenerators_(testCase, mesh)
             [countX, countY] = mesh.count();

@@ -20,6 +20,11 @@ classdef Resources
             end
 
             rooftopMoM.resources.Budget.instance().configure(double(options.memory));
+
+            % FFTW keeps the thread count of its first call in the session as its maximum, so it is started with all
+            % threads before the count is lowered.
+            maxNumCompThreads('automatic');
+            fftw('planner');
             maxNumCompThreads(options.threads);
         end
 
