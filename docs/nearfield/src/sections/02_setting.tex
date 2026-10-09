@@ -58,7 +58,6 @@ The divergences are piecewise constant, so the scalar-potential parts of all blo
 example
 $\int\!\!\int \nabla\cdot\V{\Psi}^x_{\V{0}}\,\nabla'\cdot\V{\Psi}^x_{\offs}\,g
 = a^{-2}\bigl(2\Phi(\offs)-\Phi(\offs+\ex)-\Phi(\offs-\ex)\bigr)$.
-This is how \src{} assembles the three Toeplitz generators.
 
 \defTitle{Cell-pair moments}{moments} Let $K:(0,\infty)\to\C$ satisfy $K(\NORM{\cdot})\in L^1_{\mathrm{loc}}(\Rn^2)$. For
 $\offs\in\Zn^2$ and $\alpha,\beta\in\{0,1\}$ define
@@ -69,8 +68,8 @@ $\offs\in\Zn^2$ and $\alpha,\beta\in\{0,1\}$ define
         \eta(\V{r})^{\alpha}\,\eta(\V{r}')^{\beta}\,K\bigl(\NORM{\V{r}-\V{r}'}\bigr)\D A(\V{r}')\D A(\V{r}),
 \end{align*}
 where $\xi(\V{r}')$ and $\eta(\V{r}')$ are the local coordinates in $\Om{\offs}$. For $K(R)=R^p$ we write $\Mom{p}{\alpha\beta}{\offs}$
-and $\Nom{p}{\alpha\beta}{\offs}$. Since $N_{00}=M_{00}$, there are seven moments, ordered in \src{} as $M_{00}$, $M_{10}$, $M_{01}$,
-$M_{11}$, $N_{10}$, $N_{01}$, $N_{11}$.
+and $\Nom{p}{\alpha\beta}{\offs}$. Since $N_{00}=M_{00}$, there are seven moments, $M_{00}$, $M_{10}$, $M_{01}$,
+$M_{11}$, $N_{10}$, $N_{01}$ and $N_{11}$.
 
 \vspace{\baselineskip}
 The moments carry all the geometry. The next lemma lists their symmetries.

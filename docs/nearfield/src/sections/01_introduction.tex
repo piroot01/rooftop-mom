@@ -8,9 +8,9 @@ generators. Their entries are four-dimensional integrals of the Green's function
     \label{eq:green}
     g(R) = \frac{\mathrm{e}^{-\I k R}}{R}, \qquad R = \NORM{\V{r}-\V{r}'},
 \end{equation}
-over pairs of cells, weighted by the linear profiles of the rooftops (the factor $1/(4\uppi)$ is kept outside). The
-implementation in \src{} integrates them with a tensor Gauss--Legendre (\GL{}) rule of order $q$ and extracts $1/R$ on
-the coincident cell (Entry~2.1 in Section~2.6 and the appendix of~\cite{machacek2025method}).
+over pairs of cells, weighted by the linear profiles of the rooftops (the factor $1/(4\uppi)$ is kept outside). They
+are integrated with a tensor Gauss--Legendre (\GL{}) rule of order $q$, and the singularity is extracted on the
+coincident cell only (Entry~2.1 in Section~2.6 and the appendix of~\cite{machacek2025method}).
 
 Cells that share an edge or only a vertex meet $R=0$ as well, on the boundary of the integration domain. There the \GL{}
 error does not decrease with the order: the generator entries keep a relative error of about $10^{-3}$ for cells of

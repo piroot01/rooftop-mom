@@ -83,15 +83,14 @@ for $\lambda>0$, so the static moments of a grid depend, up to the factor $a^p$,
 \vspace{\baselineskip}
 \proof In~\eqref{eq:reduction}, $\rho_{\offs}$ scales by $\lambda$ and the weights do not depend on $a$ and $b$. \qed
 
-\propTitle{Agreement with the coincident-cell formulas of the thesis}{coincident} Consider the functions
-$\texttt{type1}$, $\texttt{type2}$, $\texttt{type3}$ of \src{} and $\mathcal{I}^{(1)}$ of the appendix
-of~\cite{machacek2025method}. Then
+\propTitle{Agreement with the coincident-cell formulas of the thesis}{coincident} Consider the integrals
+$\mathcal{I}^{(-1)}$ and $\mathcal{I}^{(1)}$ of the appendix of~\cite{machacek2025method}. Then
 \begin{align*}
-    \Mom{-1}{00}{\V{0}} &= \texttt{type3}(a,b), &
-    \Mom{-1}{10}{\V{0}}-\Mom{-1}{11}{\V{0}} &= \texttt{type2}(a,b),\\
-    \Mom{-1}{11}{\V{0}} &= \texttt{type1}(a,b), &
+    (ab)^2\Mom{-1}{00}{\V{0}} &= \mathcal{I}^{(-1)}[1],\\
+    (ab)^2\Mom{-1}{11}{\V{0}} &= \mathcal{I}^{(-1)}[\lambda_1\lambda_1'],\\
+    (ab)^2\bigl(\Mom{-1}{10}{\V{0}}-\Mom{-1}{11}{\V{0}}\bigr) &= \mathcal{I}^{(-1)}[\lambda_1(1-\lambda_1')],\\
     (ab)^2\Mom{1}{00}{\V{0}} &= \mathcal{I}^{(1)}[1],\\
-    & & (ab)^2\Mom{1}{11}{\V{0}} &= \mathcal{I}^{(1)}[\lambda_1\lambda_1'].
+    (ab)^2\Mom{1}{11}{\V{0}} &= \mathcal{I}^{(1)}[\lambda_1\lambda_1'].
 \end{align*}
 The first one reads
 \begin{align*}

@@ -1,6 +1,6 @@
 """Pieces and moments of the near-field note: the polynomial pieces of the weights in u per offset (Lemma pieces), the
 touching moments as corner sums of G (Theorem touching), and the symbolic proofs of the coincident identities with the
-src/thesis formulas (Proposition coincident). The part above '# (3)' is shared by make_tex.py and exact_values.py."""
+thesis formulas (Proposition coincident). The part above '# (3)' is shared with make_tex.py."""
 import pickle
 import sympy as sp
 
@@ -47,17 +47,17 @@ def moment(p, wx, wy, dx, dy):
                     total += cm * cn * val
     return total / (a * b)
 
-# (3) coincident identities with the src / thesis formulas (symbolic, with a = 1 by homogeneity, b > 0 free)
+# (3) coincident identities with the thesis formulas (symbolic, with a = 1 by homogeneity, b > 0 free)
 L = lambda x, y: sp.log((sp.sqrt(x**2 + y**2) + x) / y)
 s_ = sp.sqrt(a**2 + b**2)
-type3 = 2 * (a**3 - a**2 * s_ + b**3 - b**2 * s_ + 3 * a * b**2 * L(a, b) + 3 * a**2 * b * L(b, a)) / (3 * a**2 * b**2)
-type1 = (12 * a**5 - 12 * a**4 * s_ + a**2 * b**2 * (30 * b - 29 * s_) + 2 * b**4 * (b - s_) + 15 * a**3 * b * (4 * b * L(a, b) + 3 * a * L(b, a))) / (90 * a**4 * b**2)
-type2 = (18 * a**5 - 2 * b**5 - 18 * a**4 * s_ - a**2 * b**2 * s_ + 2 * b**4 * s_ + 30 * a**3 * b**2 * L(a, b) + 45 * a**4 * b * L(b, a)) / (90 * a**4 * b**2)
+Im1one = 2 * (a**3 - a**2 * s_ + b**3 - b**2 * s_ + 3 * a * b**2 * L(a, b) + 3 * a**2 * b * L(b, a)) / (3 * a**2 * b**2)
+Im1ll = (12 * a**5 - 12 * a**4 * s_ + a**2 * b**2 * (30 * b - 29 * s_) + 2 * b**4 * (b - s_) + 15 * a**3 * b * (4 * b * L(a, b) + 3 * a * L(b, a))) / (90 * a**4 * b**2)
+Im1lf = (18 * a**5 - 2 * b**5 - 18 * a**4 * s_ - a**2 * b**2 * s_ + 2 * b**4 * s_ + 30 * a**3 * b**2 * L(a, b) + 45 * a**4 * b * L(b, a)) / (90 * a**4 * b**2)
 I1one = (4 * a**5 + 4 * b**5 - s_ * (4 * a**4 - 12 * a**2 * b**2 + 4 * b**4) + 10 * a * b**4 * L(a, b) + 10 * a**4 * b * L(b, a)) / 60 / (a * b)**2
 I1st = (36 * a**7 + 126 * a**2 * b**5 + 8 * b**7 - s_ * (36 * a**6 - 165 * a**4 * b**2 + 122 * a**2 * b**4 + 8 * b**6) + 210 * a**3 * b**4 * L(a, b) + 105 * a**6 * b * L(b, a)) / (3780 * a**2) / (a * b)**2
-checks = [('M00^(-1)(0,0) - type3', moment(-1, (0, 0), (0, 0), 0, 0) - type3),
-          ('M11^(-1)(0,0) - type1', moment(-1, (1, 1), (0, 0), 0, 0) - type1),
-          ('M10^(-1)(0,0) - M11^(-1)(0,0) - type2', moment(-1, (1, 0), (0, 0), 0, 0) - moment(-1, (1, 1), (0, 0), 0, 0) - type2),
+checks = [('M00^(-1)(0,0) - Im1one', moment(-1, (0, 0), (0, 0), 0, 0) - Im1one),
+          ('M11^(-1)(0,0) - Im1ll', moment(-1, (1, 1), (0, 0), 0, 0) - Im1ll),
+          ('M10^(-1)(0,0) - M11^(-1)(0,0) - Im1lf', moment(-1, (1, 0), (0, 0), 0, 0) - moment(-1, (1, 1), (0, 0), 0, 0) - Im1lf),
           ('M00^(1)(0,0) - thesis I1[1]', moment(1, (0, 0), (0, 0), 0, 0) - I1one),
           ('M11^(1)(0,0) - thesis I1[lambda lambda]', moment(1, (1, 1), (0, 0), 0, 0) - I1st)]
 with open('identities.txt', 'w') as f:
