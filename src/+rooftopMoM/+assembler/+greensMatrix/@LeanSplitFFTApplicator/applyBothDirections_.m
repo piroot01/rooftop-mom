@@ -11,7 +11,7 @@ function output = applyBothDirections_(obj, input)
 %       size is ever created.
 
     [fftSizeX, fftSizeY] = obj.spectra_(1).gridSize();
-    [rowCounts, columnCounts, offsets] = obj.componentLayout_();
+    [rowCounts, columnCounts, offsets] = obj.componentLayout_(obj.rooftops_);
 
     columnEdges = cell(1, 2);
     for component = 1:2

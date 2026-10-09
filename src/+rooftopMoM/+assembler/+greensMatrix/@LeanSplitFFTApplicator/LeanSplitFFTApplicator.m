@@ -17,15 +17,15 @@ classdef LeanSplitFFTApplicator < rooftopMoM.assembler.greensMatrix.SplitFFTAppl
         end
     end
 
-    methods
-        bytes = workingMemory(obj);
+    methods (Static)
+        bytes = estimateWorkingMemory(rooftops, sizeX, sizeY, content);
     end
 
     methods (Access = protected)
         output = applyBothDirections_(obj, input);
     end
 
-    methods (Access = private)
-        [rowCounts, columnCounts, offsets] = componentLayout_(obj);
+    methods (Static, Access = private)
+        [rowCounts, columnCounts, offsets] = componentLayout_(rooftops);
     end
 end

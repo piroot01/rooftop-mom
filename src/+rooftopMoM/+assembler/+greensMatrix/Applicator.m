@@ -26,13 +26,23 @@ classdef (Abstract) Applicator
 
             bytes = obj.spectra_.memory();
         end
+
+        function bytes = workingMemory(obj)
+        % workingMemory: Returns the bytes of the arrays alive at the peak of one product, the output included.
+
+            [sizeX, sizeY] = obj.spectra_(1).gridSize();
+            bytes = obj.estimateWorkingMemory(obj.rooftops_, sizeX, sizeY, obj.content_);
+        end
     end
 
     methods (Abstract)
         % apply: Returns the product of the Green's matrix with an Nx1 vector of rooftop coefficients.
         output = apply(obj, input);
+    end
 
-        % workingMemory: Returns the bytes of the arrays alive at the peak of one product, the output included.
-        bytes = workingMemory(obj);
+    methods (Abstract, Static)
+        % estimateWorkingMemory: Returns the bytes of the arrays alive at the peak of one product, the output included,
+        %   for the spectra on a sizeX x sizeY grid, before any spectra exist.
+        bytes = estimateWorkingMemory(rooftops, sizeX, sizeY, content);
     end
 end

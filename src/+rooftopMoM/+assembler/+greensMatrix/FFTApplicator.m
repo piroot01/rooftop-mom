@@ -29,16 +29,18 @@ classdef FFTApplicator < rooftopMoM.assembler.greensMatrix.Applicator
                     output = obj.applySingleDirection_(input, 'y', obj.spectra_.blockYY());
             end
         end
+    end
 
-        function bytes = workingMemory(obj)
-        % workingMemory: Returns the bytes of the arrays alive at the peak of one product, the output included.
+    methods (Static)
+        function bytes = estimateWorkingMemory(rooftops, sizeX, sizeY, content)
+        % estimateWorkingMemory: Returns the bytes of the arrays alive at the peak of one product, the output included,
+        %   for the spectra on a sizeX x sizeY grid.
 
-            [blockSizeX, blockSizeY] = obj.spectra_.gridSize();
-            blockBytes = 16 * blockSizeX * blockSizeY;
+            blockBytes = 16 * sizeX * sizeY;
 
-            if obj.content_ == rooftopMoM.basisFunctions.RooftopContent.BOTH
+            if content == rooftopMoM.basisFunctions.RooftopContent.BOTH
                 % Both output spectra, the padded spectrum of the y-directed input and the y-directed input itself.
-                bytes = 3 * blockBytes + 16 * obj.rooftops_.countDir('y');
+                bytes = 3 * blockBytes + 16 * rooftops.countDir('y');
             else
                 % The input spectrum, the product and its inverse transform, partly overlapping.
                 bytes = 2.5 * blockBytes;

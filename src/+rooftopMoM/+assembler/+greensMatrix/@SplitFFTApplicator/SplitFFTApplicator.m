@@ -27,8 +27,10 @@ classdef SplitFFTApplicator < rooftopMoM.assembler.greensMatrix.Applicator
 
     methods
         output = apply(obj, input);
+    end
 
-        bytes = workingMemory(obj);
+    methods (Static)
+        bytes = estimateWorkingMemory(rooftops, sizeX, sizeY, content);
     end
 
     methods (Access = protected)
