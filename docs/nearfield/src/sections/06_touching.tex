@@ -1,6 +1,18 @@
 \section{Closed forms for the touching cells}
 \label{sec:touching}
 
+\paragraph{What this section builds on.} Within the note, the section combines three earlier results: the
+two-dimensional form of a moment (Theorem~\theoRef{reduction}), the weights that are polynomials on $I_-$ and $I_+$
+(Corollary~\coroRef{weights}), and the corner difference with the closed-form antiderivatives $\Gf{p}{m}{n}$
+(Proposition~\propRef{gproperties} and Appendix~\ref{app:antiderivatives}). In the literature, closed forms of static
+potential integrals are classical. Wilton et al.~\cite{wilton1984potential} give them for uniform and linear sources on
+polygons, a single integration over the source domain, and Tzoulis and Eibert~\cite{Tzoulis2004} review this line of
+work. Lopez-Pena and Mosig~\cite{lopezpena2009analytical} evaluate the full fourfold static integrals of uniform sources
+over rectangular cells, and Bao et al.~\cite{Bao2020} and the thesis~\cite{machacek2025method} do so for rooftop
+functions on the coincident cell. This section extends the last two to the linear weights of the rooftops on all nine
+touching cells, the edge and vertex neighbours included, and from the kernel $R^{-1}$ to the kernels $R$ and $R^3$ of
+the three-term extraction.
+
 Theorem~\theoRef{reduction} turns a moment into the two-dimensional integral~\eqref{eq:reduction} over $[-1,1]^2$,
 with the weights $W_{\alpha\beta}(\nu)$, $W_{00}(\eta)$ and the distance $\rho_{\offs}(\nu,\eta)$. For a touching offset
 $\offs=(d_x,d_y)\in\{0,1\}^2$ the distance vanishes at the singular point $(\nu,\eta)=(d_x,d_y)$, and this is the only
