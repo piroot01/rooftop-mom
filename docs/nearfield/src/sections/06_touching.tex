@@ -152,34 +152,3 @@ for $\lambda>0$, so the static moments of a grid depend, up to the factor $a^p$,
 
 \vspace{\baselineskip}
 \proof In~\eqref{eq:reduction}, $\rho_{\offs}$ scales by $\lambda$ and the weights do not depend on $a$ and $b$. \qed
-
-\propTitle{Agreement with the coincident-cell formulas of the thesis}{coincident} Consider the integrals
-$\mathcal{I}^{(-1)}$ and $\mathcal{I}^{(1)}$ of the appendix of~\cite{machacek2025method}. Then
-\begin{equation}
-    \begin{aligned}
-    (ab)^2\Mom{-1}{00}{\V{0}} &= \mathcal{I}^{(-1)}[1],\\
-    (ab)^2\Mom{-1}{11}{\V{0}} &= \mathcal{I}^{(-1)}[\lambda_1\lambda_1'],\\
-    (ab)^2\bigl(\Mom{-1}{10}{\V{0}}-\Mom{-1}{11}{\V{0}}\bigr) &= \mathcal{I}^{(-1)}[\lambda_1(1-\lambda_1')],\\
-    (ab)^2\Mom{1}{00}{\V{0}} &= \mathcal{I}^{(1)}[1],\\
-    (ab)^2\Mom{1}{11}{\V{0}} &= \mathcal{I}^{(1)}[\lambda_1\lambda_1'].
-    \end{aligned}
-\end{equation}
-The first one reads
-\begin{equation}
-    \begin{aligned}
-    \Mom{-1}{00}{\V{0}} &= \frac{1}{3a^2b^2}\Bigg(2a^3+2b^3-2\sqrt{a^2+b^2}\left(a^2+b^2\right)\\
-    &\phantom{{}=\frac{1}{3a^2b^2}\Bigg(}+6a^2b\log\left(\frac{\sqrt{a^2+b^2}+b}{a}\right)
-    +6ab^2\log\left(\frac{\sqrt{a^2+b^2}+a}{b}\right)\Bigg).
-    \end{aligned}
-\end{equation}
-
-\vspace{\baselineskip}
-\proof By Corollary~\coroRef{homogeneity} it suffices to take $a=1$ and keep $b>0$ symbolic. The difference of the two
-sides, written with~\eqref{eq:touching} and the cited formula, simplifies to zero exactly (SymPy). \qed
-
-\vspace{\baselineskip}
-\noindent\textbf{Remark (thesis appendix).} The values of the formulas in the appendix of~\cite{machacek2025method} are
-correct, but three labels are misprinted: the integrands of the $\mathcal{I}^{(1)}$ entries are written with $1/R$
-instead of $R$; the last $\mathcal{I}^{(1)}$ entry repeats the label $[\lambda_1(1-\lambda_1')]$ instead of
-$[\lambda_2(1-\lambda_2')]$; and the integrand of $\mathcal{I}^{(-1)}[\lambda_2(1-\lambda_2')]$ contains $(u+\lambda_2')$
-instead of $(v+\lambda_2')$.

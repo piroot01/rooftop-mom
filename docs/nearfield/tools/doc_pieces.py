@@ -1,6 +1,6 @@
 """Pieces and moments of the near-field note: the polynomial pieces of the weights in u per offset (Lemma pieces), the
 touching moments as corner sums of G (Theorem touching), and the symbolic proofs of the coincident identities with the
-thesis formulas (Proposition coincident). The part above '# (3)' is shared with make_tex.py."""
+coincident-cell formulas of the thesis appendix. The part above '# (3)' is shared with make_tex.py."""
 import pickle
 import sympy as sp
 
