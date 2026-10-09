@@ -16,7 +16,7 @@
         \node[anchor=east] at (0,1) {$1$};
         \node[PairedF, anchor=west, font=\small] at (1,{1-\nuz}) {$\xi-\tau=\nu$};
     \end{scope}
-    \draw[->, thick] (1.85,0.15) to[bend left=30] node[above]{$\nu=\xi-\tau$} (2.55,0.15);
+    \draw[->, thick] (1.65,-0.55) to[bend left=30] node[above]{$\nu=\xi-\tau$} (2.45,-0.55);
     \begin{scope}[shift={(2.8,0)}]
         \fill[PairedA] (0,-1) -- (1,0) -- (0,0) -- cycle;
         \fill[PairedG] (0,0) -- (1,0) -- (1,1) -- cycle;
@@ -24,8 +24,8 @@
         \draw[PairedF, very thick] (\nuz,\nuz) -- (1,\nuz);
         \draw[thick] (0,-1) -- (1,0) -- (1,1) -- (0,0) -- cycle;
         \draw[thick,->] (0,-1.1) -- (0,1.25) node[anchor=east]{$\nu$};
-        \draw[thick,->] (0,0) -- (1.25,0) node[anchor=north]{$\xi$};
-        \node[anchor=north east] at (1,0) {$1$};
+        \draw[thick,->] (0,0) -- (1.35,0) node[anchor=north]{$\xi$};
+        \node[anchor=north] at (1.05,0) {$1$};
         \node[anchor=east] at (0,1) {$1$};
         \node[anchor=east] at (0,-1) {$-1$};
         \node[font=\small] at (0.3,-0.25) {$I_-$};
@@ -37,13 +37,13 @@
 \begin{tikzpicture}
     \begin{axis}[
         width=5.0cm, height=4.4cm,
-        xmin=-1, xmax=1, ymin=0, ymax=1.3,
+        xmin=-1, xmax=1, ymin=0, ymax=1.1,
         xtick={-1,0,1}, ytick={0,0.5,1},
         xlabel={$\nu$}, axis lines=left,
-        legend style={draw=none, font=\small, fill=none}, legend columns=2, legend cell align=left, legend style={at={(0.5,1)}, anchor=north},
+        legend style={draw=none, font=\small, fill=none}, legend columns=2, legend cell align=left, legend style={at={(0.5,1.03)}, anchor=south},
         samples=101, domain=-1:1, thick,
     ]
-        \draw[dashed] (axis cs:0,0) -- (axis cs:0,1.3);
+        \draw[dashed] (axis cs:0,0) -- (axis cs:0,1.1);
         \addplot[black] {(x<0)*(1+x) + (x>=0)*(1-x)};
         \addplot[PairedF] {(x<0)*0.5*(1+x)^2 + (x>=0)*0.5*(1-x^2)};
         \addplot[PairedB] {(x<0)*0.5*(1-x^2) + (x>=0)*0.5*(1-x)^2};
