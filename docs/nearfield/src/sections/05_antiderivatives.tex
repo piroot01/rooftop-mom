@@ -12,9 +12,9 @@ quadrant and $Q^\circ$ its interior. For $p>-2$, $m,n\in\N_0$ and $(a,b)\in Q$ p
     \Gf{p}{m}{n}(a,b) = \int_0^a\!\!\int_0^b u^m v^n\bigl(u^2+v^2\bigr)^{p/2}\D v\D u .
 \end{equation}
 For a function $F$ on $Q$ and $0\le a_0\le a_1$, $0\le b_0\le b_1$, the corner difference is
-\begin{equation*}
+\begin{equation}
     \cornerdiff F\,[a_0,a_1]\times[b_0,b_1] = F(a_1,b_1)-F(a_0,b_1)-F(a_1,b_0)+F(a_0,b_0).
-\end{equation*}
+\end{equation}
 
 \begin{figure}[ht]
     \centering
@@ -56,9 +56,9 @@ $D=0$ on the axes shows that $e$ and $c$ are constants with $e+c=D(0,0)=0$.
 (iv) Substitute $u=\lambda u'$ and $v=\lambda v'$ in~\eqref{eq:G}. \qed
 
 \lemmaTitle{One-dimensional integrals}{oned} Let $a\ge0$, $b>0$, $m\in\N_0$ and $q\in\{-1,1,3,5\}$, and let $R=\sqrt{a^2+b^2}$. The integrals
-\begin{equation*}
+\begin{equation}
     K^{(q)}_m(a)=\int_0^a u^m\bigl(u^2+b^2\bigr)^{q/2}\D u
-\end{equation*}
+\end{equation}
 are
 \begin{align}
     K^{(q)}_0 &= \begin{dcases}
@@ -80,26 +80,28 @@ The same formulas with $a$ and $b$ exchanged give the inner integrals $\int_0^b 
 \vspace{\baselineskip}
 \proof
 The base cases follow from
-\begin{align*}
+\begin{equation}
+    \begin{aligned}
     \frac{\D}{\D u}\arsinh\frac{u}{b} &= \bigl(u^2+b^2\bigr)^{-1/2},\qquad
     \frac{\D}{\D u}\bigl(u^2+b^2\bigr)^{(q+2)/2} = (q+2)\,u\,\bigl(u^2+b^2\bigr)^{q/2},\\
     \frac{\D}{\D u}\Bigl(u\bigl(u^2+b^2\bigr)^{q/2}\Bigr) &= (q+1)\bigl(u^2+b^2\bigr)^{q/2}-qb^2\bigl(u^2+b^2\bigr)^{(q-2)/2};
-\end{align*}
+    \end{aligned}
+\end{equation}
 the first one gives $K^{(-1)}_0$ and the second one~\eqref{eq:K1}. The last one gives the recursion
-\begin{equation*}
+\begin{equation}
     K^{(q)}_0=\frac{aR^q+qb^2K^{(q-2)}_0}{q+1},
-\end{equation*}
+\end{equation}
 which produces~\eqref{eq:K0} from $K^{(-1)}_0$.
 
 For the recursion with $m\ge2$, integrate from $0$ to $a$
-\begin{equation*}
+\begin{equation}
     \frac{\D}{\D u}\bigl(u^{m-1}(u^2+b^2)^{(q+2)/2}\bigr)=(m-1)b^2u^{m-2}(u^2+b^2)^{q/2}+(m+q+1)u^m(u^2+b^2)^{q/2}.
-\end{equation*}
+\end{equation}
 
 The logarithmic terms follow by integration by parts with
-\begin{equation*}
+\begin{equation}
     \frac{\D}{\D u}\arsinh\frac{b}{u}=-\frac{b}{u\sqrt{u^2+b^2}};
-\end{equation*}
+\end{equation}
 the boundary term $u^{m+1}\arsinh(b/u)$ vanishes as $u\to0^+$. \qed
 
 \propTitle{Closed forms}{closedforms} For $p\in\{-1,1,3\}$, $m\in\{0,1,2,3\}$, $n\in\{0,1\}$ and $(a,b)\in Q^\circ$,
@@ -127,8 +129,8 @@ with 30-digit adaptive quadrature of~\eqref{eq:G} within $2\cdot10^{-25}$. \qed
 
 \vspace{\baselineskip}
 \noindent\textbf{Example.} For $p=-1$, \eqref{eq:ibp} gives directly
-\begin{equation*}
+\begin{equation}
     \Gf{-1}{0}{0}(a,b) = \int_0^a\arsinh\frac{b}{u}\D u
     = a\log\left(\frac{\sqrt{a^2+b^2}+b}{a}\right) + b\log\left(\frac{\sqrt{a^2+b^2}+a}{b}\right),
-\end{equation*}
+\end{equation}
 the classical potential integral of a uniformly charged rectangle at its corner.

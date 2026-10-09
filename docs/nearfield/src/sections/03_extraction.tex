@@ -26,9 +26,9 @@ in Section~2.6 of~\cite{machacek2025method}. \qed
 \end{equation}
 Table~\ref{tab:extraction} lists the orders: $N=1$ is the classical extraction of the static singularity~\cite{Tzoulis2004}, $N=2$ the two-term extraction
 of~\cite{machacek2025method} (Entry~2.1 in Section~2.6), there written as
-\begin{equation*}
+\begin{equation}
     g=g_{\mathrm{s}}+\frac{1}{4\uppi}R^{-1}-\frac{k^2}{8\uppi}R,
-\end{equation*}
+\end{equation}
 and $N=3$ the one of this note.
 For every $N\ge1$, $g_N$ extends continuously to $R=0$ with $g_N(0)=-\I k$.
 
@@ -39,14 +39,14 @@ It is not of class $C^{2N-1}$ unless $k=0$.
 
 \vspace{\baselineskip}
 \proof By~\eqref{eq:taylor},
-\begin{equation*}
+\begin{equation}
     g_N(R) = E(R^2) + R^{2N-1}F(R^2),
-\end{equation*}
+\end{equation}
 with the entire functions
-\begin{equation*}
+\begin{equation}
     E(s) = -\I\sum_{\ell\ge0}\frac{(-1)^\ell k^{2\ell+1}}{(2\ell+1)!}s^\ell, \qquad
     F(s) = \sum_{\ell\ge N}\frac{(-1)^\ell k^{2\ell}}{(2\ell)!}s^{\ell-N}.
-\end{equation*}
+\end{equation}
 The function $E(\NORM{\V{z}}^2)$ is real-analytic on $\Rn^2$.
 
 The function $\NORM{\V{z}}^{2N-1}=\bigl(\NORM{\V{z}}^2\bigr)^{N-1}\NORM{\V{z}}$ is smooth away from the origin and
@@ -98,9 +98,9 @@ $2\ell-1\ge-1>-2$, and $g_N$ is bounded. \qed
 
 \vspace{\baselineskip}
 \noindent\textbf{What has to be computed.} By Lemma~\lemmaRef{symmetries}, the static moments of the four offsets
-\begin{equation*}
+\begin{equation}
     \offs\in\{(0,0),\,(1,0),\,(0,1),\,(1,1)\}
-\end{equation*}
+\end{equation}
 determine all nine touching offsets. These are the coincident cell, the two kinds of shared edge and the shared vertex.
 For $N=3$ we need, for each of them, the four $x$-moments $M_{00},M_{10},M_{01},M_{11}$ and the three $y$-moments,
 with $p\in\{-1,1,3\}$. The $y$-moments follow from the $x$-moments by Lemma~\lemmaRef{symmetries}(iii).
