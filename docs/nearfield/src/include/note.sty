@@ -18,6 +18,10 @@
 \newcommand{\GL}{GL}
 % Proofs open with an upright label; the thesis template sets it in italics.
 \renewcommand{\proof}{\noindent\textbf{Proof.}\quad}
+% The end-of-proof square flush right: on the last line when it fits, otherwise flush right on a line of its own (the
+% template's \hfill is dropped at a line break and leaves the square on the left).
+\renewcommand{\qed}{\ifvmode\noindent\fi\unskip\nobreak\hfil\penalty50\hskip2em\hbox{}\nobreak\hfil$\square$%
+    {\parfillskip=0pt\finalhyphendemerits=0\par}}
 
 % Figures: the TikZ style of the thesis figures.
 \RequirePackage{tikz-3dplot}
