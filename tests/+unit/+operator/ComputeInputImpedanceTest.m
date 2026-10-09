@@ -26,7 +26,7 @@ classdef ComputeInputImpedanceTest < unit.Base
         function impedance = solveDipole_(testCase, sizeX, sizeY, wavenumber)
             context = testCase.createContext(20, 1, sizeX, sizeY, 4, wavenumber);
             rooftops = context.rooftops();
-            generators = rooftopMoM.assembler.greensMatrix.FullAssembler().generate(context);
+            generators = rooftopMoM.assembler.greensMatrix.MomentAssembler().generate(context);
             port = rooftopMoM.operator.utils.generateMiddlePort(rooftops, 'x');
 
             current = testCase.generateDenseMatrix(generators, rooftops) \ ...

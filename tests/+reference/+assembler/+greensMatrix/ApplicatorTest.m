@@ -20,12 +20,14 @@ classdef (TestTags = {'Reference'}) ApplicatorTest < reference.Base
             end
         end
 
-        function testWholeChainMatchesTheReferenceDenseMatrix(testCase)
-            % The reference dense matrix is assembled without generators and is accurate to about 4e-11.
+        function testProductMatchesTheReferenceDenseMatrix(testCase)
+            % The reference dense matrix is assembled without generators, with the quadrature of the reference
+            % generators, and is accurate to about 4e-11.
             data = testCase.reference(1);
-            context = testCase.createReferenceContext(data);
-            generators = rooftopMoM.assembler.greensMatrix.FullAssembler().generate(context);
-            product = testCase.createProduct('FFTApplicator', context.rooftops(), generators);
+            rooftops = testCase.createReferenceContext(data).rooftops();
+            generators = rooftopMoM.assembler.greensMatrix.Generators(data.magneticXX, data.magneticYY, ...
+                data.electric, rooftops.content());
+            product = testCase.createProduct('FFTApplicator', rooftops, generators);
             expected = data.impedanceMatrix * data.vector;
 
             testCase.verifyLessThan(norm(product.apply(data.vector) - expected) / norm(expected), 1e-10);

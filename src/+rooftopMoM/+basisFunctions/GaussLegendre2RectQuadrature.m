@@ -1,6 +1,6 @@
 classdef GaussLegendre2RectQuadrature
-% GaussLegendre2RectQuadrature: Tensor Gauss-Legendre rule on the unit square and its product rule on a pair of
-%   unit squares. The B = order^2 points are ordered with the u coordinate running fastest.
+% GaussLegendre2RectQuadrature: Tensor Gauss-Legendre rule on the unit square. The B = order^2 points are ordered with
+%   the u coordinate running fastest.
 
     properties (Access = private)
         order_ double;
@@ -38,12 +38,6 @@ classdef GaussLegendre2RectQuadrature
         % weights2D: Returns the Bx1 weights on the unit square.
 
             weights = obj.weights2D_;
-        end
-
-        function weights = weights4D(obj)
-        % weights4D: Returns the BxB weights on a pair of unit squares, the first square along the rows.
-
-            weights = obj.weights2D_ * obj.weights2D_.';
         end
     end
 end

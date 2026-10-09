@@ -10,7 +10,7 @@ classdef EstimateMemoryTest < unit.Base
     methods (Test)
         function testGenerators(testCase, grid)
             context = testCase.createContext(grid(1), grid(2), 0.1, 0.15, 2, 2 * pi);
-            generators = rooftopMoM.assembler.greensMatrix.FullAssembler().generate(context);
+            generators = rooftopMoM.assembler.greensMatrix.MomentAssembler().generate(context);
 
             testCase.verifyEqual(rooftopMoM.resources.estimateGenerators(context.rooftops()), generators.memory());
         end
@@ -40,7 +40,7 @@ classdef EstimateMemoryTest < unit.Base
         function [rooftops, generators] = assemble_(testCase, grid)
             context = testCase.createContext(grid(1), grid(2), 0.1, 0.15, 2, 2 * pi);
             rooftops = context.rooftops();
-            generators = rooftopMoM.assembler.greensMatrix.FullAssembler().generate(context);
+            generators = rooftopMoM.assembler.greensMatrix.MomentAssembler().generate(context);
         end
     end
 end

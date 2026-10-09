@@ -24,13 +24,5 @@ classdef GaussLegendre2RectQuadratureTest < unit.Base
             testCase.verifyEqual(pointsV(1), pointsV(2));
             testCase.verifyLessThan(pointsU(1), pointsU(2));
         end
-
-        function testWeights4DArePairProducts(testCase)
-            quadrature = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(3);
-            weights = quadrature.weights2D();
-
-            testCase.verifyEqual(quadrature.weights4D(), weights * weights.');
-            testCase.verifyEqual(sum(quadrature.weights4D(), 'all'), 1, 'RelTol', 1e-14);
-        end
     end
 end

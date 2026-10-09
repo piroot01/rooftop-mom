@@ -10,7 +10,7 @@ classdef GenerateSpatialBlocksTest < unit.Base
         function testBlocksReproduceTheGreensMatrix(testCase, grid)
             context = testCase.createContext(grid(1), grid(2), 0.1, 0.15, 3, 2 * pi);
             rooftops = context.rooftops();
-            generators = rooftopMoM.assembler.greensMatrix.FullAssembler().generate(context);
+            generators = rooftopMoM.assembler.greensMatrix.MomentAssembler().generate(context);
             matrix = testCase.generateDenseMatrix(generators, rooftops);
 
             blocks = cell(2);

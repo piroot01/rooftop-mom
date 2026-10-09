@@ -1,0 +1,39 @@
+function parts = integrateCellPairs_(parts, context, scales, rule, extent, excluded)
+% integrateCellPairs_: Integrates the moments of the cell pairs at the offsets 0 to extent - 1, except those below
+%   excluded in both directions, with the rule and adds them to the generators, one chunk of offsets at a time.
+
+    primitive = context.rooftops().primitive();
+    sizes = [primitive.sizeX(), primitive.sizeY()];
+    count = prod(extent);
+
+    % A chunk peaks with the distances and the kernel values, 24 bytes per value.
+    chunkLength = context.chunkLength(24 * numel(rule.nodesX) * numel(rule.nodesY));
+    chunkCount = ceil(count / chunkLength);
+
+    logger = rooftopMoM.logging.Logger.instance();
+    isTrace = logger.isEnabled(rooftopMoM.logging.LogLevel.TRACE);
+
+    for n = 1:chunkCount
+        offsets = selectOffsets_(extent, ((n - 1) * chunkLength + 1):min(n * chunkLength, count), excluded);
+
+        % The moments of a chunk are a temporary, so they are freed before the next chunk is integrated.
+        if ~isempty(offsets)
+            parts = rooftopMoM.assembler.greensMatrix.utils.accumulateMoments(parts, ...
+                rooftopMoM.assembler.greensMatrix.utils.integrateMoments(rule, offsets, sizes, context.wavenumber()), ...
+                offsets, scales);
+        end
+
+        if isTrace
+            logger.trace('Integrated chunk %d of %d.', n, chunkCount);
+        end
+    end
+end
+
+function offsets = selectOffsets_(extent, range, excluded)
+% selectOffsets_: Returns the 2xC offsets with the linear indices range among the offsets 0 to extent - 1, except
+%   those below excluded in both directions.
+
+    [i, j] = ind2sub(extent, range);
+    offsets = [i - 1; j - 1];
+    offsets = offsets(:, offsets(1, :) >= excluded(1) | offsets(2, :) >= excluded(2));
+end

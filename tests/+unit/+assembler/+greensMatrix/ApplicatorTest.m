@@ -18,7 +18,7 @@ classdef ApplicatorTest < unit.Base
         function testMatchesTheDenseMatrix(testCase, applicator, grid)
             context = testCase.createContext(grid(1), grid(2), grid(3), grid(4), 3, 2 * pi);
             rooftops = context.rooftops();
-            generators = rooftopMoM.assembler.greensMatrix.FullAssembler().generate(context);
+            generators = rooftopMoM.assembler.greensMatrix.MomentAssembler().generate(context);
             product = testCase.createProduct(applicator, rooftops, generators);
 
             rng(1);
@@ -30,7 +30,7 @@ classdef ApplicatorTest < unit.Base
 
         function testMemoryIsReported(testCase, applicator)
             context = testCase.createContext(5, 4, 0.1, 0.15, 3, 2 * pi);
-            generators = rooftopMoM.assembler.greensMatrix.FullAssembler().generate(context);
+            generators = rooftopMoM.assembler.greensMatrix.MomentAssembler().generate(context);
             product = testCase.createProduct(applicator, context.rooftops(), generators);
 
             testCase.verifyGreaterThan(product.memory(), 0);

@@ -86,7 +86,7 @@ classdef Problem < handle
 
             if isempty(obj.generators_)
                 obj.requireAssembly_();
-                obj.generators_ = rooftopMoM.assembler.greensMatrix.FullAssembler().generate(obj.context_);
+                obj.generators_ = rooftopMoM.assembler.greensMatrix.MomentAssembler().generate(obj.context_);
                 rooftopMoM.resources.Budget.instance().hold(obj.generators_.memory());
             end
 
