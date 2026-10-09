@@ -1,9 +1,9 @@
 Near-field singularity extraction
 =================================
 
-A technical note on the near-field extraction in src: the three-term extraction (1/R, R, R^3) on all touching cells
-of the rooftop EFIE on a uniform grid, and the closed forms of all static integrals it needs, written in the form of
-the bachelor-thesis appendix.
+A technical note on the near-field extraction: the three-term extraction (1/R, R, R^3) on all touching cells of the
+rooftop EFIE on a uniform grid, and the closed forms of all static integrals it needs, written in the form of the
+bachelor-thesis appendix.
 
 Build
 
