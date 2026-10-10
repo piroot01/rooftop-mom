@@ -94,6 +94,15 @@ classdef ProblemTest < unit.Base
             testCase.verifyGreaterThanOrEqual(problem.density(), 12);
         end
 
+        function testFromElectricalSizeRoundsTheCountsToFastFFTSizes(testCase)
+            % ka = 4.6 needs 10.35 faces per side at 10 per wavelength; the 11 faces that reach it round up to 12.
+            problem = rooftopMoM.Problem.fromElectricalSize(4.6, 'density', 10, 'quadratureOrder', 3);
+            [countX, countY] = problem.mesh().count();
+
+            testCase.verifyEqual([countX, countY], [12, 12]);
+            testCase.verifyGreaterThanOrEqual(problem.density(), 10);
+        end
+
         function testFromElectricalSizeMeshesAStripWithOneFaceAcross(testCase)
             % A half-wave strip 250 times as long as wide: ka = pi / 2, 10 faces along it and 1 across.
             problem = rooftopMoM.Problem.fromElectricalSize(pi / 2, 'density', 20, 'aspect', 250, 'quadratureOrder', 3);

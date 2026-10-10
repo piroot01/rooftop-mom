@@ -158,7 +158,8 @@ classdef Problem < handle
     methods (Static)
         function problem = fromElectricalSize(electricalSize, options)
         % fromElectricalSize: Creates the problem of a rectangular plate of the electrical size ka at the wavelength
-        %   1 m, k = 2 * pi, meshed with the fewest faces that reach the density along both sides.
+        %   1 m, k = 2 * pi, meshed with the fewest faces that reach the density along both sides, each count rounded
+        %   up to a number whose prime factors are at most 7.
         %
         %   Input:
         %       electricalSize: ka, with a the radius of the smallest sphere around the plate, half its diagonal.
@@ -185,6 +186,12 @@ classdef Problem < handle
 
             % Rounding must not add a face to a side that is a whole number of faces long.
             counts = max(1, ceil((1 - 4 * eps) * sides * double(options.density)));
+
+            % The circulant preconditioner transforms on the face grid itself, and FFTW is 1.7 to 2.6 times slower per
+            % unknown on sizes with a prime factor above 7 (e.g. 1031 against 1050). Rounding each count up to the next
+            % size without one only raises the density: by 1.8 % on average for square plates at 10 faces per
+            % wavelength.
+            counts = arrayfun(@rooftopMoM.assembler.greensMatrix.utils.generateFastFFTSize, counts);
 
             if all(counts == 1)
                 error('rooftopMoM:problem:singleFace', ['At ka = %g and %g faces per wavelength the plate is a ' ...
