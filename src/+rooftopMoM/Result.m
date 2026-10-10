@@ -1,7 +1,7 @@
 classdef Result
 % Result: Outcome of rooftopMoM.Solver.solve: the solution and its convergence record. For an Excitation the
 %   solution holds the rooftop coefficients of the current, and the result gives the input impedance of a delta gap
-%   or the radar cross section of a plane wave.
+%   or the radar cross section of a plane wave, in m^2 or over the squared wavelength.
 
     properties (Access = private)
         output_ rooftopMoM.solver.Output;
@@ -68,6 +68,15 @@ classdef Result
             parameters = obj.parameters_('planeWave');
             crossSection = rooftopMoM.operator.computeRadarCrossSection(obj.excitation_.problem().wavenumber(), ...
                 obj.excitation_.vector(), obj.output_.solution(), parameters.intensity);
+        end
+
+        function crossSection = normalizedRadarCrossSection(obj)
+        % normalizedRadarCrossSection: Returns the monostatic radar cross section over the squared wavelength,
+        %   sigma / lambda^2, the same at every scale of the same electrical size.
+
+            crossSection = obj.radarCrossSection();
+            wavelength = 2 * pi / obj.excitation_.problem().wavenumber();
+            crossSection = crossSection / wavelength^2;
         end
     end
 
