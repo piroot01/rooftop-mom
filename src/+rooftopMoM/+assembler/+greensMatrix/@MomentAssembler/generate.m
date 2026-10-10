@@ -20,10 +20,13 @@ function generators = generate(obj, context)
     scales = 1i * rooftopMoM.assembler.Constants.Z0 / (4 * pi) * prod(sizes)^2 * [1 / wavenumber, wavenumber];
     parts = allocateParts_(rooftops);
 
-    % The near pairs have the offsets 0 to nearCounts - 1 in each direction. Their rule splits the longer cell side into
-    % parts of about the shorter one, so the near singularity of an elongated pair lies as many parts away from the
-    % nodes as for square cells.
+    % The near pairs have the offsets 0 to nearCounts - 1 in each direction.
     nearCounts = countNearOffsets_(counts, sizes, obj.nearGap_);
+
+    % The second argument is the number of parts of [-1, 0] and [0, 1] in x and y, not a size: the rounded aspect
+    % ratio, e.g. [3, 1] for a 3 x 1 cell. The near rule thus splits the longer cell side into parts of about the
+    % shorter one, so the near singularity of an elongated pair lies as many parts away from the nodes as for square
+    % cells. The far pairs are smooth and need no split.
     nearRule = rooftopMoM.assembler.greensMatrix.utils.generateReducedRule(orders(1), round(sizes / min(sizes)));
     farRule = rooftopMoM.assembler.greensMatrix.utils.generateReducedRule(orders(2), [1, 1]);
 

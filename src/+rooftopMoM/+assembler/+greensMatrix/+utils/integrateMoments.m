@@ -6,7 +6,8 @@ function moments = integrateMoments(rule, offsets, sizes, wavenumber)
 %
 %   Inputs:
 %       rule: Struct of generateReducedRule.
-%       offsets: 2xC nonnegative cell offsets (dX; dY) of the other cell from the cell at the origin.
+%       offsets: 2xC nonnegative cell offsets (dX; dY) of the other cell from the cell at the origin, one per cell
+%           pair (C of them).
 %       sizes: 1x2 cell sizes [sizeX, sizeY].
 %       wavenumber: Wavenumber k.
 %
