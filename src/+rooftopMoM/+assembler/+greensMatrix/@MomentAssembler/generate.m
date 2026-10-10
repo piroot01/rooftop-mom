@@ -35,7 +35,11 @@ function generators = generate(obj, context)
         prod(nearCounts), orders(1), prod(counts) - prod(nearCounts), orders(2));
 
     parts = integrateCellPairs_(parts, context, scales, nearRule, nearCounts, [0, 0]);
-    parts = integrateCellPairs_(parts, context, scales, farRule, counts, nearCounts);
+
+    % The far rule is the same for all far pairs and has one part per direction, so neighbouring offsets share half of
+    % its points. integrateLattice_ evaluates the kernel once per shared point, about 4x fewer values than
+    % integrateCellPairs_ would.
+    parts = integrateLattice_(parts, context, scales, farRule, counts, nearCounts);
 
     % The touching pairs integrated the remainder of the extraction; the extracted part follows in closed form.
     touching = [0, 1, 0, 1; 0, 0, 1, 1];
