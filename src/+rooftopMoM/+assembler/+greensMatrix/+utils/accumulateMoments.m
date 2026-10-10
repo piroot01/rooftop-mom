@@ -9,6 +9,9 @@ function parts = accumulateMoments(parts, moments, offsets, scales)
 %       reference falling and the other rising, at e + u: M01 - M11.
 %   At 0 the last term comes from the pair at -u, which the reflection x -> -x maps onto the pair at u with the weight
 %   M10 - M11.
+%   The terms are laid out on the grid columns between the smallest and the largest offset along y, zero where no
+%   offset is given, and added to the generators as blocks of whole columns, shifted by one row for e - u and e + u
+%   along x and by one column along y.
 %
 %   Inputs:
 %       parts: Struct of the generators electric (countX x countY), magneticXX and magneticYY, the latter empty for a
@@ -21,36 +24,56 @@ function parts = accumulateMoments(parts, moments, offsets, scales)
 %   Output:
 %       parts: The struct with the moments added.
 
-    % A generator one cell wide keeps its orientation when indexed, so the values take the shape of the entries.
-    index = sub2ind(size(parts.electric), offsets(1, :) + 1, offsets(2, :) + 1);
-    entries = parts.electric(index);
-    parts.electric(index) = entries + reshape(scales(1) * moments(1, :), size(entries));
+    if isempty(offsets)
+        return;
+    end
 
-    % The y moments take the place of the x moments along y; M00 is common to both.
-    names = {'magneticXX', 'magneticYY'};
-    rows = {1:4, [1, 5, 6, 7]};
+    [countX, countY] = size(parts.electric);
+    first = min(offsets(2, :));
+    width = max(offsets(2, :)) - first + 1;
+    columns = first + (1:width);
 
-    for k = 1:2
-        if isempty(parts.(names{k}))
-            continue;
+    % The rows give the electric term, then e, e - u and e + u along x and along y, from M00, M10, M01, M11, N10, N01
+    % and N11; the y moments take the place of the x moments along y.
+    weights = [1, 0, 0, 0, 0, 0, 0
+        1, -1, -1, 2, 0, 0, 0
+        0, 1, 0, -1, 0, 0, 0
+        0, 0, 1, -1, 0, 0, 0
+        1, 0, 0, 0, -1, -1, 2
+        0, 0, 0, 0, 1, 0, -1
+        0, 0, 0, 0, 0, 1, -1] .* [scales(1); repmat(scales(2), 6, 1)];
+
+    % Column n of terms holds term n on the countX x width block of the grid.
+    terms = zeros(countX * width, 7, 'like', 1i);
+    terms(offsets(1, :) + 1 + (offsets(2, :) - first) * countX, :) = (weights * moments).';
+    block = @(n) reshape(terms(:, n), countX, width);
+
+    parts.electric(:, columns) = parts.electric(:, columns) + block(1);
+
+    if ~isempty(parts.magneticXX)
+        rising = block(3);
+        rising(2, :) = 2 * rising(2, :);
+        falling = block(4);
+        values = block(2);
+        values = values(1:(end - 1), :) + rising(2:end, :);
+        values(2:end, :) = values(2:end, :) + falling(1:(end - 2), :);
+        parts.magneticXX(:, columns) = parts.magneticXX(:, columns) + values;
+    end
+
+    if ~isempty(parts.magneticYY)
+        rising = block(6);
+
+        if first <= 1 && first + width > 1
+            rising(:, 2 - first) = 2 * rising(:, 2 - first);
         end
 
-        along = offsets(k, :);
-        scaled = scales(2) * moments(rows{k}, :);
-        terms = {
-            scaled(1, :) - scaled(2, :) - scaled(3, :) + 2 * scaled(4, :), along
-            (scaled(2, :) - scaled(4, :)) .* (1 + (along == 1)), along - 1
-            scaled(3, :) - scaled(4, :), along + 1
-        };
-
-        for n = 1:size(terms, 1)
-            [values, target] = terms{n, :};
-            inside = target >= 0 & target < size(parts.(names{k}), k);
-            position = offsets(:, inside);
-            position(k, :) = target(inside);
-            index = sub2ind(size(parts.(names{k})), position(1, :) + 1, position(2, :) + 1);
-            entries = parts.(names{k})(index);
-            parts.(names{k})(index) = entries + reshape(values(inside), size(entries));
-        end
+        % Column n of values is the column first + n - 1 of the generator, first - 1 to first + width.
+        values = zeros(countX, width + 2, 'like', 1i);
+        values(:, 2:(end - 1)) = block(5);
+        values(:, 1:(end - 2)) = values(:, 1:(end - 2)) + rising;
+        values(:, 3:end) = values(:, 3:end) + block(7);
+        inside = max(1, 2 - first):min(width + 2, countY - first);
+        target = first + inside - 1;
+        parts.magneticYY(:, target) = parts.magneticYY(:, target) + values(:, inside);
     end
 end
