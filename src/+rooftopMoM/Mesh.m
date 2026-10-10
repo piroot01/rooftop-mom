@@ -48,6 +48,14 @@ classdef Mesh
             sizeY = obj.primitive_.sizeY();
         end
 
+        function radius = radius(obj)
+        % radius: Returns the radius a of the smallest sphere around the plate, half its diagonal, in m. A problem on
+        %   the mesh has the electrical size ka.
+
+            radius = hypot(obj.primitive_.countX() * obj.primitive_.sizeX(), ...
+                obj.primitive_.countY() * obj.primitive_.sizeY()) / 2;
+        end
+
         function primitive = primitive(obj)
             primitive = obj.primitive_;
         end
