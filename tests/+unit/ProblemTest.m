@@ -46,7 +46,50 @@ classdef ProblemTest < unit.Base
             rooftopMoM.Problem(rooftopMoM.Mesh(4, 3, 0.1, 0.2), 2 * pi, 'quadratureOrder', 3);
 
             testCase.verifyTrue(any(contains(sink.lines(), ['[Problem.Problem]: 4 x 3 faces of 0.1 x 0.2 m, ' ...
-                '17 rooftops, wavenumber 6.28319 rad/m, quadrature orders 3 near and 3 far.'])));
+                '17 rooftops, wavenumber 6.28319 rad/m, ka 2.265, 5 faces per wavelength, quadrature orders 3 near ' ...
+                'and 3 far.'])));
+        end
+
+        function testElectricalSizeSetsTheWavenumber(testCase)
+            mesh = rooftopMoM.Mesh(4, 3, 0.1, 0.2);
+
+            problem = rooftopMoM.Problem(mesh, 'electricalSize', 2, 'quadratureOrder', 3);
+
+            testCase.verifyEqual(problem.wavenumber(), 2 / mesh.radius(), 'RelTol', 1e-15);
+            testCase.verifyEqual(problem.electricalSize(), 2, 'RelTol', 1e-15);
+        end
+
+        function testDensityCountsTheLongerFaceSide(testCase)
+            % Faces of 0.2 m along y, five per wavelength of 1 m.
+            problem = rooftopMoM.Problem(rooftopMoM.Mesh(4, 3, 0.1, 0.2), 2 * pi, 'quadratureOrder', 3);
+
+            testCase.verifyEqual(problem.density(), 5, 'RelTol', 1e-15);
+        end
+
+        function testFromElectricalSizeMeshesThePlate(testCase)
+            % ka = 4 at the wavelength 1 m: the diagonal is 4 / pi, the sides 1.139 and 0.569 m, which take 13.7 and
+            % 6.8 faces at 12 per wavelength.
+            problem = rooftopMoM.Problem.fromElectricalSize(4, 'density', 12, 'aspect', 2, 'quadratureOrder', 3);
+            [countX, countY] = problem.mesh().count();
+            [sizeX, sizeY] = problem.mesh().faceSize();
+
+            testCase.verifyEqual([countX, countY], [14, 7]);
+            testCase.verifyEqual(countX * sizeX / (countY * sizeY), 2, 'RelTol', 1e-14);
+            testCase.verifyEqual(problem.wavenumber(), 2 * pi);
+            testCase.verifyEqual(problem.electricalSize(), 4, 'RelTol', 1e-14);
+            testCase.verifyGreaterThanOrEqual(problem.density(), 12);
+        end
+
+        function testFromElectricalSizeMeshesAStripWithOneFaceAcross(testCase)
+            % A half-wave strip 250 times as long as wide: ka = pi / 2, 10 faces along it and 1 across.
+            problem = rooftopMoM.Problem.fromElectricalSize(pi / 2, 'density', 20, 'aspect', 250, 'quadratureOrder', 3);
+            [countX, countY] = problem.mesh().count();
+
+            testCase.verifyEqual([countX, countY], [10, 1]);
+        end
+
+        function testFromElectricalSizeRefusesASingleFace(testCase)
+            testCase.verifyError(@() rooftopMoM.Problem.fromElectricalSize(0.1), 'rooftopMoM:problem:singleFace');
         end
 
         function testInvalidInputsRaiseErrors(testCase)
@@ -59,6 +102,13 @@ classdef ProblemTest < unit.Base
                 'rooftopMoM:problem:invalidQuadratureOrder');
             testCase.verifyError(@() rooftopMoM.Problem(mesh, 2 * pi, 'order', 3), ...
                 'MATLAB:TooManyInputs');
+            testCase.verifyError(@() rooftopMoM.Problem(mesh), 'rooftopMoM:problem:invalidWavenumber');
+            testCase.verifyError(@() rooftopMoM.Problem(mesh, 2 * pi, 'electricalSize', 2), ...
+                'rooftopMoM:problem:invalidWavenumber');
+            testCase.verifyError(@() rooftopMoM.Problem(mesh, 'electricalSize', -1), ...
+                'MATLAB:validators:mustBePositive');
+            testCase.verifyError(@() rooftopMoM.Problem.fromElectricalSize(4, 'density', 0), ...
+                'MATLAB:validators:mustBePositive');
         end
     end
 end
