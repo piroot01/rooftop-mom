@@ -2,8 +2,9 @@ function measureThreadScaling(count, threads)
 % measureThreadScaling: Prints the wall time and the busy cores of the assembly, the three products and the circulant
 %   preconditioner of a plate of count x count faces of a tenth of a wavelength, for each number of threads.
 %       measureThreadScaling(2048, [1, 2, 4, 8, 16])
-%   The times are medians after one warm-up run; the busy cores are the CPU time of MATLAB over the wall time. A run
-%   that keeps many cores busy without getting faster waits for the memory, not for the cores.
+%   The times are medians after one warm-up run; the busy cores are the CPU time of MATLAB over the wall time. They
+%   include threads that spin while they wait for the next parallel step, so they overstate the cores doing useful
+%   work.
 %
 %   Inputs:
 %       count: Number of faces along each side (default 1024).
