@@ -180,7 +180,8 @@ classdef Problem < handle
                 options.chunkSize {mustBeScalarOrEmpty, mustBeReal, mustBeFinite, mustBePositive} = []
             end
 
-            % At the wavelength 1 m the diagonal is 2 * a = ka / pi.
+            % At the wavelength 1 m the diagonal is 2 * a = ka / pi. The sides are the diagonal times the unit vector
+            % [aspect, 1] / hypot(aspect, 1), which keeps their ratio at aspect and their hypotenuse at the diagonal.
             aspect = double(options.aspect);
             sides = double(electricalSize) / pi * [aspect, 1] / hypot(aspect, 1);
 
