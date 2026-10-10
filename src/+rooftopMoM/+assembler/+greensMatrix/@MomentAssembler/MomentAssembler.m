@@ -15,4 +15,25 @@ classdef MomentAssembler < rooftopMoM.assembler.greensMatrix.Assembler
         % generate: Returns the Generators of an AssemblerContext.
         generators = generate(obj, context);
     end
+
+    methods (Static)
+        function bytes = estimateWorkingMemory(rooftops, orders)
+        % estimateWorkingMemory: Returns the bytes of the largest chunk the assembly of the rooftops with the
+        %   quadrature orders [near, far] can use: its near or its far pass in one chunk. A larger chunk changes
+        %   nothing.
+
+            primitive = rooftops.primitive();
+            counts = [primitive.countX(), primitive.countY()];
+            sizes = [primitive.sizeX(), primitive.sizeY()];
+            nearCounts = countNearOffsets_(counts, sizes, rooftopMoM.assembler.greensMatrix.MomentAssembler.nearGap_);
+            nearRule = rooftopMoM.assembler.greensMatrix.utils.generateReducedRule(orders(1), ...
+                round(sizes / min(sizes)));
+            farRule = rooftopMoM.assembler.greensMatrix.utils.generateReducedRule(orders(2), [1, 1]);
+
+            % A pass runs over every offset of its range, the far one over the near offsets too, and a chunk takes 24
+            % bytes per kernel value (integrateCellPairs_).
+            bytes = 24 * max(prod(nearCounts) * numel(nearRule.nodesX) * numel(nearRule.nodesY), ...
+                prod(counts) * numel(farRule.nodesX) * numel(farRule.nodesY));
+        end
+    end
 end

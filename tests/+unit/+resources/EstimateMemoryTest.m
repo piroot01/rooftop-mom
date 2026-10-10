@@ -15,6 +15,15 @@ classdef EstimateMemoryTest < unit.Base
             testCase.verifyEqual(rooftopMoM.resources.estimateGenerators(context.rooftops()), generators.memory());
         end
 
+        function testChunk(testCase, grid)
+            % The estimate is the smallest chunk with which each pass of the assembly runs in one chunk.
+            context = testCase.createContext(grid(1), grid(2), 0.1, 0.15, [3, 2], 2 * pi);
+            bytes = rooftopMoM.resources.estimateChunk(context.rooftops(), context.quadratureOrders());
+
+            testCase.verifyEqual(testCase.countChunks_(grid, bytes), [1, 1]);
+            testCase.verifyGreaterThan(max(testCase.countChunks_(grid, bytes - 1)), 1);
+        end
+
         function testProduct(testCase, grid, product)
             [rooftops, generators] = testCase.assemble_(grid);
             applicator = testCase.createProduct(applicatorName_(product), rooftops, generators);
@@ -37,6 +46,19 @@ classdef EstimateMemoryTest < unit.Base
     end
 
     methods (Access = private)
+        function counts = countChunks_(testCase, grid, chunkSize)
+        % countChunks_: Returns the numbers of chunks of the near and of the far pass of an assembly, read from its
+        %   trace log.
+
+            sink = rooftopMoM.logging.sinks.MemorySink();
+            rooftopMoM.logging.Logger.instance().configure(rooftopMoM.logging.LogLevel.TRACE, {sink});
+            context = testCase.createContext(grid(1), grid(2), 0.1, 0.15, [3, 2], 2 * pi, chunkSize);
+            rooftopMoM.assembler.greensMatrix.MomentAssembler().generate(context);
+
+            totals = regexp(strjoin(sink.lines(), newline), 'Integrated chunk 1 of (\d+)\.', 'tokens');
+            counts = cellfun(@(token) str2double(token{1}), totals);
+        end
+
         function [rooftops, generators] = assemble_(testCase, grid)
             context = testCase.createContext(grid(1), grid(2), 0.1, 0.15, 2, 2 * pi);
             rooftops = context.rooftops();
