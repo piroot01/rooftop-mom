@@ -4,5 +4,5 @@ function version = version()
 %   Output:
 %       version: Character vector 'major.minor.patch'.
 
-    version = '3.2.3';
+    version = '3.3.0';
 end
