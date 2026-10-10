@@ -42,7 +42,7 @@ classdef ConjugateGradientTest < unit.solver.Base
             output = rooftopMoM.solver.ConjugateGradient(1e-8, 100).solve(matrix, rightHandSide, []);
 
             lines = sink.lines();
-            testCase.verifyEqual(nnz(contains(lines, '[TRACE] [ConjugateGradient.iterate_]: Iteration ')), ...
+            testCase.verifyEqual(nnz(contains(lines, '[trace] [ConjugateGradient.iterate_]: Iteration ')), ...
                 output.iterationCount());
         end
 

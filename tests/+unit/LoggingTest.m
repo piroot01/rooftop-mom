@@ -10,7 +10,7 @@ classdef LoggingTest < unit.Base
 
             lines = cellstr(readlines(fileName, 'EmptyLineRule', 'skip'));
             testCase.verifyNumElements(lines, 1);
-            testCase.verifySubstring(lines{1}, '[DEBUG]');
+            testCase.verifySubstring(lines{1}, '[debug]');
         end
 
         function testLevelIgnoresCase(testCase)

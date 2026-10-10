@@ -22,7 +22,7 @@ classdef LoggerTest < unit.Base
 
             lines = sink.lines();
             testCase.verifyNumElements(lines, 3);
-            testCase.verifySubstring(lines{3}, '[INFO]');
+            testCase.verifySubstring(lines{3}, '[info]');
         end
 
         function testOffWritesNothing(testCase)
@@ -44,7 +44,7 @@ classdef LoggerTest < unit.Base
             rooftopMoM.logging.Logger.instance().debug('Converged in %d iterations.', 12);
 
             lines = sink.lines();
-            testCase.verifyMatches(lines{1}, ['^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\] \[DEBUG\] ' ...
+            testCase.verifyMatches(lines{1}, ['^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\] \[debug\] ' ...
                 '\[LoggerTest\.testLineFormat\]: Converged in 12 iterations\.$']);
         end
 

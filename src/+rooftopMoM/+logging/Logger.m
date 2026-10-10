@@ -2,7 +2,7 @@ classdef Logger < handle
 % Logger: Shared logger of the rooftopMoM package.
 %   All modules write to one instance, Logger.instance(). A message is written only if its level is enabled; a
 %   disabled call returns after a single comparison. A written line looks like
-%       [2026-10-08 16:41:23.123] [INFO] [IterativeMethod.solve]: ConjugateGradient converged in 12 iterations.
+%       [2026-10-08 16:41:23.123] [info] [IterativeMethod.solve]: ConjugateGradient converged in 12 iterations.
 %   The caller is read from the call stack, so a call site passes only the message:
 %       logger = rooftopMoM.logging.Logger.instance();
 %       logger.info('%s converged in %d iterations.', method, iterationCount);
@@ -69,7 +69,7 @@ classdef Logger < handle
         % error: Writes the message (sprintf format and values) at the level ERROR.
 
             if obj.level_ >= 1
-                obj.write_('ERROR', format, varargin);
+                obj.write_('error', format, varargin);
             end
         end
 
@@ -77,7 +77,7 @@ classdef Logger < handle
         % warning: Writes the message (sprintf format and values) at the level WARNING.
 
             if obj.level_ >= 2
-                obj.write_('WARNING', format, varargin);
+                obj.write_('warning', format, varargin);
             end
         end
 
@@ -85,7 +85,7 @@ classdef Logger < handle
         % info: Writes the message (sprintf format and values) at the level INFO.
 
             if obj.level_ >= 3
-                obj.write_('INFO', format, varargin);
+                obj.write_('info', format, varargin);
             end
         end
 
@@ -93,7 +93,7 @@ classdef Logger < handle
         % debug: Writes the message (sprintf format and values) at the level DEBUG.
 
             if obj.level_ >= 4
-                obj.write_('DEBUG', format, varargin);
+                obj.write_('debug', format, varargin);
             end
         end
 
@@ -101,7 +101,7 @@ classdef Logger < handle
         % trace: Writes the message (sprintf format and values) at the level TRACE.
 
             if obj.level_ >= 5
-                obj.write_('TRACE', format, varargin);
+                obj.write_('trace', format, varargin);
             end
         end
     end
@@ -111,7 +111,7 @@ classdef Logger < handle
         % write_: Formats the line and passes it to every sink.
         %
         %   Inputs:
-        %       levelName: Character vector of the level name.
+        %       levelName: Character vector of the level name in lowercase, the label of the line.
         %       format: sprintf format of the message.
         %       values: Cell of the values of the format.
 

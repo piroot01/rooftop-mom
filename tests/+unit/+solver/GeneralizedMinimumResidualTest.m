@@ -61,7 +61,7 @@ classdef GeneralizedMinimumResidualTest < unit.solver.Base
 
             lines = sink.lines();
             testCase.verifyEqual(nnz(contains(lines, ...
-                '[TRACE] [GeneralizedMinimumResidual.iterate_]: Iteration ')), output.iterationCount());
+                '[trace] [GeneralizedMinimumResidual.iterate_]: Iteration ')), output.iterationCount());
         end
     end
 end

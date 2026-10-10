@@ -71,7 +71,7 @@ classdef IterativeMethodTest < unit.solver.Base
             testCase.verifyFalse(output.converged());
             testCase.verifyEqual(output.iterationCount(), 2);
             testCase.verifyNumElements(lines, 1);
-            testCase.verifySubstring(lines{1}, ['[WARNING] [IterativeMethod.solve]: ', nameOf_(method), ...
+            testCase.verifySubstring(lines{1}, ['[warning] [IterativeMethod.solve]: ', nameOf_(method), ...
                 ' did not converge in 2 iterations']);
         end
 
@@ -85,9 +85,9 @@ classdef IterativeMethodTest < unit.solver.Base
 
             lines = sink.lines();
             testCase.verifyNumElements(lines, 2);
-            testCase.verifySubstring(lines{1}, ['[DEBUG] [IterativeMethod.solve]: Solving 30 unknowns with ', ...
+            testCase.verifySubstring(lines{1}, ['[debug] [IterativeMethod.solve]: Solving 30 unknowns with ', ...
                 nameOf_(method), ' to the relative residual 1.0e-10 in at most 100 iterations.']);
-            testCase.verifySubstring(lines{2}, ['[INFO] [IterativeMethod.solve]: ', nameOf_(method), ' converged in ']);
+            testCase.verifySubstring(lines{2}, ['[info] [IterativeMethod.solve]: ', nameOf_(method), ' converged in ']);
         end
     end
 end
