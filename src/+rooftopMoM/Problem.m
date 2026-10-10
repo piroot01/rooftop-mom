@@ -25,8 +25,9 @@ classdef Problem < handle
         %           as long as wide). The faces of a near pair are less than three longer face sides apart. The
         %           excitation uses the far order.
         %       'chunkSize': Bytes of one chunk of the assembly, its peak memory (default the chunk size set in
-        %           rooftopMoM.Resources.configure, otherwise 2^24 bytes or what the memory ceiling leaves). Chunks of
-        %           about the size of the last-level cache of the CPU are the fastest; larger ones are slower.
+        %           rooftopMoM.Resources.configure, otherwise 2^28 bytes or what the memory ceiling leaves). Every
+        %           chunk costs a fixed time, so chunks below 2^24 bytes are slower (2^20 takes about 1.7 times as
+        %           long); larger ones are as fast or faster.
 
             arguments
                 mesh (1, 1) rooftopMoM.Mesh

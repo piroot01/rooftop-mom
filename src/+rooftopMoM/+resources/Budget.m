@@ -4,8 +4,9 @@ classdef Budget < handle
 %   and into the free memory of the machine.
 
     properties (Constant, Access = private)
-        % Chunks of the assembly of about the size of the last-level cache are the fastest; larger ones are slower.
-        defaultChunkSize_ = 2^24;
+        % Every chunk of the assembly costs a fixed time, so larger chunks are as fast or faster; at 2^28 bytes that
+        % cost is a few percent of the assembly.
+        defaultChunkSize_ = 2^28;
     end
 
     properties (Access = private)
