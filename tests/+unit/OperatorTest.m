@@ -40,7 +40,8 @@ classdef OperatorTest < unit.Base
 
     methods (Access = private)
         function problem = problem_(~)
-            problem = rooftopMoM.Problem(rooftopMoM.Mesh(5, 4, 0.1, 0.15), 2 * pi, 'quadratureOrder', 3);
+            % At the wavenumber 4 the faces of 0.15 m stay below a tenth of the wavelength.
+            problem = rooftopMoM.Problem(rooftopMoM.Mesh(5, 4, 0.1, 0.15), 4, 'quadratureOrder', 3);
         end
 
         function input = input_(~, problem)

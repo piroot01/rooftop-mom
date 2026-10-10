@@ -8,6 +8,11 @@ classdef Problem < handle
 %   on the shape and the faces per wavelength of the mesh: a plate scaled together with the wavelength gives the same
 %   current, input impedance and radar cross section over the squared wavelength.
 
+    properties (Constant, Access = private)
+        % The usual rule for rooftops: at least 10 faces per wavelength.
+        minimumDensity_ = 10;
+    end
+
     properties (Access = private)
         mesh_ rooftopMoM.Mesh;
         context_ rooftopMoM.assembler.AssemblerContext;
@@ -18,7 +23,8 @@ classdef Problem < handle
 
     methods
         function obj = Problem(mesh, wavenumber, options)
-        % Problem: Creates the problem; nothing is assembled yet.
+        % Problem: Creates the problem; nothing is assembled yet. A mesh with fewer than 10 faces per wavelength logs
+        %   a warning.
         %
         %   Inputs:
         %       mesh: rooftopMoM.Mesh.
@@ -72,9 +78,17 @@ classdef Problem < handle
 
             [countX, countY] = mesh.count();
             [sizeX, sizeY] = mesh.faceSize();
-            rooftopMoM.logging.Logger.instance().debug(['%d x %d faces of %g x %g m, %d rooftops, wavenumber %g ' ...
-                'rad/m, ka %.4g, %.3g faces per wavelength, quadrature orders %d near and %d far.'], countX, countY, ...
-                sizeX, sizeY, rooftops.count(), wavenumber, obj.electricalSize(), obj.density(), orders(1), orders(2));
+            logger = rooftopMoM.logging.Logger.instance();
+            logger.debug(['%d x %d faces of %g x %g m, %d rooftops, wavenumber %g rad/m, ka %.4g, %.3g faces per ' ...
+                'wavelength, quadrature orders %d near and %d far.'], countX, countY, sizeX, sizeY, ...
+                rooftops.count(), wavenumber, obj.electricalSize(), obj.density(), orders(1), orders(2));
+
+            % Faces of exactly the largest size pass despite the rounding of the density.
+            if obj.density() < (1 - 1e-12) * obj.minimumDensity_
+                logger.warning(['The mesh has %.3g faces per wavelength, fewer than %d; at this wavenumber the ' ...
+                    'faces should be at most %.3g m.'], obj.density(), obj.minimumDensity_, ...
+                    2 * pi / (obj.wavenumber() * obj.minimumDensity_));
+            end
         end
 
         function delete(obj)

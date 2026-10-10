@@ -50,20 +50,34 @@ classdef ProblemTest < unit.Base
                 'and 3 far.'])));
         end
 
+        function testCoarseMeshLogsAWarning(testCase)
+            sink = rooftopMoM.logging.sinks.MemorySink();
+            rooftopMoM.logging.Logger.instance().configure(rooftopMoM.logging.LogLevel.WARNING, {sink});
+
+            % Faces of 0.2 m give five per wavelength of 1 m, faces of 0.1 m exactly ten.
+            rooftopMoM.Problem(rooftopMoM.Mesh(4, 3, 0.1, 0.2), 2 * pi, 'quadratureOrder', 3);
+            rooftopMoM.Problem(rooftopMoM.Mesh(4, 3, 0.1, 0.1), 2 * pi, 'quadratureOrder', 3);
+
+            lines = sink.lines();
+            testCase.verifyNumElements(lines, 1);
+            testCase.verifySubstring(lines{1}, ['[warning] [Problem.Problem]: The mesh has 5 faces per wavelength, ' ...
+                'fewer than 10; at this wavenumber the faces should be at most 0.1 m.']);
+        end
+
         function testElectricalSizeSetsTheWavenumber(testCase)
             mesh = rooftopMoM.Mesh(4, 3, 0.1, 0.2);
 
-            problem = rooftopMoM.Problem(mesh, 'electricalSize', 2, 'quadratureOrder', 3);
+            problem = rooftopMoM.Problem(mesh, 'electricalSize', 0.5, 'quadratureOrder', 3);
 
-            testCase.verifyEqual(problem.wavenumber(), 2 / mesh.radius(), 'RelTol', 1e-15);
-            testCase.verifyEqual(problem.electricalSize(), 2, 'RelTol', 1e-15);
+            testCase.verifyEqual(problem.wavenumber(), 0.5 / mesh.radius(), 'RelTol', 1e-15);
+            testCase.verifyEqual(problem.electricalSize(), 0.5, 'RelTol', 1e-15);
         end
 
         function testDensityCountsTheLongerFaceSide(testCase)
-            % Faces of 0.2 m along y, five per wavelength of 1 m.
-            problem = rooftopMoM.Problem(rooftopMoM.Mesh(4, 3, 0.1, 0.2), 2 * pi, 'quadratureOrder', 3);
+            % Faces of 0.08 m along y, 12.5 per wavelength of 1 m.
+            problem = rooftopMoM.Problem(rooftopMoM.Mesh(4, 3, 0.05, 0.08), 2 * pi, 'quadratureOrder', 3);
 
-            testCase.verifyEqual(problem.density(), 5, 'RelTol', 1e-15);
+            testCase.verifyEqual(problem.density(), 12.5, 'RelTol', 1e-15);
         end
 
         function testFromElectricalSizeMeshesThePlate(testCase)
