@@ -41,7 +41,7 @@ classdef ResourcesTest < unit.Base
             rooftopMoM.Resources.configure('memory', testCase.estimateGenerators_(mesh) + 2^18);
             problem = rooftopMoM.Problem(mesh, 2 * pi, 'quadratureOrder', 2);
 
-            testCase.verifyEqual(problem.context().memoryBytes(), 2^18);
+            testCase.verifyEqual(problem.context().chunkSize(), 2^18);
         end
 
         function testHeldMemoryFollowsTheLiveObjects(testCase)
@@ -63,7 +63,7 @@ classdef ResourcesTest < unit.Base
             operator = rooftopMoM.Operator(problem, 'product', 'splitFFT');
             preconditioner = rooftopMoM.Preconditioner(problem);
 
-            testCase.verifyEqual([report.generators, report.chunk], [problem.memory(), problem.context().memoryBytes()]);
+            testCase.verifyEqual([report.generators, report.chunk], [problem.memory(), problem.context().chunkSize()]);
             testCase.verifyEqual([report.product, report.productWorking], ...
                 [operator.memory(), operator.workingMemory()]);
             testCase.verifyEqual([report.preconditioner, report.preconditionerWorking], ...
@@ -73,7 +73,7 @@ classdef ResourcesTest < unit.Base
         function testCheckRaisesErrorAboveTheCeiling(testCase)
             % A chunk set by the user stays as it is, so a ceiling below the peak cannot be met.
             mesh = rooftopMoM.Mesh(64, 64, 0.05, 0.05);
-            check = @() rooftopMoM.Resources.check(mesh, 'memoryBytes', 2^20, 'method', 'gmres', 'restart', 20);
+            check = @() rooftopMoM.Resources.check(mesh, 'chunkSize', 2^20, 'method', 'gmres', 'restart', 20);
             report = check();
             rooftopMoM.Resources.configure('memory', report.peak - 1);
 

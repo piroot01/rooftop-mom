@@ -60,7 +60,7 @@ classdef Resources
         %       mesh: rooftopMoM.Mesh.
         %
         %   Optional name-value inputs, as for Problem, Operator, Preconditioner and Solver:
-        %       'memoryBytes': Peak memory of one chunk of the assembly (default as for Problem).
+        %       'chunkSize': Bytes of one chunk of the assembly (default as for Problem).
         %       'product': 'fft', 'splitFFT' or 'leanSplitFFT' (default 'splitFFT').
         %       'preconditioner': Logical flag, the run uses a circulant preconditioner (default true).
         %       'method': 'cg' or 'gmres' (default 'cg').
@@ -73,7 +73,7 @@ classdef Resources
 
             arguments
                 mesh (1, 1) rooftopMoM.Mesh
-                options.memoryBytes {mustBeScalarOrEmpty, mustBeReal, mustBePositive} = []
+                options.chunkSize {mustBeScalarOrEmpty, mustBeReal, mustBePositive} = []
                 options.product (1, :) char {mustBeMember(options.product, {'fft', 'splitFFT', 'leanSplitFFT'})} = ...
                     'splitFFT'
                 options.preconditioner (1, 1) logical = true
@@ -88,7 +88,7 @@ classdef Resources
             budget = rooftopMoM.resources.Budget.instance();
 
             report.generators = rooftopMoM.resources.estimateGenerators(rooftops);
-            report.chunk = options.memoryBytes;
+            report.chunk = options.chunkSize;
 
             if isempty(report.chunk)
                 report.chunk = budget.chooseChunk(report.generators);

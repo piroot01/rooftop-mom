@@ -24,7 +24,7 @@ classdef Problem < handle
         %           [16, 8], which gives the entries of the Green's matrix to about 1e-14, or 1e-13 for faces ten times
         %           as long as wide). The faces of a near pair are less than three longer face sides apart. The
         %           excitation uses the far order.
-        %       'memoryBytes': Peak memory of one chunk of the assembly in bytes (default 2^24, or what the memory
+        %       'chunkSize': Bytes of one chunk of the assembly, its peak memory (default 2^24, or what the memory
         %           ceiling of rooftopMoM.Resources leaves). Chunks of about the size of the last-level cache of the CPU
         %           are the fastest; larger ones are slower.
 
@@ -32,21 +32,21 @@ classdef Problem < handle
                 mesh (1, 1) rooftopMoM.Mesh
                 wavenumber (1, 1) {mustBeReal, mustBeFinite, mustBePositive}
                 options.quadratureOrder {mustBeInteger, mustBePositive, mustBeOneOrTwo_} = [16, 8]
-                options.memoryBytes {mustBeScalarOrEmpty, mustBeReal, mustBeFinite, mustBePositive} = []
+                options.chunkSize {mustBeScalarOrEmpty, mustBeReal, mustBeFinite, mustBePositive} = []
             end
 
             orders = double([options.quadratureOrder(1), options.quadratureOrder(end)]);
             quadrature = rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(orders(2));
             rooftops = rooftopMoM.basisFunctions.UniformRooftops(mesh.primitive(), quadrature);
-            memoryBytes = double(options.memoryBytes);
+            chunkSize = double(options.chunkSize);
 
-            if isempty(memoryBytes)
-                memoryBytes = rooftopMoM.resources.Budget.instance().chooseChunk( ...
+            if isempty(chunkSize)
+                chunkSize = rooftopMoM.resources.Budget.instance().chooseChunk( ...
                     rooftopMoM.resources.estimateGenerators(rooftops));
             end
 
             obj.mesh_ = mesh;
-            obj.context_ = rooftopMoM.assembler.AssemblerContext(rooftops, double(wavenumber), memoryBytes, orders);
+            obj.context_ = rooftopMoM.assembler.AssemblerContext(rooftops, double(wavenumber), chunkSize, orders);
             obj.requireAssembly_();
 
             [countX, countY] = mesh.count();
@@ -112,7 +112,7 @@ classdef Problem < handle
         % requireAssembly_: Raises an error if the generators and one chunk of their assembly do not fit the memory.
 
             generatorBytes = rooftopMoM.resources.estimateGenerators(obj.rooftops());
-            chunkBytes = obj.context_.memoryBytes();
+            chunkBytes = obj.context_.chunkSize();
             toText = @rooftopMoM.resources.utils.formatBytes;
 
             rooftopMoM.resources.Budget.instance().require(generatorBytes + chunkBytes, sprintf(['The assembly of %d ' ...
