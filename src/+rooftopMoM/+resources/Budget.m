@@ -1,16 +1,19 @@
 classdef Budget < handle
-% Budget: Shared memory budget of the objects of rooftopMoM. It keeps the ceiling given by the user and the bytes held
-%   by the live objects. New memory is admitted only if it fits below the ceiling and into the free memory of the
-%   machine.
+% Budget: Shared memory budget of the objects of rooftopMoM. It keeps the ceiling and the chunk size of the assembly
+%   given by the user and the bytes held by the live objects. New memory is admitted only if it fits below the ceiling
+%   and into the free memory of the machine.
 
     properties (Constant, Access = private)
         % Chunks of the assembly of about the size of the last-level cache are the fastest; larger ones are slower.
-        defaultChunkBytes_ = 2^24;
+        defaultChunkSize_ = 2^24;
     end
 
     properties (Access = private)
         % Bytes the objects may hold together, Inf for no ceiling.
         ceiling_ double = Inf;
+
+        % Bytes of one chunk of the assembly given by the user, NaN for the default.
+        chunkSize_ double = NaN;
 
         % Bytes held by the live objects.
         held_ double = 0;
@@ -36,10 +39,12 @@ classdef Budget < handle
     end
 
     methods
-        function configure(obj, ceiling)
-        % configure: Sets the ceiling in bytes, Inf for none.
+        function configure(obj, ceiling, chunkSize)
+        % configure: Sets the ceiling in bytes, Inf for none, and the chunk size of the assembly in bytes, NaN for the
+        %   default.
 
             obj.ceiling_ = ceiling;
+            obj.chunkSize_ = chunkSize;
         end
 
         function ceiling = ceiling(obj)
@@ -63,10 +68,14 @@ classdef Budget < handle
         end
 
         function bytes = chooseChunk(obj, otherBytes)
-        % chooseChunk: Returns the default memory of one chunk of the assembly, at most what the ceiling leaves next to
-        %   otherBytes.
+        % chooseChunk: Returns the bytes of one chunk of the assembly: the chunk size given by the user as it is, or
+        %   else the default, at most what the ceiling leaves next to otherBytes.
 
-            bytes = min(obj.defaultChunkBytes_, max(0, obj.ceiling_ - obj.held_ - otherBytes));
+            bytes = obj.chunkSize_;
+
+            if isnan(bytes)
+                bytes = min(obj.defaultChunkSize_, max(0, obj.ceiling_ - obj.held_ - otherBytes));
+            end
         end
 
         function require(obj, bytes, description)

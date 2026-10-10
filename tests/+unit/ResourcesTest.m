@@ -92,12 +92,56 @@ classdef ResourcesTest < unit.Base
             testCase.verifyLessThanOrEqual(adapted.peak, report.peak - 2^20);
         end
 
+        function testConfiguredChunkSizeHoldsForEveryProblem(testCase)
+            mesh = rooftopMoM.Mesh(16, 16, 0.05, 0.05);
+            rooftopMoM.Resources.configure('chunkSize', 2^20);
+
+            problem = rooftopMoM.Problem(mesh, 2 * pi, 'quadratureOrder', 2);
+            report = rooftopMoM.Resources.check(mesh);
+
+            testCase.verifyEqual([problem.context().chunkSize(), report.chunk], [2^20, 2^20]);
+        end
+
+        function testChunkSizeOfAProblemOverridesTheConfiguredOne(testCase)
+            rooftopMoM.Resources.configure('chunkSize', 2^20);
+
+            problem = rooftopMoM.Problem(rooftopMoM.Mesh(16, 16, 0.05, 0.05), 2 * pi, 'quadratureOrder', 2, ...
+                'chunkSize', 2^21);
+
+            testCase.verifyEqual(problem.context().chunkSize(), 2^21);
+        end
+
+        function testConfiguredChunkSizeIsNotReducedToFitTheCeiling(testCase)
+            % The chunk fits below the ceiling, but not next to the generators.
+            mesh = rooftopMoM.Mesh(32, 32, 0.05, 0.05);
+            rooftopMoM.Resources.configure('memory', testCase.estimateGenerators_(mesh) + 2^18, 'chunkSize', 2^18 + 1);
+
+            testCase.verifyError(@() rooftopMoM.Problem(mesh, 2 * pi, 'quadratureOrder', 2), ...
+                'rooftopMoM:resources:insufficientMemory');
+        end
+
+        function testResetRestoresTheAutomaticChunkSize(testCase)
+            mesh = rooftopMoM.Mesh(16, 16, 0.05, 0.05);
+            automatic = rooftopMoM.Resources.check(mesh).chunk;
+            rooftopMoM.Resources.configure('chunkSize', 2^20);
+
+            rooftopMoM.Resources.reset();
+
+            testCase.verifyEqual(rooftopMoM.Resources.check(mesh).chunk, automatic);
+        end
+
         function testInvalidInputsRaiseErrors(testCase)
             testCase.verifyError(@() rooftopMoM.Resources.configure('memory', -1), 'MATLAB:validators:mustBePositive');
             testCase.verifyError(@() rooftopMoM.Resources.configure('threads', 0), ...
                 'rooftopMoM:resources:invalidThreads');
             testCase.verifyError(@() rooftopMoM.Resources.configure('threads', 'many'), ...
                 'rooftopMoM:resources:invalidThreads');
+            testCase.verifyError(@() rooftopMoM.Resources.configure('chunkSize', 0), ...
+                'rooftopMoM:resources:invalidChunkSize');
+            testCase.verifyError(@() rooftopMoM.Resources.configure('chunkSize', 'large'), ...
+                'rooftopMoM:resources:invalidChunkSize');
+            testCase.verifyError(@() rooftopMoM.Resources.configure('memory', 2^20, 'chunkSize', 2^21), ...
+                'rooftopMoM:resources:invalidChunkSize');
         end
     end
 

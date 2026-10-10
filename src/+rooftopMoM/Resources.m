@@ -1,25 +1,43 @@
 classdef Resources
-% Resources: User control of the memory and the threads of rooftopMoM. Before an object of the API allocates its data,
-%   it checks that the data fits below the memory ceiling and into the free memory of the machine.
-%       rooftopMoM.Resources.configure('memory', 2 * 2^30, 'threads', 8);
+% Resources: User control of the memory, the threads and the assembly chunks of rooftopMoM. Before an object of the API
+%   allocates its data, it checks that the data fits below the memory ceiling and into the free memory of the machine.
+%       rooftopMoM.Resources.configure('memory', 2 * 2^30, 'threads', 8, 'chunkSize', 2^26);
 %       report = rooftopMoM.Resources.check(mesh, 'method', 'gmres', 'restart', 30);
-%   rooftopMoM.Resources.reset() restores no ceiling and the automatic number of threads.
+%   rooftopMoM.Resources.reset() restores no ceiling, the automatic number of threads and the automatic chunk size.
 
     methods (Static)
         function configure(options)
-        % configure: Sets the memory ceiling and the number of computational threads.
+        % configure: Sets the memory ceiling, the number of computational threads and the chunk size of the
+        %   assembly.
         %
         %   Optional name-value inputs:
         %       'memory': Bytes the objects of rooftopMoM may hold together; the free memory of the machine still
         %           applies (default Inf, no ceiling).
         %       'threads': Number of computational threads of MATLAB, or 'automatic' (default 'automatic').
+        %       'chunkSize': Bytes of one chunk of the assembly of every Problem that does not set its own, or
+        %           'automatic' for the default chunk of Problem (default 'automatic'). Like a chunk size given to
+        %           Problem, it is never reduced to fit the ceiling, only checked against it.
 
             arguments
                 options.memory (1, 1) {mustBeReal, mustBeNonNan, mustBePositive} = Inf
                 options.threads {mustBeThreadCount_} = 'automatic'
+                options.chunkSize {mustBeChunkSize_} = 'automatic'
             end
 
-            rooftopMoM.resources.Budget.instance().configure(double(options.memory));
+            chunkSize = NaN;
+
+            if isnumeric(options.chunkSize)
+                chunkSize = double(options.chunkSize);
+            end
+
+            if chunkSize > options.memory
+                toText = @rooftopMoM.resources.utils.formatBytes;
+                error('rooftopMoM:resources:invalidChunkSize', ...
+                    'The chunk size of %s does not fit below the memory ceiling of %s.', toText(chunkSize), ...
+                    toText(double(options.memory)));
+            end
+
+            rooftopMoM.resources.Budget.instance().configure(double(options.memory), chunkSize);
 
             % FFTW keeps the thread count of its first call in the session as its maximum, so it is started with all
             % threads before the count is lowered.
@@ -29,7 +47,7 @@ classdef Resources
         end
 
         function reset()
-        % reset: Restores no memory ceiling and the automatic number of threads.
+        % reset: Restores no memory ceiling, the automatic number of threads and the automatic chunk size.
 
             rooftopMoM.Resources.configure();
         end
@@ -115,6 +133,16 @@ classdef Resources
                 toText(report.chunk), toText(report.product), toText(report.productWorking), ...
                 toText(report.preconditioner), toText(report.preconditionerWorking), toText(report.solver)));
         end
+    end
+end
+
+function mustBeChunkSize_(value)
+    isAutomatic = (ischar(value) || isstring(value)) && strcmpi(value, 'automatic');
+    isSize = isnumeric(value) && isscalar(value) && isreal(value) && isfinite(value) && value > 0;
+
+    if ~isAutomatic && ~isSize
+        error('rooftopMoM:resources:invalidChunkSize', ...
+            'The chunk size is a positive number of bytes or ''automatic''.');
     end
 end
 

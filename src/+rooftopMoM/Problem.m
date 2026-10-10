@@ -24,9 +24,9 @@ classdef Problem < handle
         %           [16, 8], which gives the entries of the Green's matrix to about 1e-14, or 1e-13 for faces ten times
         %           as long as wide). The faces of a near pair are less than three longer face sides apart. The
         %           excitation uses the far order.
-        %       'chunkSize': Bytes of one chunk of the assembly, its peak memory (default 2^24, or what the memory
-        %           ceiling of rooftopMoM.Resources leaves). Chunks of about the size of the last-level cache of the CPU
-        %           are the fastest; larger ones are slower.
+        %       'chunkSize': Bytes of one chunk of the assembly, its peak memory (default the chunk size set in
+        %           rooftopMoM.Resources.configure, otherwise 2^24 bytes or what the memory ceiling leaves). Chunks of
+        %           about the size of the last-level cache of the CPU are the fastest; larger ones are slower.
 
             arguments
                 mesh (1, 1) rooftopMoM.Mesh
