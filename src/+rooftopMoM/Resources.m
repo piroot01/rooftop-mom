@@ -78,6 +78,8 @@ classdef Resources
         %       mesh: rooftopMoM.Mesh.
         %
         %   Optional name-value inputs, as for Problem, Operator, Preconditioner and Solver:
+        %       'quadratureOrder': Gauss-Legendre orders [near, far] of the cell pairs, or one order for both (default
+        %           [16, 8]); they set the largest chunk the assembly can use.
         %       'chunkSize': Bytes of one chunk of the assembly (default as for Problem).
         %       'product': 'fft', 'splitFFT' or 'leanSplitFFT' (default 'splitFFT').
         %       'preconditioner': Logical flag, the run uses a circulant preconditioner (default true).
@@ -91,6 +93,7 @@ classdef Resources
 
             arguments
                 mesh (1, 1) rooftopMoM.Mesh
+                options.quadratureOrder {mustBeInteger, mustBePositive, mustBeOneOrTwo_} = [16, 8]
                 options.chunkSize {mustBeScalarOrEmpty, mustBeReal, mustBePositive} = []
                 options.product (1, :) char {mustBeMember(options.product, {'fft', 'splitFFT', 'leanSplitFFT'})} = ...
                     'splitFFT'
@@ -100,7 +103,7 @@ classdef Resources
                 options.maxIterationCount (1, 1) {mustBeInteger, mustBePositive} = 1000
             end
 
-            % The memory does not depend on the quadrature.
+            % The quadrature of the rooftops, which only the excitation uses, does not change the memory.
             rooftops = rooftopMoM.basisFunctions.UniformRooftops(mesh.primitive(), ...
                 rooftopMoM.basisFunctions.GaussLegendre2RectQuadrature(1));
             budget = rooftopMoM.resources.Budget.instance();
@@ -111,6 +114,9 @@ classdef Resources
             if isempty(report.chunk)
                 report.chunk = budget.chooseChunk(report.generators);
             end
+
+            orders = double([options.quadratureOrder(1), options.quadratureOrder(end)]);
+            report.chunk = min(report.chunk, rooftopMoM.resources.estimateChunk(rooftops, orders));
 
             [report.product, report.productWorking] = rooftopMoM.resources.estimateProduct(rooftops, options.product);
             [report.preconditioner, report.preconditionerWorking] = deal(0);
@@ -143,6 +149,12 @@ function mustBeChunkSize_(value)
     if ~isAutomatic && ~isSize
         error('rooftopMoM:resources:invalidChunkSize', ...
             'The chunk size is a positive number of bytes or ''automatic''.');
+    end
+end
+
+function mustBeOneOrTwo_(value)
+    if ~ismember(numel(value), [1, 2])
+        error('rooftopMoM:problem:invalidQuadratureOrder', 'The quadrature order is one order or a pair [near, far].');
     end
 end
 

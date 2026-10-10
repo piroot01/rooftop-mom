@@ -25,9 +25,10 @@ classdef Problem < handle
         %           as long as wide). The faces of a near pair are less than three longer face sides apart. The
         %           excitation uses the far order.
         %       'chunkSize': Bytes of one chunk of the assembly, its peak memory (default the chunk size set in
-        %           rooftopMoM.Resources.configure, otherwise 2^28 bytes or what the memory ceiling leaves). Every
-        %           chunk costs a fixed time, so chunks below 2^24 bytes are slower (2^20 takes about 1.7 times as
-        %           long); larger ones are as fast or faster.
+        %           rooftopMoM.Resources.configure, otherwise 2^28 bytes or what the memory ceiling leaves), at most
+        %           what the assembly can use: its near or its far pass in one chunk. Every chunk costs a fixed time,
+        %           so chunks below 2^24 bytes are slower (2^20 takes about 1.7 times as long); larger ones are as fast
+        %           or faster.
 
             arguments
                 mesh (1, 1) rooftopMoM.Mesh
@@ -45,6 +46,9 @@ classdef Problem < handle
                 chunkSize = rooftopMoM.resources.Budget.instance().chooseChunk( ...
                     rooftopMoM.resources.estimateGenerators(rooftops));
             end
+
+            % A larger chunk would change nothing, so the memory checks count only what the assembly can use.
+            chunkSize = min(chunkSize, rooftopMoM.resources.estimateChunk(rooftops, orders));
 
             obj.mesh_ = mesh;
             obj.context_ = rooftopMoM.assembler.AssemblerContext(rooftops, double(wavenumber), chunkSize, orders);

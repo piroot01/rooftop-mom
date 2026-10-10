@@ -58,7 +58,7 @@ classdef ResourcesTest < unit.Base
 
         function testCheckMatchesTheBuiltRun(testCase)
             mesh = rooftopMoM.Mesh(24, 20, 0.05, 0.05);
-            report = rooftopMoM.Resources.check(mesh, 'product', 'splitFFT');
+            report = rooftopMoM.Resources.check(mesh, 'quadratureOrder', 2, 'product', 'splitFFT');
             problem = rooftopMoM.Problem(mesh, 2 * pi, 'quadratureOrder', 2);
             operator = rooftopMoM.Operator(problem, 'product', 'splitFFT');
             preconditioner = rooftopMoM.Preconditioner(problem);
@@ -93,10 +93,10 @@ classdef ResourcesTest < unit.Base
         end
 
         function testConfiguredChunkSizeHoldsForEveryProblem(testCase)
-            mesh = rooftopMoM.Mesh(16, 16, 0.05, 0.05);
+            mesh = rooftopMoM.Mesh(64, 64, 0.05, 0.05);
             rooftopMoM.Resources.configure('chunkSize', 2^20);
 
-            problem = rooftopMoM.Problem(mesh, 2 * pi, 'quadratureOrder', 2);
+            problem = rooftopMoM.Problem(mesh, 2 * pi);
             report = rooftopMoM.Resources.check(mesh);
 
             testCase.verifyEqual([problem.context().chunkSize(), report.chunk], [2^20, 2^20]);
@@ -105,10 +105,21 @@ classdef ResourcesTest < unit.Base
         function testChunkSizeOfAProblemOverridesTheConfiguredOne(testCase)
             rooftopMoM.Resources.configure('chunkSize', 2^20);
 
-            problem = rooftopMoM.Problem(rooftopMoM.Mesh(16, 16, 0.05, 0.05), 2 * pi, 'quadratureOrder', 2, ...
-                'chunkSize', 2^21);
+            problem = rooftopMoM.Problem(rooftopMoM.Mesh(64, 64, 0.05, 0.05), 2 * pi, 'chunkSize', 2^21);
 
             testCase.verifyEqual(problem.context().chunkSize(), 2^21);
+        end
+
+        function testChunkStopsAtWhatTheAssemblyCanUse(testCase)
+            % The whole assembly of a small problem fits a chunk below the default, and so does a set chunk size.
+            mesh = rooftopMoM.Mesh(16, 16, 0.05, 0.05);
+            usable = rooftopMoM.resources.estimateChunk(rooftopMoM.Problem(mesh, 2 * pi).rooftops(), [16, 8]);
+            rooftopMoM.Resources.configure('chunkSize', 2^30);
+
+            testCase.verifyLessThan(usable, 2^28);
+            testCase.verifyEqual(rooftopMoM.Problem(mesh, 2 * pi).context().chunkSize(), usable);
+            testCase.verifyEqual(rooftopMoM.Problem(mesh, 2 * pi, 'chunkSize', 2^29).context().chunkSize(), usable);
+            testCase.verifyEqual(rooftopMoM.Resources.check(mesh).chunk, usable);
         end
 
         function testConfiguredChunkSizeIsNotReducedToFitTheCeiling(testCase)
