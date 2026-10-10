@@ -39,6 +39,9 @@ function generators = generate(obj, context)
 
     % The touching pairs integrated the remainder of the extraction; the extracted part follows in closed form.
     touching = [0, 1, 0, 1; 0, 0, 1, 1];
+
+    % A grid one cell wide, e.g. a strip dipole, lacks the touching offsets with 1 along that direction: their
+    % remainder was never integrated and the generators have no column or row for them, so they are left out.
     inside = all(touching < counts(:), 1);
     extracted = rooftopMoM.assembler.singularIntegrals.generateExtractedMoments(sizes(1), sizes(2), wavenumber);
     parts = rooftopMoM.assembler.greensMatrix.utils.accumulateMoments(parts, extracted(:, inside), ...

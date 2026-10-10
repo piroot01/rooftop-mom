@@ -16,8 +16,11 @@ function moments = integrateMoments(rule, offsets, sizes, wavenumber)
 
     count = size(offsets, 2);
 
-    % R = sqrt(a^2 (nu - dX)^2 + b^2 (eta - dY)^2), Px x Py x C. The singular points lie on the ends of the parts of
-    % the rule, never on its nodes, so R > 0.
+    % R = sqrt(a^2 (nu - dX)^2 + b^2 (eta - dY)^2), Px x Py x C (Theorem 4.1). A node (nu, eta) is not a pair of points
+    % of the two cells but all pairs with these differences of their local coordinates, so even for the coincident cell
+    % all its pairs with R = 0 collapse into the single point nu = eta = 0. That point, and the edge midpoints and
+    % corners of [-1, 1]^2 of the other touching cells, lie on the ends of the parts of the rule, never on its
+    % Gauss-Legendre nodes, so R > 0.
     distance = hypot(sizes(1) * (rule.nodesX - reshape(offsets(1, :), 1, 1, count)), ...
         sizes(2) * (rule.nodesY - reshape(offsets(2, :), 1, 1, count)));
     kernel = exp(-1i * wavenumber * distance) ./ distance;
