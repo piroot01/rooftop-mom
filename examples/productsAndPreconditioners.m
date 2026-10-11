@@ -53,7 +53,7 @@ report_('huckle, bandwidth 16', solver.solve(operator, excitation, 'precondition
 
 % A modifier builds the preconditioner from a part of the matrix, here its imaginary part.
 preconditioner = rooftopMoM.Preconditioner(problem, 'modifier', @imag);
-report_('tChan, imaginary part', solver.solve(operator, excitation, 'preconditioner', preconditioner));
+report_('rChan, imaginary part', solver.solve(operator, excitation, 'preconditioner', preconditioner));
 
 % The generators, the product and the last preconditioner are still alive.
 fprintf('\nThe live objects hold %.1f MB.\n', rooftopMoM.Resources.held() / 2^20);

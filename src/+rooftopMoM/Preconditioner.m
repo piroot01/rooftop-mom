@@ -1,7 +1,7 @@
 classdef Preconditioner < rooftopMoM.Product
 % Preconditioner: Circulant preconditioner of the Green's matrix of a Problem, the product with the inverse of a block
 %   circulant approximation of the matrix.
-%       preconditioner = rooftopMoM.Preconditioner(problem, 'kernel', 'tChan', 'builder', 'partwise');
+%       preconditioner = rooftopMoM.Preconditioner(problem, 'kernel', 'rChan', 'builder', 'partwise');
 
     methods
         function obj = Preconditioner(problem, options)
@@ -12,7 +12,7 @@ classdef Preconditioner < rooftopMoM.Product
         %
         %   Optional name-value inputs:
         %       'kernel': Circulant approximation of a Toeplitz generator, 'strang', 'tChan', 'rChan', 'huckle' or
-        %           'superoptimal', the superoptimal circulant of Tyrtyshnikov (default 'tChan').
+        %           'superoptimal', the superoptimal circulant of Tyrtyshnikov (default 'rChan').
         %       'builder': What is approximated (default 'partwise'):
         %           'partwise': Each of the three generators.
         %           'blockwise': Each of the four blocks of the matrix.
@@ -24,7 +24,7 @@ classdef Preconditioner < rooftopMoM.Product
             arguments
                 problem (1, 1) rooftopMoM.Problem
                 options.kernel (1, :) char {mustBeMember(options.kernel, ...
-                    {'strang', 'tChan', 'rChan', 'huckle', 'superoptimal'})} = 'tChan'
+                    {'strang', 'tChan', 'rChan', 'huckle', 'superoptimal'})} = 'rChan'
                 options.builder (1, :) char {mustBeMember(options.builder, {'partwise', 'blockwise', 'hybrid'})} = ...
                     'partwise'
                 options.bandwidth {mustBeInteger, mustBePositive, mustBePairOrEmpty_} = []
