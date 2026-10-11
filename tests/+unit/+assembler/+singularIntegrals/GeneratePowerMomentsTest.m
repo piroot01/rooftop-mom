@@ -15,9 +15,9 @@ classdef GeneratePowerMomentsTest < unit.Base
             offsets = [0, 0; 1, 0; 0, 1; 1, 1];
 
             for row = 1:size(data, 1)
-                [a, b, power] = deal(data(row, 1), data(row, 2), data(row, 3));
+                [a, b, exponent] = deal(data(row, 1), data(row, 2), data(row, 3));
                 [~, column] = ismember(data(row, 4:5), offsets, 'rows');
-                moments = rooftopMoM.assembler.singularIntegrals.generatePowerMoments(a, b, power);
+                moments = rooftopMoM.assembler.singularIntegrals.generatePowerMoments(a, b, exponent);
                 tolerance = 1e-13;
 
                 if max(a, b) / min(a, b) > 4
@@ -25,7 +25,7 @@ classdef GeneratePowerMomentsTest < unit.Base
                 end
 
                 testCase.verifyEqual(moments(:, column), data(row, 6:12).', 'RelTol', tolerance, ...
-                    sprintf('cell %g x %g, power %d, offset (%d, %d)', a, b, power, data(row, 4:5)));
+                    sprintf('cell %g x %g, power %d, offset (%d, %d)', a, b, exponent, data(row, 4:5)));
             end
         end
 
