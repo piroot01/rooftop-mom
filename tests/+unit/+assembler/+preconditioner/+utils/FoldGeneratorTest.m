@@ -12,6 +12,18 @@ classdef FoldGeneratorTest < unit.Base
             testCase.verifyEqual(circulant, expected, 'AbsTol', 1e-14);
         end
 
+        function testFoldsAnEvenGeneratorOneSided(testCase)
+            % Any window, also one that is not even, folds the one-sided generator of an even matrix as its two-sided
+            % extension.
+            rng(1);
+            generator = complex(randn(6, 5), randn(6, 5));
+            window = @(offsets, count, dimension) (count + offsets + dimension) / count;
+
+            testCase.verifyEqual(rooftopMoM.assembler.preconditioner.utils.foldGenerator(generator, window, true), ...
+                rooftopMoM.assembler.preconditioner.utils.foldGenerator( ...
+                rooftopMoM.assembler.preconditioner.utils.extendEvenly(generator), window), 'AbsTol', 1e-14);
+        end
+
         function testFoldsAlongBothDirections(testCase)
             % With unit weights the offset (p, q) lands at (p mod 2, q mod 3).
             generator = reshape(1:15, 3, 5);

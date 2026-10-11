@@ -33,6 +33,24 @@ classdef KernelsTest < unit.assembler.preconditioner.Base
                 'AbsTol', 1e-14);
         end
 
+        function testTChanAndRChanFoldAnEvenGeneratorOneSided(testCase)
+            % The one-sided generator of an even Toeplitz matrix gives the circulant of its two-sided extension, also
+            % for strips with one face across.
+            rng(1);
+
+            for kernel = {@rooftopMoM.assembler.preconditioner.kernels.generateTChan, ...
+                    @rooftopMoM.assembler.preconditioner.kernels.generateRChan}
+                for grid = {[5, 4], [1, 6], [7, 1]}
+                    generator = complex(randn(grid{1}), randn(grid{1}));
+                    expected = kernel{1}(rooftopMoM.assembler.preconditioner.utils.extendEvenly(generator));
+
+                    testCase.verifyEqual(kernel{1}(generator, true), expected, 'AbsTol', 1e-14);
+                end
+
+                testCase.verifyEmpty(kernel{1}([], true));
+            end
+        end
+
         function testStrangCopiesTheCentralOffsets(testCase)
             generator = reshape(1:20, 5, 4);
             circulant = rooftopMoM.assembler.preconditioner.kernels.generateStrang( ...
