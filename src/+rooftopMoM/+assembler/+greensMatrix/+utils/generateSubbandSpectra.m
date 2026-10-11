@@ -4,7 +4,8 @@ function spectra = generateSubbandSpectra(generators, faceSizeX, faceSizeY)
 %   frequency subbands P and A give
 %       T * x = (ifft(P .* fft(x)) + conj(w) .* ifft(A .* fft(w .* x))) / 2,  w(d) = exp(-1i * pi * d / n),
 %   so the product needs FFTs of the grid size only. Every direction with more than one face is split, and n is
-%   rounded up to a fast FFT size.
+%   rounded up to a fast FFT size. One FFT of the embedding of a generator gives all its subbands: they are its even
+%   and its odd frequencies along every split direction.
 %
 %   Inputs:
 %       generators: rooftopMoM.assembler.greensMatrix.Generators.
@@ -30,9 +31,31 @@ function spectra = generateSubbandSpectra(generators, faceSizeX, faceSizeY)
     end
 
     [paritiesX, paritiesY] = ndgrid(0:double(fftSizeX > 1), 0:double(fftSizeY > 1));
-    scale = 1 / numel(paritiesX);
-    subband = @(kernel, k) scale * rooftopMoM.assembler.greensMatrix.utils.generateSubbandSpectrum(kernel, ...
-        fftSizeX, fftSizeY, paritiesX(k), paritiesY(k));
+    [stepX, stepY] = size(paritiesX);
+    kernels = {generators.magneticXX(), generators.magneticYY(), generators.electric()};
+    subbands = cell(3, numel(paritiesX));
+
+    for n = find(~cellfun(@isempty, kernels))
+        % The embedding of the period 2 * fftSize in every split direction holds t(p, q) at the offsets (+-p, +-q),
+        % already divided by the number of subbands; the offset fftSize stays zero.
+        [rows, columns] = size(kernels{n});
+        embedding = zeros(stepX * fftSizeX, stepY * fftSizeY, 'like', kernels{n});
+        embedding(1:rows, 1:columns) = kernels{n} / numel(paritiesX);
+        embedding((end - rows + 2):end, 1:columns) = embedding(rows:(-1):2, 1:columns);
+        embedding(:, (end - columns + 2):end) = embedding(:, columns:(-1):2);
+        embedding = fft2(embedding);
+
+        % The spectrum of a real even circulant is real; drop the rounding in the imaginary part.
+        if isreal(kernels{n})
+            embedding = real(embedding);
+        end
+
+        for k = 1:numel(paritiesX)
+            subbands{n, k} = embedding((1 + paritiesX(k)):stepX:end, (1 + paritiesY(k)):stepY:end);
+        end
+
+        clear embedding
+    end
 
     spectra = cell(1, numel(paritiesX));
 
@@ -40,9 +63,11 @@ function spectra = generateSubbandSpectra(generators, faceSizeX, faceSizeY)
         [shiftX, shiftY] = rooftopMoM.assembler.greensMatrix.utils.generateShiftPhases(fftSizeX, fftSizeY, ...
             paritiesX(k), paritiesY(k));
 
-        spectra{k} = rooftopMoM.assembler.greensMatrix.utils.generateBlockSpectra( ...
-            subband(generators.magneticXX(), k), subband(generators.magneticYY(), k), ...
-            subband(generators.electric(), k), generators.content(), faceSizeX, faceSizeY, shiftX, shiftY);
+        spectra{k} = rooftopMoM.assembler.greensMatrix.utils.generateBlockSpectra(subbands{:, k}, ...
+            generators.content(), faceSizeX, faceSizeY, shiftX, shiftY);
+
+        % Free the subbands of the generators as soon as their blocks exist, which keeps the peak memory low.
+        subbands(:, k) = {[]};
     end
 
     spectra = [spectra{:}];
