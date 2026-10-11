@@ -9,6 +9,16 @@ classdef ReadAvailableMemoryTest < unit.Base
             testCase.verifyTrue(isfinite(bytes));
         end
 
+        function testReadsWindowsAsTheFunctionMemory(testCase)
+            % The Java runtime reads the same available memory as the function memory; it may change a little between
+            % the two readings.
+            testCase.assumeTrue(ispc && usejava('jvm'), 'Only Windows with the Java runtime reads through Java.');
+            [~, systemView] = memory();
+
+            testCase.verifyEqual(rooftopMoM.resources.readAvailableMemory(), systemView.PhysicalMemory.Available, ...
+                'RelTol', 0.05);
+        end
+
         function testParsesMeminfoOfLinux(testCase)
             text = sprintf(['MemTotal:       32559532 kB\nMemFree:        10826360 kB\n' ...
                 'MemAvailable:   19411080 kB\nBuffers:          510956 kB\n']);
